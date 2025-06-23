@@ -8,10 +8,12 @@
 </head>
 <body>
   <div class="container">
+    <img src="logo_resized.png" alt="Universal Rentals Logo" style="max-height: 80px; display: block; margin: 0 auto 20px;" />
+    <h2 style="text-align:center; color:#333;">Employee Clock In</h2>
     <h1>Universal Crew App</h1>
     <form id="login-form" onsubmit="return handleLogin(event)">
-      <input type="tel" inputmode="numeric" pattern="[0-9]*" id="pin" maxlength="4" placeholder="Enter PIN" required />
-      <button type="submit">Login</button>
+      <input type="tel" style="padding:10px;font-size:16px;width:100%;max-width:300px;margin:10px auto;display:block;" inputmode="numeric" pattern="[0-9]*" id="pin" maxlength="4" placeholder="Enter PIN" required />
+      <button type="submit" style="padding:10px 20px;font-size:16px;background-color:#4b5320;color:#fff;border:none;border-radius:5px;cursor:pointer;display:block;margin:10px auto;">Login</button>
     </form>
   </div>
   <script>
