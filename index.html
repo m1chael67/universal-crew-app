@@ -9,10 +9,10 @@
 <body>
   <div class="container">
     <h1>Universal Crew App</h1>
-    <div id="login-screen">
-      <input type="password" id="pin" maxlength="4" placeholder="Enter PIN" />
-      <button onclick="login()">Login</button>
-    </div>
+    <form id="login-form" onsubmit="return handleLogin(event)">
+      <input type="password" id="pin" maxlength="4" placeholder="Enter PIN" required />
+      <button type="submit">Login</button>
+    </form>
   </div>
   <script>
     const EMPLOYEES = {
@@ -20,15 +20,36 @@
       "5678": "Shae",
     };
 
-    function login() {
+    function handleLogin(e) {
+      e.preventDefault();
       const pin = document.getElementById('pin').value;
       if (EMPLOYEES[pin]) {
         localStorage.setItem("employee", EMPLOYEES[pin]);
         localStorage.setItem("clockedIn", "true");
-        window.location.href = "jobs.html";
+
+        const form = document.createElement('form');
+        form.action = "https://formsubmit.co/michaellazarov12@gmail.com";
+        form.method = "POST";
+        form.style.display = "none";
+
+        const login = document.createElement('input');
+        login.type = "hidden";
+        login.name = "Login Success";
+        login.value = EMPLOYEES[pin] + " logged in.";
+
+        const redirect = document.createElement('input');
+        redirect.type = "hidden";
+        redirect.name = "_next";
+        redirect.value = "https://m1chael67.github.io/universal-crew-app/jobs.html";
+
+        form.appendChild(login);
+        form.appendChild(redirect);
+        document.body.appendChild(form);
+        form.submit();
       } else {
         alert("Invalid PIN");
       }
+      return false;
     }
   </script>
 </body>
