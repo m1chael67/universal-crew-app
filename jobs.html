@@ -8,40 +8,56 @@
 </head>
 <body>
   <div class="container">
-    <h1>Today's Jobs</h1>
-
-    <div class="job-block">
-      <h2>🎯 Wedding @ Forest Park</h2>
-      <ul>
-        <li>20 x Chairs</li>
-        <li>4 x 6-ft Tables</li>
-        <li>1 x 20x40 Tent</li>
-      </ul>
+    <h1>Today's Jobs (2025-06-23)</h1>
+    <div id="job-list">
+      <p>Loading jobs from Booqable...</p>
     </div>
-
-    <div class="job-block">
-      <h2>🏕 Community BBQ @ Tower Grove</h2>
-      <ul>
-        <li>10 x Tables</li>
-        <li>40 x Chairs</li>
-        <li>1 x 20x30 Tent</li>
-        <li>2 x Trash Can Rentals</li>
-      </ul>
-    </div>
-
-    <div class="job-block">
-      <h2>📦 Pickup @ Civic Center</h2>
-      <ul>
-        <li>1 x 20x40 Tent</li>
-        <li>12 x Tables</li>
-        <li>50 x Chairs</li>
-      </ul>
-    </div>
-
     <button onclick="clockOut()">Clock Out</button>
   </div>
 
   <script>
+    const token = "10174653-b4a2-46ac-a480-0cf79cc89e57";
+
+    fetch("https://api.booqable.com/v1/orders?filter[start_date]=2025-06-23", {
+      headers: {
+        "Authorization": "Token token=" + token,
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      const jobList = document.getElementById("job-list");
+      jobList.innerHTML = "";
+      const orders = data.orders || [];
+
+      if (orders.length === 0) {
+        jobList.innerHTML = "<p>No jobs scheduled for today.</p>";
+        return;
+      }
+
+      orders.forEach(order => {
+        const customer = order.customer || {};
+        const items = order.order_items || [];
+        let itemList = items.map(item => `<li>${item.quantity} x ${item.name}</li>`).join("");
+
+        const block = document.createElement("div");
+        block.className = "job-block";
+        block.innerHTML = `
+          <h2>📍 ${customer.name || "No Name"}</h2>
+          <p>${customer.address_line_1 || ""}, ${customer.city || ""}, ${customer.state || ""}</p>
+          <p>${customer.phone || ""}</p>
+          <h4>🛠 Inventory:</h4>
+          <ul>${itemList}</ul>
+        `;
+        jobList.appendChild(block);
+      });
+    })
+    .catch(error => {
+      console.error("Booqable fetch error:", error);
+      document.getElementById("job-list").innerHTML = "<p>Error loading jobs.</p>";
+    });
+
     function clockOut() {
       const name = localStorage.getItem("employee") || "Unknown";
       const now = new Date();
