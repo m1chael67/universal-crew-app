@@ -3,6 +3,12 @@ const EMPLOYEES = {
   "5678": "Shae",
 };
 
+window.onload = () => {
+  if (localStorage.getItem("clockedIn") === "true") {
+    window.location.href = "jobs.html";
+  }
+};
+
 function login() {
   const pin = document.getElementById('pin').value;
   if (EMPLOYEES[pin]) {
@@ -19,10 +25,9 @@ function clockIn() {
   const name = localStorage.getItem("employee") || "Unknown";
   const now = new Date();
   const logEntry = `${name} clocked in at ${now.toLocaleTimeString()}`;
-
   document.getElementById('clock-status').textContent = logEntry;
+  localStorage.setItem("clockedIn", "true");
 
-  // Email it using FormSubmit (free service)
   const form = document.createElement('form');
   form.action = "https://formsubmit.co/michaellazarov12@gmail.com";
   form.method = "POST";
@@ -37,8 +42,14 @@ function clockIn() {
   document.body.appendChild(form);
   form.submit();
 
-  // Then redirect to jobs page
   setTimeout(() => {
     window.location.href = "jobs.html";
   }, 1500);
+}
+
+function clockOut() {
+  localStorage.removeItem("clockedIn");
+  localStorage.removeItem("employee");
+  alert("You have been clocked out.");
+  location.reload();
 }
