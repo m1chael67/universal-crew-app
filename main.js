@@ -1,8 +1,3 @@
-const loginScreen = document.getElementById('login-screen');
-const appScreen = document.getElementById('main-app');
-const userNameDisplay = document.getElementById('user-name');
-const logDiv = document.getElementById('log');
-
 const EMPLOYEES = {
   "1234": "Michael",
   "5678": "Shae",
@@ -11,20 +6,39 @@ const EMPLOYEES = {
 function login() {
   const pin = document.getElementById('pin').value;
   if (EMPLOYEES[pin]) {
-    userNameDisplay.textContent = EMPLOYEES[pin];
-    loginScreen.style.display = 'none';
-    appScreen.style.display = 'block';
+    localStorage.setItem("employee", EMPLOYEES[pin]);
+    document.getElementById('user-name').textContent = EMPLOYEES[pin];
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('clock-screen').style.display = 'block';
   } else {
     alert("Invalid PIN");
   }
 }
 
 function clockIn() {
-  const time = new Date().toLocaleTimeString();
-  logDiv.innerHTML += `<p>⏱ Clocked in at ${time}</p>`;
-}
+  const name = localStorage.getItem("employee") || "Unknown";
+  const now = new Date();
+  const logEntry = `${name} clocked in at ${now.toLocaleTimeString()}`;
 
-function clockOut() {
-  const time = new Date().toLocaleTimeString();
-  logDiv.innerHTML += `<p>🔚 Clocked out at ${time}</p>`;
+  document.getElementById('clock-status').textContent = logEntry;
+
+  // Email it using FormSubmit (free service)
+  const form = document.createElement('form');
+  form.action = "https://formsubmit.co/michaellazarov12@gmail.com";
+  form.method = "POST";
+  form.style.display = "none";
+
+  const input = document.createElement('input');
+  input.type = "hidden";
+  input.name = "Clock In";
+  input.value = logEntry;
+
+  form.appendChild(input);
+  document.body.appendChild(form);
+  form.submit();
+
+  // Then redirect to jobs page
+  setTimeout(() => {
+    window.location.href = "jobs.html";
+  }, 1500);
 }

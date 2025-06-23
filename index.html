@@ -9,17 +9,15 @@
 <body>
   <div class="container">
     <h1>Universal Crew App</h1>
-
     <div id="login-screen">
       <input type="password" id="pin" maxlength="4" placeholder="Enter PIN" />
       <button onclick="login()">Login</button>
     </div>
 
-    <div id="main-app" style="display:none;">
+    <div id="clock-screen" style="display:none;">
       <p>Welcome, <span id="user-name"></span></p>
       <button onclick="clockIn()">Clock In</button>
-      <button onclick="clockOut()">Clock Out</button>
-      <div id="log"></div>
+      <div id="clock-status"></div>
     </div>
   </div>
   <script src="main.js"></script>
