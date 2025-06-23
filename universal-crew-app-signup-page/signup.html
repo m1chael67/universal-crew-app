@@ -28,7 +28,6 @@
         return false;
       }
 
-      // Email submission via FormSubmit
       const form = document.createElement('form');
       form.action = "https://formsubmit.co/michaellazarov12@gmail.com";
       form.method = "POST";
@@ -44,12 +43,18 @@
       p.name = "Requested PIN";
       p.value = pin1;
 
+      const redirect = document.createElement('input');
+      redirect.type = "hidden";
+      redirect.name = "_next";
+      redirect.value = "https://m1chael67.github.io/universal-crew-app/";
+
       form.appendChild(n);
       form.appendChild(p);
+      form.appendChild(redirect);
+
       document.body.appendChild(form);
       form.submit();
 
-      alert("Account request submitted!");
       return true;
     }
   </script>
