@@ -1,15 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Universal Crew App</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="container">
     <h1>Universal Crew App</h1>
-    <p>This is the pre-built version ready for GitHub Pages and iPhone Home Screen.</p>
+
+    <div id="login-screen">
+      <input type="password" id="pin" maxlength="4" placeholder="Enter PIN" />
+      <button onclick="login()">Login</button>
+    </div>
+
+    <div id="main-app" style="display:none;">
+      <p>Welcome, <span id="user-name"></span></p>
+      <button onclick="clockIn()">Clock In</button>
+      <button onclick="clockOut()">Clock Out</button>
+      <div id="log"></div>
+    </div>
   </div>
   <script src="main.js"></script>
 </body>
