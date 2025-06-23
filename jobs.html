@@ -52,27 +52,29 @@
       form.method = "POST";
       form.style.display = "none";
 
-      const input = document.createElement('input');
-      input.type = "hidden";
-      input.name = "Clock Out";
-      input.value = logEntry;
+      const msg = document.createElement('input');
+      msg.type = "hidden";
+      msg.name = "Clock Out";
+      msg.value = logEntry;
 
       const disableCaptcha = document.createElement('input');
       disableCaptcha.type = "hidden";
       disableCaptcha.name = "_captcha";
       disableCaptcha.value = "false";
 
-      form.appendChild(input);
+      const redirect = document.createElement('input');
+      redirect.type = "hidden";
+      redirect.name = "_next";
+      redirect.value = "index.html";
+
+      form.appendChild(msg);
       form.appendChild(disableCaptcha);
+      form.appendChild(redirect);
       document.body.appendChild(form);
       form.submit();
 
-      setTimeout(() => {
-        localStorage.removeItem("clockedIn");
-        localStorage.removeItem("employee");
-        alert("You have been clocked out.");
-        location.href = "index.html";
-      }, 1500);
+      localStorage.removeItem("clockedIn");
+      localStorage.removeItem("employee");
     }
   </script>
 </body>
