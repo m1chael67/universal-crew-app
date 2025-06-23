@@ -13,13 +13,23 @@
       <input type="password" id="pin" maxlength="4" placeholder="Enter PIN" />
       <button onclick="login()">Login</button>
     </div>
-
-    <div id="clock-screen" style="display:none;">
-      <p>Welcome, <span id="user-name"></span></p>
-      <button onclick="clockIn()">Clock In</button>
-      <div id="clock-status"></div>
-    </div>
   </div>
-  <script src="main.js"></script>
+  <script>
+    const EMPLOYEES = {
+      "1234": "Michael",
+      "5678": "Shae",
+    };
+
+    function login() {
+      const pin = document.getElementById('pin').value;
+      if (EMPLOYEES[pin]) {
+        localStorage.setItem("employee", EMPLOYEES[pin]);
+        localStorage.setItem("clockedIn", "true");
+        window.location.href = "jobs.html";
+      } else {
+        alert("Invalid PIN");
+      }
+    }
+  </script>
 </body>
 </html>

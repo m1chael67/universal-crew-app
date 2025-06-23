@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Your Jobs</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>Today's Jobs</h1>
+
+    <div class="job-block">
+      <h2>🎯 Wedding @ Forest Park</h2>
+      <ul>
+        <li>20 x Chairs</li>
+        <li>4 x 6-ft Tables</li>
+        <li>1 x 20x40 Tent</li>
+      </ul>
+    </div>
+
+    <div class="job-block">
+      <h2>🏕 Community BBQ @ Tower Grove</h2>
+      <ul>
+        <li>10 x Tables</li>
+        <li>40 x Chairs</li>
+        <li>1 x 20x30 Tent</li>
+        <li>2 x Trash Can Rentals</li>
+      </ul>
+    </div>
+
+    <div class="job-block">
+      <h2>📦 Pickup @ Civic Center</h2>
+      <ul>
+        <li>1 x 20x40 Tent</li>
+        <li>12 x Tables</li>
+        <li>50 x Chairs</li>
+      </ul>
+    </div>
+
+    <button onclick="clockOut()">Clock Out</button>
+  </div>
+
+  <script>
+    function clockOut() {
+      const name = localStorage.getItem("employee") || "Unknown";
+      const now = new Date();
+      const logEntry = `${name} clocked out at ${now.toLocaleTimeString()}`;
+
+      // Build and send form to email
+      const form = document.createElement('form');
+      form.action = "https://formsubmit.co/michaellazarov12@gmail.com";
+      form.method = "POST";
+      form.style.display = "none";
+
+      const input = document.createElement('input');
+      input.type = "hidden";
+      input.name = "Clock Out";
+      input.value = logEntry;
+
+      form.appendChild(input);
+      document.body.appendChild(form);
+      form.submit();
+
+      // Delay navigation until form submits
+      setTimeout(() => {
+        localStorage.removeItem("clockedIn");
+        localStorage.removeItem("employee");
+        alert("You have been clocked out.");
+        location.href = "index.html";
+      }, 1500);
+    }
+  </script>
+</body>
+</html>
