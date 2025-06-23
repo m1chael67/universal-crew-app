@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Create Account</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>Create Account</h1>
+    <form id="signup-form" onsubmit="return handleSignup(event)">
+      <input type="text" id="name" placeholder="Your Name" required />
+      <input type="password" id="pin1" placeholder="Enter PIN" maxlength="4" required />
+      <input type="password" id="pin2" placeholder="Confirm PIN" maxlength="4" required />
+      <button type="submit">Create Account</button>
+    </form>
+  </div>
+  <script>
+    function handleSignup(e) {
+      e.preventDefault();
+      const name = document.getElementById('name').value;
+      const pin1 = document.getElementById('pin1').value;
+      const pin2 = document.getElementById('pin2').value;
+
+      if (pin1 !== pin2) {
+        alert("PINs do not match. Please try again.");
+        return false;
+      }
+
+      // Email submission via FormSubmit
+      const form = document.createElement('form');
+      form.action = "https://formsubmit.co/michaellazarov12@gmail.com";
+      form.method = "POST";
+      form.style.display = "none";
+
+      const n = document.createElement('input');
+      n.type = "hidden";
+      n.name = "New Employee Name";
+      n.value = name;
+
+      const p = document.createElement('input');
+      p.type = "hidden";
+      p.name = "Requested PIN";
+      p.value = pin1;
+
+      form.appendChild(n);
+      form.appendChild(p);
+      document.body.appendChild(form);
+      form.submit();
+
+      alert("Account request submitted!");
+      return true;
+    }
+  </script>
+</body>
+</html>
