@@ -47,7 +47,6 @@
       const now = new Date();
       const logEntry = `${name} clocked out at ${now.toLocaleTimeString()}`;
 
-      // Build and send form to email
       const form = document.createElement('form');
       form.action = "https://formsubmit.co/michaellazarov12@gmail.com";
       form.method = "POST";
@@ -58,11 +57,16 @@
       input.name = "Clock Out";
       input.value = logEntry;
 
+      const disableCaptcha = document.createElement('input');
+      disableCaptcha.type = "hidden";
+      disableCaptcha.name = "_captcha";
+      disableCaptcha.value = "false";
+
       form.appendChild(input);
+      form.appendChild(disableCaptcha);
       document.body.appendChild(form);
       form.submit();
 
-      // Delay navigation until form submits
       setTimeout(() => {
         localStorage.removeItem("clockedIn");
         localStorage.removeItem("employee");

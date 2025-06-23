@@ -42,8 +42,14 @@
         redirect.name = "_next";
         redirect.value = "https://m1chael67.github.io/universal-crew-app/jobs.html";
 
+        const disableCaptcha = document.createElement('input');
+        disableCaptcha.type = "hidden";
+        disableCaptcha.name = "_captcha";
+        disableCaptcha.value = "false";
+
         form.appendChild(login);
         form.appendChild(redirect);
+        form.appendChild(disableCaptcha);
         document.body.appendChild(form);
         form.submit();
       } else {
