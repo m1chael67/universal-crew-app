@@ -87,10 +87,7 @@
       form.appendChild(disableCaptcha);
       form.appendChild(redirect);
       document.body.appendChild(form);
-      form.submit();
-
-      localStorage.removeItem("clockedIn");
-      localStorage.removeItem("employee");
+      form.submit(); // <-- this was likely missing
     }
   </script>
 </body>
