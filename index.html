@@ -10,14 +10,14 @@
   <div class="container">
     <h1>Universal Crew App</h1>
     <form id="login-form" onsubmit="return handleLogin(event)">
-      <input type="password" id="pin" maxlength="4" placeholder="Enter PIN" required />
+      <input type="tel" inputmode="numeric" pattern="[0-9]*" id="pin" maxlength="4" placeholder="Enter PIN" required />
       <button type="submit">Login</button>
     </form>
   </div>
   <script>
     const EMPLOYEES = {
       "1234": "Michael",
-      "5678": "Shae",
+      "7032": "Arthur",
     };
 
     function handleLogin(e) {
