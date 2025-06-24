@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -47,16 +46,16 @@
   </div>
 
   <script>
-    // Monthly hours tracker
-    const now = new Date();
-    const key = "hours-" + now.getFullYear() + "-" + (now.getMonth() + 1);
-    const hours = localStorage.getItem(key) || "0";
-    document.getElementById("hour-counter").textContent = hours;
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    const todayISO = yyyy + '-' + mm + '-' + dd;
 
-    // Get logged in employee
-    const employee = localStorage.getItem("employee") || "Unknown";
+    // Monthly hours tracking
+    const key = "hours-" + yyyy + "-" + mm;
+    document.getElementById("hour-counter").textContent = localStorage.getItem(key) || "0";
 
-    // Google Sheets setup
     const sheetId = "1EXRZrzTEGMCG2ceIKg7ZkAZHPOMZojz7n00hAs2a5FA";
     const sheetUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json`;
 
@@ -67,25 +66,37 @@
         const rows = json.table.rows;
         const data = rows.map(r => r.c.map(c => c ? c.v : ""));
 
-        const today = new Date().toLocaleDateString("en-US");
-        const jobsByKey = {};
-
+        const jobs = {};
         data.forEach(([Name, Date, Type, Address, Phone, Item, Quantity, Note]) => {
-          if (!Name || !Date || Date !== today) return;
-          const key = Name + Date;
-          if (!jobsByKey[key]) {
-            jobsByKey[key] = {
-              Name, Date, Type, Address, Phone,
+          if (!Name || !Date) return;
+
+          let parsedDate = new Date(Date);
+          let dyyyy = parsedDate.getFullYear();
+          let dmm = String(parsedDate.getMonth() + 1).padStart(2, '0');
+          let ddd = String(parsedDate.getDate()).padStart(2, '0');
+          let jobDate = dyyyy + '-' + dmm + '-' + ddd;
+
+          if (jobDate !== todayISO) return;
+
+          let key = Name + jobDate;
+          if (!jobs[key]) {
+            jobs[key] = {
+              Name, Date: jobDate, Type, Address, Phone,
               inventory: []
             };
           }
-          jobsByKey[key].inventory.push({ Item, Quantity, Note });
+          jobs[key].inventory.push({ Item, Quantity, Note });
         });
 
-        const list = document.getElementById("job-list");
-        list.innerHTML = "";
+        const jobList = document.getElementById("job-list");
+        jobList.innerHTML = "";
 
-        Object.values(jobsByKey).forEach(job => {
+        if (Object.keys(jobs).length === 0) {
+          jobList.innerHTML = "<p>No jobs scheduled for today.</p>";
+          return;
+        }
+
+        Object.values(jobs).forEach(job => {
           const row = document.createElement("div");
           row.className = "job-row";
           row.textContent = `${job.Name} (${job.Date})`;
@@ -104,7 +115,7 @@
             detail.style.display = "block";
             window.scrollTo(0, 0);
           };
-          list.appendChild(row);
+          jobList.appendChild(row);
         });
 
         const detail = document.createElement("div");
@@ -112,8 +123,8 @@
         document.body.appendChild(detail);
       })
       .catch(err => {
-        document.getElementById("job-list").textContent = "Failed to load jobs.";
-        console.error(err);
+        console.error("Error fetching jobs:", err);
+        document.getElementById("job-list").innerHTML = "<p>Error loading jobs.</p>";
       });
   </script>
 </body>
