@@ -56,20 +56,18 @@
     const key = "hours-" + yyyy + "-" + mm;
     document.getElementById("hour-counter").textContent = localStorage.getItem(key) || "0";
 
-    const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSiCVJqaIrsBdGSXhdJG-yPooQUbGzfiRXfdhTXmYna6hcgzGf5jaJXX61Ok6IsM6VCQNhLDN_odNZF/pubhtml?gid=0&single=true";
-
-    fetch(sheetUrl)
+    fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vSiCVJqaIrsBdGSXhdJG-yPooQUbGzfiRXfdhTXmYna6hcgzGf5jaJXX61Ok6IsM6VCQNhLDN_odNZF/pub?output=csv")
       .then(response => response.text())
-      .then(html => {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        const rows = [...doc.querySelectorAll("table tbody tr")].map(row =>
-          [...row.querySelectorAll("td")].map(cell => cell.innerText.trim())
-        );
+      .then(text => {
+        const lines = text.split("\n").map(l => l.split(","));
+        const headers = lines[0];
+        const rows = lines.slice(1).filter(r => r.length > 1);
 
         const jobs = {};
-        rows.forEach(([Name, Date, Type, Address, Phone, Item, Quantity, Note]) => {
+        rows.forEach(row => {
+          const [Name, Date, Type, Address, Phone, Item, Quantity, Note] = row;
           if (!Name || !Date) return;
+
           const parsedDate = new Date(Date);
           const dyyyy = parsedDate.getFullYear();
           const dmm = String(parsedDate.getMonth() + 1).padStart(2, '0');
@@ -120,7 +118,7 @@
       })
       .catch(err => {
         console.error("Error:", err);
-        document.getElementById("job-list").innerHTML = "<p>Error loading jobs. Sheet may not be public.</p>";
+        document.getElementById("job-list").innerHTML = "<p>Error loading jobs. Check CSV URL or sheet formatting.</p>";
       });
   </script>
 </body>
