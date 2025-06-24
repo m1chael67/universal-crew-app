@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -50,40 +51,35 @@
     const yyyy = today.getFullYear();
     const mm = String(today.getMonth() + 1).padStart(2, '0');
     const dd = String(today.getDate()).padStart(2, '0');
-    const todayISO = yyyy + '-' + mm + '-' + dd;
+    const todayStr = yyyy + '-' + mm + '-' + dd;
 
-    // Monthly hours tracking
     const key = "hours-" + yyyy + "-" + mm;
     document.getElementById("hour-counter").textContent = localStorage.getItem(key) || "0";
 
-    const sheetId = "1EXRZrzTEGMCG2ceIKg7ZkAZHPOMZojz7n00hAs2a5FA";
-    const sheetUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json`;
+    const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSiCVJqaIrsBdGSXhdJG-yPooQUbGzfiRXfdhTXmYna6hcgzGf5jaJXX61Ok6IsM6VCQNhLDN_odNZF/pubhtml?gid=0&single=true";
 
     fetch(sheetUrl)
-      .then(res => res.text())
-      .then(text => {
-        const json = JSON.parse(text.substring(47).slice(0, -2));
-        const rows = json.table.rows;
-        const data = rows.map(r => r.c.map(c => c ? c.v : ""));
+      .then(response => response.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const rows = [...doc.querySelectorAll("table tbody tr")].map(row =>
+          [...row.querySelectorAll("td")].map(cell => cell.innerText.trim())
+        );
 
         const jobs = {};
-        data.forEach(([Name, Date, Type, Address, Phone, Item, Quantity, Note]) => {
+        rows.forEach(([Name, Date, Type, Address, Phone, Item, Quantity, Note]) => {
           if (!Name || !Date) return;
+          const parsedDate = new Date(Date);
+          const dyyyy = parsedDate.getFullYear();
+          const dmm = String(parsedDate.getMonth() + 1).padStart(2, '0');
+          const ddd = String(parsedDate.getDate()).padStart(2, '0');
+          const jobDate = dyyyy + '-' + dmm + '-' + ddd;
+          if (jobDate !== todayStr) return;
 
-          let parsedDate = new Date(Date);
-          let dyyyy = parsedDate.getFullYear();
-          let dmm = String(parsedDate.getMonth() + 1).padStart(2, '0');
-          let ddd = String(parsedDate.getDate()).padStart(2, '0');
-          let jobDate = dyyyy + '-' + dmm + '-' + ddd;
-
-          if (jobDate !== todayISO) return;
-
-          let key = Name + jobDate;
+          const key = Name + jobDate;
           if (!jobs[key]) {
-            jobs[key] = {
-              Name, Date: jobDate, Type, Address, Phone,
-              inventory: []
-            };
+            jobs[key] = { Name, Date: jobDate, Type, Address, Phone, inventory: [] };
           }
           jobs[key].inventory.push({ Item, Quantity, Note });
         });
@@ -123,8 +119,8 @@
         document.body.appendChild(detail);
       })
       .catch(err => {
-        console.error("Error fetching jobs:", err);
-        document.getElementById("job-list").innerHTML = "<p>Error loading jobs. Check if sheet is published to web.</p>";
+        console.error("Error:", err);
+        document.getElementById("job-list").innerHTML = "<p>Error loading jobs. Sheet may not be public.</p>";
       });
   </script>
 </body>
