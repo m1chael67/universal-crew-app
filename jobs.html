@@ -1,13 +1,14 @@
 
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Jobs - Universal Rentals</title>
-  <link rel="stylesheet" href="style.css" />
-  <link rel="icon" href="favicon.png" type="image/png" />
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Jobs - Universal Rentals</title>
+<link href="style.css" rel="stylesheet"/>
+<link href="favicon.png" rel="icon" type="image/png"/>
+<style>
     .job-block-header {
       display: flex;
       justify-content: space-between;
@@ -19,15 +20,14 @@
   </style>
 </head>
 <body>
-  <div class="top-bar" style="position: fixed; top: 0; right: 0; padding: 0.5rem; font-size: 12px; background: white; z-index: 1000;">
+<div class="top-bar" style="position: fixed; top: 0; right: 0; padding: 0.5rem; font-size: 12px; background: white; z-index: 1000;">
     Hours this month: <span id="hour-counter">0</span>
-  </div>
-  <div class="container" style="margin-top: 2rem;">
-    <h1>All Jobs</h1>
-    <div id="job-list">Loading...</div>
-  </div>
-
-  <script>
+</div>
+<div class="container" style="margin-top: 2rem;">
+<h1>All Jobs</h1>
+<div id="job-list">Loading...</div>
+</div>
+<script>
     const now = new Date();
     const key = "hours-" + now.getFullYear() + "-" + (now.getMonth() + 1);
     const hours = localStorage.getItem(key) || "0";
