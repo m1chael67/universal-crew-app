@@ -46,12 +46,16 @@
         const jobsByNameDate = {};
 
         data.forEach(row => {
-          const [Name, Address, Phone, Date, Item, Quantity, Type, Note] = row;
-          if (!Name || !Date) return;
-          const key = Name + Date;
+          const [Name, Address, Phone, DateRaw, Item, Quantity, Type, Note] = row;
+          if (!Name || !DateRaw) return;
+
+          const dateObj = new Date(DateRaw);
+          const formattedDate = `${dateObj.getMonth() + 1}/${dateObj.getDate()}/${dateObj.getFullYear()}`;
+          const key = Name + formattedDate;
+
           if (!jobsByNameDate[key]) {
             jobsByNameDate[key] = {
-              Name, Date, Type, Address, Phone,
+              Name, Date: formattedDate, Type, Address, Phone,
               inventory: []
             };
           }
@@ -76,7 +80,7 @@
             <h3>Inventory</h3>
             <ul>
               ${job.inventory.map(i =>
-                `<li>${i.Quantity || 0} × ${i.Item}${i.Note ? ` (${i.Note})` : ""}</li>`
+                `<li>${i.Item} × ${i.Quantity || 0}${i.Note ? ` (${i.Note})` : ""}</li>`
               ).join("")}
             </ul>
           `;
