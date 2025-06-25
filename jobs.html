@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Today's Jobs</title>
+  <title>All Jobs</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
   <style>
     body {
@@ -42,12 +42,11 @@
 </head>
 <body>
   <div class="card">
-    <h2>Today's Jobs</h2>
+    <h2>All Scheduled Jobs</h2>
     <div id="jobList">Loading...</div>
   </div>
 
   <script>
-    const today = "6/25/2025";
     const jobList = document.getElementById("jobList");
 
     fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vSiCVJqaIrsBdGSXhdJG-yPooQUbGzfiRXfdhTXmYna6hcgzGf5jaJXX61Ok6IsM6VCQNhLDN_odNZF/pub?output=csv")
@@ -59,26 +58,21 @@
           const obj = {};
           headers.forEach((h, i) => obj[h.trim()] = r[i]?.trim());
           return obj;
-        }).filter(row => row["Date"] === today);
+        });
 
         const grouped = {};
         data.forEach(row => {
-          const key = row["Name"] + " | " + row["Address"] + " | " + row["Phone Number"];
+          const key = row["Name"] + " | " + row["Date"] + " | " + row["Type"] + " | " + row["Address"] + " | " + row["Phone Number"];
           if (!grouped[key]) grouped[key] = [];
           grouped[key].push(row);
         });
 
-        if (Object.keys(grouped).length === 0) {
-          jobList.innerHTML = "<p>No jobs for today.</p>";
-          return;
-        }
-
         jobList.innerHTML = "";
         for (const key in grouped) {
-          const [name, address, phone] = key.split(" | ");
+          const [name, date, type, address, phone] = key.split(" | ");
           const jobDiv = document.createElement("div");
           jobDiv.className = "job";
-          jobDiv.innerHTML = `<h3>${name}</h3>
+          jobDiv.innerHTML = `<h3>${name} <span class="small">($<class 'type'> on ${date})</span></h3>
                               <div class="small">${address} | ${phone}</div>`;
           grouped[key].forEach(item => {
             const li = document.createElement("div");
