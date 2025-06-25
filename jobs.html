@@ -3,6 +3,7 @@
 
 <html lang="en">
 <head>
+<link rel="apple-touch-icon" href="logo_resized.png" />
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Jobs - Universal Rentals</title>
@@ -83,7 +84,7 @@
             </div>
             <p><strong>Type:</strong> ${job.Type}</p>
             <p><strong>Address:</strong> ${job.Address}</p>
-            <p><strong>Phone:</strong> ${job.Phone}</p>
+            <p><strong>Phone:</strong> <a href="tel:${job.Phone}">${job.Phone}</a></p>
             <h3>Inventory</h3>
             <ul>
               ${job.inventory.map(i =>
