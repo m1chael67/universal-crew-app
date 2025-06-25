@@ -86,7 +86,7 @@
             <h3>Inventory</h3>
             <ul>
               ${job.inventory.map(i =>
-                `<li>${i.Item} × <span style="color: green;">${i.Quantity || 0}</span>${i.Note ? ` <span style="color: red; margin-left: 2rem;">${i.Note}</span>` : ""}</li>`
+                `<li style="display: flex; justify-content: space-between;"><span>${i.Item} × <span style="color: green;">${i.Quantity || 0}</span></span>${i.Note ? `<span style="color: red;">${i.Note}</span>` : ""}</li>`
               ).join("")}
             </ul>
           `;
