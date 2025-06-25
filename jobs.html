@@ -47,7 +47,7 @@
         block.innerHTML = `
           <h2>📍 ${customer.name || "No Name"}</h2>
           <p>${customer.address_line_1 || ""}, ${customer.city || ""}, ${customer.state || ""}</p>
-          <p><a href="tel:${customer.phone}">📞 ${customer.phone}</a></p>
+          <p>${customer.phone || ""}</p>
           <h4>🛠 Inventory:</h4>
           <ul>${itemList}</ul>
         `;
