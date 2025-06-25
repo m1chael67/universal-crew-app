@@ -49,7 +49,14 @@
           const [Name, Address, Phone, DateStr, Item, Quantity, Type, Note] = row;
           if (!Name || !DateStr) return;
 
-          const dateKey = DateStr;  // Already formatted in spreadsheet
+		  let dateKey = DateStr;
+		  if (typeof dateKey === "object" && dateKey instanceof Date) {
+		    const mm = dateKey.getMonth() + 1;
+		    const dd = dateKey.getDate();
+		    const yyyy = dateKey.getFullYear();
+		    dateKey = `${mm}/${dd}/${yyyy}`;
+		  }
+          
           const key = Name + dateKey;
 
           if (!jobsByNameDate[key]) {
