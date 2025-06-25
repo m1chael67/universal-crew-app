@@ -1,104 +1,95 @@
-
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
 <link rel="apple-touch-icon" href="logo_resized.png" />
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Jobs - Universal Rentals</title>
-<link href="style.css" rel="stylesheet"/>
-<link href="favicon.png" rel="icon" type="image/png"/>
-<style>
-    .job-block-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .job-block h2 {
-      margin: 0;
-    }
-  
-.bullet-flex { display: flex; justify-content: space-between; list-style-type: disc; list-style-position: inside; }</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Your Jobs</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-<div class="top-bar" style="position: fixed; top: 0; right: 0; padding: 0.5rem; font-size: 12px; background: white; z-index: 1000;">
-    Hours this month: <span id="hour-counter">0</span>
-</div>
-<div class="container" style="margin-top: 2rem;">
-<h1>All Jobs</h1>
-<div id="job-list">Loading...</div>
-</div>
-<script>
-    const now = new Date();
-    const key = "hours-" + now.getFullYear() + "-" + (now.getMonth() + 1);
-    const hours = localStorage.getItem(key) || "0";
-    document.getElementById("hour-counter").textContent = hours;
+  <div class="container">
+    <h1>Today's Jobs (2025-06-23)</h1>
+    <div id="job-list">
+      <p>Loading jobs from Booqable...</p>
+    </div>
+    <button onclick="clockOut()">Clock Out</button>
+  </div>
 
-    const sheetId = "1EXRZrzTEGMCG2ceIKg7ZkAZHPOMZojz7n00hAs2a5FA";
-    const sheetUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json`;
+  <script>
+    const token = "10174653-b4a2-46ac-a480-0cf79cc89e57";
 
-    fetch(sheetUrl)
-      .then(res => res.text())
-      .then(text => {
-        const json = JSON.parse(text.substring(47).slice(0, -2));
-        const rows = json.table.rows;
-        const data = rows.map(r => r.c.map(c => c ? c.v : ""));
+    fetch("https://api.booqable.com/v1/orders?filter[start_date]=2025-06-23", {
+      headers: {
+        "Authorization": "Token token=" + token,
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      const jobList = document.getElementById("job-list");
+      jobList.innerHTML = "";
+      const orders = data.orders || [];
 
-        const jobsByNameDate = {};
+      if (orders.length === 0) {
+        jobList.innerHTML = "<p>No jobs scheduled for today.</p>";
+        return;
+      }
 
-        data.forEach(row => {
-          const [Name, Address, Phone, DateStr, Item, Quantity, Type, Note] = row;
-          if (!Name || !DateStr) return;
+      orders.forEach(order => {
+        const customer = order.customer || {};
+        const items = order.order_items || [];
+        let itemList = items.map(item => `<li>${item.quantity} x ${item.name}</li>`).join("");
 
-		  let dateKey = DateStr;
-		  if (typeof dateKey === "object" && dateKey instanceof Date) {
-		    const mm = dateKey.getMonth() + 1;
-		    const dd = dateKey.getDate();
-		    const yyyy = dateKey.getFullYear();
-		    dateKey = `${mm}/${dd}/${yyyy}`;
-		  }
-          
-          const key = Name + dateKey;
-
-          if (!jobsByNameDate[key]) {
-            jobsByNameDate[key] = {
-              Name, Date: dateKey, Type, Address, Phone,
-              inventory: []
-            };
-          }
-          jobsByNameDate[key].inventory.push({ Item, Quantity, Note });
-        });
-
-        const list = document.getElementById("job-list");
-        list.innerHTML = "";
-
-        Object.values(jobsByNameDate).forEach(job => {
-          const block = document.createElement("div");
-          block.className = "job-block";
-
-          block.innerHTML = `
-            <div class="job-block-header">
-              <h2>${job.Name}</h2>
-              <span style="font-weight: bold;">${job.Date}</span>
-            </div>
-            <p><strong>Type:</strong> ${job.Type}</p>
-            <p><strong>Address:</strong> ${job.Address}</p>
-            <p><strong>Phone:</strong> ${job.Phone}</p>
-            <h3>Inventory</h3>
-            <ul>
-              ${job.inventory.map(i =>
-                `<li style="display: flex; justify-content: space-between; list-style-type: disc; list-style-position: inside;"><span>${i.Item} × <span style="color: green;">${i.Quantity || 0}</span></span>${i.Note ? `<span style="color: red;">${i.Note}</span>` : ""}</li>`
-              ).join("")}
-            </ul>
-          `;
-          list.appendChild(block);
-        });
-      })
-      .catch(err => {
-        document.getElementById("job-list").textContent = "Failed to load jobs.";
-        console.error(err);
+        const block = document.createElement("div");
+        block.className = "job-block";
+        block.innerHTML = `
+          <h2>📍 ${customer.name || "No Name"}</h2>
+          <p>${customer.address_line_1 || ""}, ${customer.city || ""}, ${customer.state || ""}</p>
+          <p><a href="tel:${customer.phone}">📞 ${customer.phone}</a></p>
+          <h4>🛠 Inventory:</h4>
+          <ul>${itemList}</ul>
+        `;
+        jobList.appendChild(block);
       });
+    })
+    .catch(error => {
+      console.error("Booqable fetch error:", error);
+      document.getElementById("job-list").innerHTML = "<p>Error loading jobs.</p>";
+    });
+
+    function clockOut() {
+      const name = localStorage.getItem("employee") || "Unknown";
+      const now = new Date();
+      const logEntry = `${name} clocked out at ${now.toLocaleTimeString()}`;
+
+      const form = document.createElement('form');
+      form.action = "https://formsubmit.co/michaellazarov12@gmail.com";
+      form.method = "POST";
+      form.style.display = "none";
+
+      const msg = document.createElement('input');
+      msg.type = "hidden";
+      msg.name = "Clock Out";
+      msg.value = logEntry;
+
+      const disableCaptcha = document.createElement('input');
+      disableCaptcha.type = "hidden";
+      disableCaptcha.name = "_captcha";
+      disableCaptcha.value = "false";
+
+      const redirect = document.createElement('input');
+      redirect.type = "hidden";
+      redirect.name = "_next";
+      redirect.value = "https://m1chael67.github.io/universal-crew-app/index.html";
+
+      form.appendChild(msg);
+      form.appendChild(disableCaptcha);
+      form.appendChild(redirect);
+      document.body.appendChild(form);
+      form.submit(); // <-- this was likely missing
+    }
   </script>
 </body>
 </html>
