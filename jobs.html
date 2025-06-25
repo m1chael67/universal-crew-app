@@ -20,6 +20,28 @@
     }
   
 .bullet-flex { display: flex; justify-content: space-between; list-style-type: disc; list-style-position: inside; }</style>
+
+<style>
+  .clockout-btn {
+    display: block;
+    margin: 30px auto;
+    padding: 15px 30px;
+    font-size: 1.2rem;
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  #user-name-display {
+    position: absolute;
+    top: 8px;
+    left: 10px;
+    font-weight: bold;
+    font-size: 0.9rem;
+  }
+</style>
+
 </head>
 <body>
 
@@ -117,5 +139,23 @@
         console.error(err);
       });
   </script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    const userName = localStorage.getItem("name");
+    if (userName) {
+      const nameDisplay = document.createElement("div");
+      nameDisplay.id = "user-name-display";
+      nameDisplay.textContent = "Logged in as: " + userName;
+      document.body.appendChild(nameDisplay);
+    }
+
+    const clockoutBtn = document.getElementById("clockout-btn");
+    if (clockoutBtn) {
+      clockoutBtn.classList.add("clockout-btn");
+    }
+  });
+</script>
+
 </body>
 </html>

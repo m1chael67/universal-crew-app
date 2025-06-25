@@ -18,50 +18,21 @@
       <button type="submit" style="padding:10px 20px;font-size:16px;background-color:#4b5320;color:#fff;border:none;border-radius:5px;cursor:pointer;display:block;margin:10px auto;">Login</button>
     </form>
   </div>
-  <script>
-    const EMPLOYEES = {
-      "1234": "Michael",
-      "7032": "Arthur",
-      "8369": "Tim J Jackson",
-    };
-
-    function handleLogin(e) {
-      e.preventDefault();
-      const pin = document.getElementById('pin').value;
-      if (EMPLOYEES[pin]) {
-        localStorage.setItem("employee", EMPLOYEES[pin]);
-        localStorage.setItem("clockedIn", "true");
-
-        const form = document.createElement('form');
-        form.action = "https://formsubmit.co/michaellazarov12@gmail.com";
-        form.method = "POST";
-        form.style.display = "none";
-
-        const login = document.createElement('input');
-        login.type = "hidden";
-        login.name = "Login Success";
-        login.value = EMPLOYEES[pin] + " logged in.";
-
-        const redirect = document.createElement('input');
-        redirect.type = "hidden";
-        redirect.name = "_next";
-        redirect.value = "https://m1chael67.github.io/universal-crew-app/jobs.html";
-
-        const disableCaptcha = document.createElement('input');
-        disableCaptcha.type = "hidden";
-        disableCaptcha.name = "_captcha";
-        disableCaptcha.value = "false";
-
-        form.appendChild(login);
-        form.appendChild(redirect);
-        form.appendChild(disableCaptcha);
-        document.body.appendChild(form);
-        form.submit();
-      } else {
-        alert("Invalid PIN");
-      }
-      return false;
+  
+<script>
+  document.querySelector("form").addEventListener("submit", function (event) {
+    const name = document.querySelector('input[name="name"]').value;
+    const pin = document.querySelector('input[name="pin"]').value;
+    const confirmPin = document.querySelector('input[name="confirm_pin"]');
+    if (confirmPin && pin !== confirmPin.value) {
+      alert("PINs do not match. Please try again.");
+      event.preventDefault();
+      return;
     }
-  </script>
+    localStorage.setItem("userName", name);
+    localStorage.setItem("userPin", pin);
+  });
+</script>
+
 </body>
 </html>
