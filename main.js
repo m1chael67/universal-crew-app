@@ -1,73 +1,61 @@
 
-document.addEventListener("DOMContentLoaded", function () {
-  const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSiCVJqaIrsBdGSXhdJG-yPooQUbGzfiRXfdhTXmYna6hcgzGf5jaJXX61Ok6IsM6VCQNhLDN_odNZF/pub?output=csv";
-  const container = document.getElementById("job-list");
+// Check if already clocked in
+function updateHoursDisplay() {
+  const employee = localStorage.getItem("employee");
+  if (!employee) return;
 
-  fetch(sheetURL)
-    .then(response => response.text())
-    .then(csv => {
-      const rows = csv.split("\n").map(row => row.split(","));
-      const headers = rows.shift();
-      const jobs = rows.map(row => {
-        const job = {};
-        headers.forEach((h, i) => job[h.trim()] = row[i]?.trim());
-        return job;
-      });
+  const now = new Date();
+  const key = `hours-${now.getFullYear()}-${now.getMonth() + 1}-${employee}`;
+  const hours = parseFloat(localStorage.getItem(key)) || 0;
 
-      const today = new Date();
-      const todayStr = (today.getMonth() + 1) + "/" + today.getDate() + "/" + today.getFullYear();
+  const el = document.getElementById("hour-tracker");
+  if (el) el.innerText = `Hours this month: ${hours.toFixed(2)}`;
+}
 
-      const grouped = {};
-      jobs.forEach(job => {
-        if (job["Date"] === todayStr) {
-          const key = job["Name"] + job["Phone Number"] + job["Date"];
-          if (!grouped[key]) {
-            grouped[key] = {
-              name: job["Name"],
-              address: job["Address"],
-              phone: job["Phone Number"],
-              date: job["Date"],
-              inventory: []
-            };
-          }
-          grouped[key].inventory.push({
-            item: job["Inventory"],
-            quantity: job["Quantity"],
-            type: job["Type"],
-            notes: job["Notes"]
-          });
-        }
-      });
+// Save clock-in time
+function saveClockIn() {
+  const now = new Date();
+  localStorage.setItem("clockInTime", now.toISOString());
+}
 
-      container.innerHTML = "";
+// Calculate and save clock-out duration
+function saveClockOut() {
+  const employee = localStorage.getItem("employee");
+  const clockInTime = localStorage.getItem("clockInTime");
 
-      if (Object.keys(grouped).length === 0) {
-        container.innerHTML = "<p>No jobs for today.</p>";
-        return;
-      }
+  if (!employee || !clockInTime) return;
 
-      Object.values(grouped).forEach(group => {
-        const block = document.createElement("div");
-        block.className = "job-block";
-        block.innerHTML = `
-          <div class="job-header">
-            <h2>${group.name}</h2>
-            <span class="job-date">${group.date}</span>
-          </div>
-          <p><strong>Phone:</strong> ${group.phone}</p>
-          <p><strong>Address:</strong> ${group.address}</p>
-          <div class="job-inventory">
-            <h4>Inventory</h4>
-            <ul>
-              ${group.inventory.map(i => `<li>${i.type} × ${i.quantity} — ${i.item} ${i.notes ? "(" + i.notes + ")" : ""}</li>`).join("")}
-            </ul>
-          </div>
-        `;
-        container.appendChild(block);
-      });
-    })
-    .catch(error => {
-      container.innerHTML = "<p>Error loading jobs. Check CSV/URL or sheet formatting.</p>";
-      console.error(error);
+  const clockIn = new Date(clockInTime);
+  const clockOut = new Date();
+  const diffMs = clockOut - clockIn;
+  const diffHrs = diffMs / (1000 * 60 * 60); // ms to hours
+
+  const key = `hours-${clockOut.getFullYear()}-${clockOut.getMonth() + 1}-${employee}`;
+  const existingHours = parseFloat(localStorage.getItem(key)) || 0;
+  const updated = existingHours + diffHrs;
+
+  localStorage.setItem(key, updated.toFixed(2));
+  localStorage.removeItem("clockInTime");
+  localStorage.setItem("clockedIn", "false");
+}
+
+// Handle redirect after login
+function handleLoginRedirect() {
+  const isClockedIn = localStorage.getItem("clockedIn") === "true";
+  if (isClockedIn) {
+    saveClockIn();
+    window.location.href = "jobs.html";
+  }
+}
+
+// Automatically update hour tracker when job page loads
+document.addEventListener("DOMContentLoaded", () => {
+  updateHoursDisplay();
+  const clockOutBtn = document.getElementById("clock-out");
+
+  if (clockOutBtn) {
+    clockOutBtn.addEventListener("click", () => {
+      saveClockOut();
     });
+  }
 });
