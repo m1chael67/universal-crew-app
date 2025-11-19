@@ -16,12 +16,13 @@
     .job-block h2 {
       margin: 0;
     }
-    .bullet-flex {
-      display: flex;
-      justify-content: space-between;
-      list-style-type: disc;
-      list-style-position: inside;
-    }
+	.bullet-flex {
+	  list-style-type: disc !important;
+	  list-style-position: inside;
+	  display: list-item;        /* restore bullet behavior */
+	  padding-left: 8px;         /* small indentation */
+	  margin-left: 12px;         /* looks cleaner */
+	}
     .copy-address {
       cursor: pointer;
     }
