@@ -1,15 +1,13 @@
-
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
-<link rel="apple-touch-icon" href="logo_resized.png" />
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Jobs - Universal Rentals</title>
-<link href="style.css" rel="stylesheet"/>
-<link href="favicon.png" rel="icon" type="image/png"/>
-<style>
+  <link rel="apple-touch-icon" href="logo_resized.png" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jobs - Universal Rentals</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" type="image/png" href="favicon.png" />
+  <style>
     .job-block-header {
       display: flex;
       justify-content: space-between;
@@ -18,90 +16,129 @@
     .job-block h2 {
       margin: 0;
     }
-  
-.bullet-flex { display: flex; justify-content: space-between; list-style-type: disc; list-style-position: inside; }</style>
+    .bullet-flex {
+      display: flex;
+      justify-content: space-between;
+      list-style-type: disc;
+      list-style-position: inside;
+    }
+    .copy-address {
+      cursor: pointer;
+    }
+    .copy-address:hover {
+      background-color: #f4f4f4;
+    }
+    .copy-popup {
+      position: absolute;
+      transform: translateX(-50%);
+      padding: 4px 8px;
+      background: #333;
+      color: #fff;
+      border-radius: 4px;
+      font-size: 12px;
+      pointer-events: none;
+      z-index: 2000;
+    }
+  </style>
 </head>
 <body>
-<div class="top-bar" style="position: fixed; top: 0; right: 0; padding: 0.5rem; font-size: 12px; background: white; z-index: 1000;">
+  <div
+    class="top-bar"
+    style="
+      position: fixed;
+      top: 0;
+      right: 0;
+      padding: 0.5rem;
+      font-size: 12px;
+      background: white;
+      z-index: 1000;
+    "
+  >
     Hours this month: <span id="hour-counter">0</span>
-</div>
-<div class="container" style="margin-top: 2rem;">
-<h1>All Jobs</h1>
-<div id="job-list">Loading...</div>
-</div>
-<script>
+  </div>
+
+  <div class="container" style="margin-top: 2rem;">
+    <h1>All Jobs</h1>
+    <div id="job-list">Loading...</div>
+  </div>
+
+  <script>
+    // Hours counter (same idea you had before)
     const now = new Date();
-    const key = "hours-" + now.getFullYear() + "-" + (now.getMonth() + 1);
-    const hours = localStorage.getItem(key) || "0";
+    const hoursKey = "hours-" + now.getFullYear() + "-" + (now.getMonth() + 1);
+    const hours = localStorage.getItem(hoursKey) || "0";
     document.getElementById("hour-counter").textContent = hours;
 
+    // Jobs from Google Sheets using the gviz JSON (original working method)
     const sheetId = "1EXRZrzTEGMCG2ceIKg7ZkAZHPOMZojz7n00hAs2a5FA";
     const sheetUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json`;
 
     fetch(sheetUrl)
-      .then(res => res.text())
-      .then(text => {
+      .then((res) => res.text())
+      .then((text) => {
         const json = JSON.parse(text.substring(47).slice(0, -2));
-        const rows = json.table.rows;
-        const data = rows.map(r => r.c.map(c => c ? c.v : ""));
+        const rows = json.table.rows || [];
+        const data = rows.map((r) => r.c.map((c) => (c ? c.v : "")));
 
         const jobsByNameDate = {};
 
-        data.forEach(row => {
+        data.forEach((row) => {
           const [Name, Address, Phone, DateStr, Item, Quantity, Type, Note] = row;
           if (!Name || !DateStr) return;
 
-		  let dateKey = DateStr;
+          let dateKey = DateStr;
 
-		  // If it's an actual Date object
-		  if (dateKey instanceof Date) {
-		    const options = { weekday: "long" };
-		    const weekday = dateKey.toLocaleDateString("en-US", options);
+          // If it's an actual Date object (just in case)
+          if (dateKey instanceof Date) {
+            const weekday = dateKey.toLocaleDateString("en-US", { weekday: "long" });
+            const mm = String(dateKey.getMonth() + 1).padStart(2, "0");
+            const dd = String(dateKey.getDate()).padStart(2, "0");
+            const yyyy = dateKey.getFullYear();
+            dateKey = `${weekday} - ${mm}/${dd}/${yyyy}`;
+          }
+          // If it's a string like "Date(2025,11,21)"
+          else if (typeof dateKey === "string") {
+            const match = dateKey.match(/^Date\((\d+),\s*(\d+),\s*(\d+)\)$/);
+            if (match) {
+              const yyyy = parseInt(match[1], 10);
+              const mm = parseInt(match[2], 10);
+              const dd = parseInt(match[3], 10);
 
-		    const mm = String(dateKey.getMonth() + 1).padStart(2, "0");
-		    const dd = String(dateKey.getDate()).padStart(2, "0");
-		    const yyyy = dateKey.getFullYear();
+              const jsDate = new Date(yyyy, mm - 1, dd);
+              const weekday = jsDate.toLocaleDateString("en-US", { weekday: "long" });
 
-		    dateKey = `${weekday} - ${mm}/${dd}/${yyyy}`;
-		  }
+              const mmStr = String(mm).padStart(2, "0");
+              const ddStr = String(dd).padStart(2, "0");
 
-		  // If it's a string like "Date(2025,10,20)"
-		  else if (typeof dateKey === "string") {
-		    const match = dateKey.match(/^Date\((\d+),\s*(\d+),\s*(\d+)\)$/);
-		    if (match) {
-		      const yyyy = parseInt(match[1], 10);
-		      const mm = parseInt(match[2], 10);
-		      const dd = parseInt(match[3], 10);
+              dateKey = `${weekday} - ${mmStr}/${ddStr}/${yyyy}`;
+            }
+          }
 
-		      // Convert to real Date object so weekday is correct
-		      const jsDate = new Date(yyyy, mm - 1, dd);
+          const groupKey = Name + "|" + dateKey;
 
-		      const options = { weekday: "long" };
-		      const weekday = jsDate.toLocaleDateString("en-US", options);
-
-		      const mmStr = String(mm).padStart(2, "0");
-		      const ddStr = String(dd).padStart(2, "0");
-
-		      dateKey = `${weekday} - ${mmStr}/${ddStr}/${yyyy}`;
-		    }
-		  }
-		  
-          
-          const key = Name + dateKey;
-
-          if (!jobsByNameDate[key]) {
-            jobsByNameDate[key] = {
-              Name, Date: dateKey, Type, Address, Phone,
-              inventory: []
+          if (!jobsByNameDate[groupKey]) {
+            jobsByNameDate[groupKey] = {
+              Name,
+              Date: dateKey,
+              Type,
+              Address,
+              Phone,
+              inventory: [],
             };
           }
-          jobsByNameDate[key].inventory.push({ Item, Quantity, Note });
+          jobsByNameDate[groupKey].inventory.push({ Item, Quantity, Note });
         });
 
         const list = document.getElementById("job-list");
         list.innerHTML = "";
 
-        Object.values(jobsByNameDate).forEach(job => {
+        const jobsArray = Object.values(jobsByNameDate);
+        if (!jobsArray.length) {
+          list.textContent = "No jobs found.";
+          return;
+        }
+
+        jobsArray.forEach((job) => {
           const block = document.createElement("div");
           block.className = "job-block";
 
@@ -110,23 +147,79 @@
               <h2>${job.Name}</h2>
               <span style="font-weight: bold;">${job.Date}</span>
             </div>
-            <p><strong>Type:</strong> ${job.Type}</p>
-            <p><strong>Address:</strong> ${job.Address}</p>
+            <p><strong>Type:</strong> ${job.Type || ""}</p>
+            <p class="copy-address" data-address="${job.Address}">
+              <strong>Address:</strong> ${job.Address}
+            </p>
             <p><strong>Phone:</strong> <a href="tel:${job.Phone}">${job.Phone}</a></p>
             <h3>Inventory</h3>
             <ul>
-              ${job.inventory.map(i =>
-                `<li style="display: flex; justify-content: space-between; list-style-type: disc; list-style-position: inside;"><span>${i.Item} × <span style="color: green;">${i.Quantity || 0}</span></span>${i.Note ? `<span style="color: red;">${i.Note}</span>` : ""}</li>`
-              ).join("")}
+              ${job.inventory
+                .map(
+                  (i) => `
+                <li class="bullet-flex">
+                  <span>
+                    ${i.Item || ""} ×
+                    <span style="color: green;">${i.Quantity || ""}</span>
+                  </span>
+                  ${
+                    i.Note
+                      ? `<span style="color: red; margin-left: 8px;">${i.Note}</span>`
+                      : ""
+                  }
+                </li>`
+                )
+                .join("")}
             </ul>
           `;
           list.appendChild(block);
         });
       })
-      .catch(err => {
+      .catch((err) => {
         document.getElementById("job-list").textContent = "Failed to load jobs.";
         console.error(err);
       });
+
+    // Click-to-copy address with "Copied!" popup
+    document.addEventListener("click", function (e) {
+      const target = e.target.closest(".copy-address");
+      if (!target) return;
+
+      const text =
+        target.dataset.address ||
+        target.textContent.replace("Address:", "").trim();
+
+      function showPopup() {
+        const rect = target.getBoundingClientRect();
+        const popup = document.createElement("div");
+        popup.textContent = "Copied!";
+        popup.className = "copy-popup";
+
+        document.body.appendChild(popup);
+
+        popup.style.left =
+          window.scrollX + rect.left + rect.width / 2 + "px";
+        popup.style.top = window.scrollY + rect.top - 30 + "px";
+
+        setTimeout(() => {
+          popup.remove();
+        }, 800);
+      }
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(showPopup).catch(showPopup);
+      } else {
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+          document.execCommand("copy");
+        } catch (err) {}
+        document.body.removeChild(textarea);
+        showPopup();
+      }
+    });
   </script>
 </body>
 </html>
