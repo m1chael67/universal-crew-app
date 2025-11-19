@@ -19,9 +19,9 @@
 	.bullet-flex {
 	  list-style-type: disc !important;
 	  list-style-position: inside;
-	  display: list-item;        /* restore bullet behavior */
-	  padding-left: 8px;         /* small indentation */
-	  margin-left: 12px;         /* looks cleaner */
+	  display: list-item;
+	  padding-left: 8px;
+	  margin-left: 12px;
 	}
     .copy-address {
       cursor: pointer;
@@ -64,13 +64,11 @@
   </div>
 
   <script>
-    // Hours counter (same idea you had before)
     const now = new Date();
     const hoursKey = "hours-" + now.getFullYear() + "-" + (now.getMonth() + 1);
     const hours = localStorage.getItem(hoursKey) || "0";
     document.getElementById("hour-counter").textContent = hours;
 
-    // Jobs from Google Sheets using the gviz JSON (original working method)
     const sheetId = "1EXRZrzTEGMCG2ceIKg7ZkAZHPOMZojz7n00hAs2a5FA";
     const sheetUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json`;
 
@@ -89,7 +87,6 @@
 
           let dateKey = DateStr;
 
-          // If it's an actual Date object (just in case)
           if (dateKey instanceof Date) {
             const weekday = dateKey.toLocaleDateString("en-US", { weekday: "long" });
             const mm = String(dateKey.getMonth() + 1).padStart(2, "0");
@@ -97,18 +94,20 @@
             const yyyy = dateKey.getFullYear();
             dateKey = `${weekday} - ${mm}/${dd}/${yyyy}`;
           }
-          // If it's a string like "Date(2025,11,21)"
           else if (typeof dateKey === "string") {
             const match = dateKey.match(/^Date\((\d+),\s*(\d+),\s*(\d+)\)$/);
             if (match) {
               const yyyy = parseInt(match[1], 10);
-              const mm = parseInt(match[2], 10);
+              const mm = parseInt(match[2], 10); // 0-based
               const dd = parseInt(match[3], 10);
 
-              const jsDate = new Date(yyyy, mm - 1, dd);
+              // ✅ FIXED — use mm directly (it is already 0-based)
+              const jsDate = new Date(yyyy, mm, dd);
+
               const weekday = jsDate.toLocaleDateString("en-US", { weekday: "long" });
 
-              const mmStr = String(mm).padStart(2, "0");
+              // ✅ FIXED — display mm + 1
+              const mmStr = String(mm + 1).padStart(2, "0");
               const ddStr = String(dd).padStart(2, "0");
 
               dateKey = `${weekday} - ${mmStr}/${ddStr}/${yyyy}`;
@@ -127,6 +126,7 @@
               inventory: [],
             };
           }
+
           jobsByNameDate[groupKey].inventory.push({ Item, Quantity, Note });
         });
 
@@ -181,7 +181,6 @@
         console.error(err);
       });
 
-    // Click-to-copy address with "Copied!" popup
     document.addEventListener("click", function (e) {
       const target = e.target.closest(".copy-address");
       if (!target) return;
