@@ -52,12 +52,40 @@
           if (!Name || !DateStr) return;
 
 		  let dateKey = DateStr;
-		  if (typeof dateKey === "object" && dateKey instanceof Date) {
-		    const mm = dateKey.getMonth() + 1;
-		    const dd = dateKey.getDate();
+
+		  // If it's an actual Date object
+		  if (dateKey instanceof Date) {
+		    const options = { weekday: "long" };
+		    const weekday = dateKey.toLocaleDateString("en-US", options);
+
+		    const mm = String(dateKey.getMonth() + 1).padStart(2, "0");
+		    const dd = String(dateKey.getDate()).padStart(2, "0");
 		    const yyyy = dateKey.getFullYear();
-		    dateKey = `${mm}/${dd}/${yyyy}`;
+
+		    dateKey = `${weekday} - ${mm}/${dd}/${yyyy}`;
 		  }
+
+		  // If it's a string like "Date(2025,10,20)"
+		  else if (typeof dateKey === "string") {
+		    const match = dateKey.match(/^Date\((\d+),\s*(\d+),\s*(\d+)\)$/);
+		    if (match) {
+		      const yyyy = parseInt(match[1], 10);
+		      const mm = parseInt(match[2], 10);
+		      const dd = parseInt(match[3], 10);
+
+		      // Convert to real Date object so weekday is correct
+		      const jsDate = new Date(yyyy, mm - 1, dd);
+
+		      const options = { weekday: "long" };
+		      const weekday = jsDate.toLocaleDateString("en-US", options);
+
+		      const mmStr = String(mm).padStart(2, "0");
+		      const ddStr = String(dd).padStart(2, "0");
+
+		      dateKey = `${weekday} - ${mmStr}/${ddStr}/${yyyy}`;
+		    }
+		  }
+		  
           
           const key = Name + dateKey;
 
