@@ -4,7 +4,7 @@
   <link rel="apple-touch-icon" href="logo_resized.png" />
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Jobs - Universal Rentals</title>
+  <title>Joe's Jobs - Universal Rentals</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="icon" type="image/png" href="favicon.png" />
   <style>
@@ -41,7 +41,7 @@
   </div>
 
   <div class="container" style="margin-top: 2rem;">
-    <h1>All Jobs</h1>
+    <h1>Joe's Jobs</h1>
     <div id="job-list">Loading...</div>
   </div>
 
@@ -53,7 +53,7 @@
     document.getElementById("hour-counter").textContent = hours;
 
     // Which employee this page is for; null means show all jobs
-    const FILTER_EMPLOYEE = null;
+    const FILTER_EMPLOYEE = "Joe";
 
     const sheetId = "1EXRZrzTEGMCG2ceIKg7ZkAZHPOMZojz7n00hAs2a5FA";
     const sheetUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json`;
