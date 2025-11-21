@@ -134,7 +134,7 @@
 	        hours: String(hoursDelta || 0)
 	      });
 
-	      // Let this fire even if the page navigates away
+	      // 1) Log hours to Apps Script
 	      fetch(WEB_APP_URL, {
 	        method: "POST",
 	        mode: "no-cors",
@@ -144,53 +144,29 @@
 	      }).catch(function(err) {
 	        console.error("Log to Apps Script failed", err);
 	      });
+
+	      // 2) Send email via FormSubmit, but as a background fetch (no redirect)
+	      var emailPayload = new URLSearchParams({
+	        Event: eventType,
+	        Employee: currentEmployee,
+	        Timestamp: new Date().toString(),
+	        _captcha: "false"
+	        // no _next => no redirect
+	      });
+
+	      fetch("https://formsubmit.co/michaellazarov12@gmail.com", {
+	        method: "POST",
+	        mode: "no-cors",
+	        body: emailPayload
+	      }).catch(function(err) {
+	        console.error("FormSubmit email failed", err);
+	      });
+
 	    } catch (e) {
-	      console.error("Error preparing Apps Script log", e);
+	      console.error("Error in sendClockEvent", e);
 	    }
-
-	    // Give the fetch a moment to leave before redirecting for email
-	    setTimeout(function () {
-	      var form = document.createElement('form');
-	      form.action = "https://formsubmit.co/michaellazarov12@gmail.com";
-	      form.method = "POST";
-	      form.style.display = "none";
-
-	      var evt = document.createElement('input');
-	      evt.type = "hidden";
-	      evt.name = "Event";
-	      evt.value = eventType;
-
-	      var emp = document.createElement('input');
-	      emp.type = "hidden";
-	      emp.name = "Employee";
-	      emp.value = currentEmployee;
-
-	      var time = document.createElement('input');
-	      time.type = "hidden";
-	      time.name = "Timestamp";
-	      time.value = new Date().toString();
-
-	      var redirect = document.createElement('input');
-	      redirect.type = "hidden";
-	      redirect.name = "_next";
-	      redirect.value = window.location.href;
-
-	      var disableCaptcha = document.createElement('input');
-	      disableCaptcha.type = "hidden";
-	      disableCaptcha.name = "_captcha";
-	      disableCaptcha.value = "false";
-
-	      form.appendChild(evt);
-	      form.appendChild(emp);
-	      form.appendChild(time);
-	      form.appendChild(redirect);
-	      form.appendChild(disableCaptcha);
-	      document.body.appendChild(form);
-	      form.submit();
-	    }, 300); // ~0.3 seconds is plenty
 	  }
-      
-
+	  
       var clockInBtn = document.getElementById("clock-in-btn");
       var clockOutBtn = document.getElementById("clock-out-btn");
 
