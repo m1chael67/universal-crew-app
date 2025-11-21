@@ -4,7 +4,7 @@
   <link rel="apple-touch-icon" href="logo_resized.png" />
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tim's Jobs - Universal Rentals</title>
+  <title>Tim</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="icon" type="image/png" href="favicon.png" />
   <style>
@@ -30,7 +30,7 @@
     <div style="text-align:right;margin-bottom:8px;">
       <button id="logout-btn" type="button" style="font-size:12px;padding:4px 8px;cursor:pointer;">Log Out</button>
     </div>
-    <h1>Tim's Jobs</h1>
+    <h1>Tim</h1>
     <div class="clock-row">
       <button id="clock-in-btn" type="button">Clock In</button>
       <button id="clock-out-btn" type="button">Clock Out</button>
@@ -54,9 +54,11 @@
       return { start: start, end: end, label: label, key: key };
     }
 
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz1UBQIkA2_2tO2VXxFTrPGiy-tO5BqQufrw83uF0I1DdOucW-QtWtm0WSlynlhY2c/exec";
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwMf8NcGG2ydJMGUOZGaY6ct_AQ6sfNG8FCY7szJ_bMVHtcNIhMkDcvRTBrRyCxgt0/exec";
 
     const TIME_LOG_SHEET_ID = "1gm39kMipfpLKS2n8g9F4SYG9Do36M_5Lc6GOs-c6jCM";
+    const EMPLOYEE_NAME = "Tim";
+
 
     function formatJobDate(raw) {
       if (!raw) return "";
@@ -414,13 +416,12 @@
         var now = new Date();
         var pp = getPayPeriodInfo(now);
         var periodKey = pp.key;
-        var emp = currentEmployee;
 
         var tq =
           "select sum(F) " +
           "where C = 'clock_out' " +
           "and D = '" + periodKey + "' " +
-          "and B = '" + emp + "' " +
+          "and B = '" + EMPLOYEE_NAME + "' " +
           "group by D, B " +
           "label sum(F) ''";
 
@@ -455,6 +456,7 @@
     }
 
     document.addEventListener("DOMContentLoaded", loadHoursFromSheet);
+
 </script>
 </body>
 </html>
