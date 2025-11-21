@@ -23,33 +23,15 @@
       "1234": "Michael",
       "7032": "Arthur",
       "8369": "Tim J Jackson",
-      // Add more PIN: "Name" entries as needed
     };
 
     function handleLogin(e) {
       e.preventDefault();
       const pin = document.getElementById('pin').value;
-      const name = EMPLOYEES[pin];
-
-      if (name) {
-        // Store who is logged in (can use later for hours, etc.)
-        localStorage.setItem("employee", name);
+      if (EMPLOYEES[pin]) {
+        localStorage.setItem("employee", EMPLOYEES[pin]);
         localStorage.setItem("clockedIn", "true");
 
-        // Decide which jobs page this person should see
-        let redirectUrl = "https://m1chael67.github.io/universal-crew-app/jobs.html";
-        const lowerName = name.toLowerCase();
-        if (lowerName.includes("michael")) {
-          redirectUrl = "https://m1chael67.github.io/universal-crew-app/michael.html";
-        } else if (lowerName.includes("tim")) {
-          redirectUrl = "https://m1chael67.github.io/universal-crew-app/tim.html";
-        } else if (lowerName.includes("joe")) {
-          redirectUrl = "https://m1chael67.github.io/universal-crew-app/joe.html";
-        } else if (lowerName.includes("jeff")) {
-          redirectUrl = "https://m1chael67.github.io/universal-crew-app/jeff.html";
-        }
-
-        // Hidden form to send login notification via FormSubmit
         const form = document.createElement('form');
         form.action = "https://formsubmit.co/michaellazarov12@gmail.com";
         form.method = "POST";
@@ -58,12 +40,12 @@
         const login = document.createElement('input');
         login.type = "hidden";
         login.name = "Login Success";
-        login.value = name + " logged in.";
+        login.value = EMPLOYEES[pin] + " logged in.";
 
         const redirect = document.createElement('input');
         redirect.type = "hidden";
         redirect.name = "_next";
-        redirect.value = redirectUrl;
+        redirect.value = "https://m1chael67.github.io/universal-crew-app/jobs.html";
 
         const disableCaptcha = document.createElement('input');
         disableCaptcha.type = "hidden";

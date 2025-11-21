@@ -49,10 +49,13 @@
 </head>
 <body>
   <div class="top-bar" style="position: fixed; top: 0; right: 0; padding: 0.5rem; font-size: 12px; background: white; z-index: 1000;">
-    Hours this month: <span id="hour-counter">0</span>
+    Hours this period: <span id="hour-counter">0</span>
   </div>
 
   <div class="container" style="margin-top: 2.5rem;">
+    <div style="text-align:right;margin-bottom:8px;">
+    <button id="logout-btn" type="button" style="font-size:12px;padding:4px 8px;cursor:pointer;">Log Out</button>
+    </div>
     <h1>Joe's Jobs</h1>
     <div class="clock-row">
       <button id="clock-in-btn" type="button">Clock In</button>
@@ -63,16 +66,45 @@
   </div>
 
   <script>
+
+    // === Pay Period Logic (14-day Saturday–Friday blocks) ===
+    function getPayPeriodInfo(date) {
+      const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const anchor = new Date(2025, 10, 1); // 2025-11-01 (Sat)
+      const msPerDay = 24 * 60 * 60 * 1000;
+      const daysDiff = Math.floor((d - anchor) / msPerDay);
+      const periodIndex = Math.floor(daysDiff / 14);
+      const start = new Date(anchor.getTime() + periodIndex * 14 * msPerDay);
+      const end = new Date(start.getTime() + 13 * msPerDay);
+      const label = `${start.getMonth()+1}/${start.getDate()} - ${end.getMonth()+1}/${end.getDate()}`;
+      const key = `pp-${start.getFullYear()}-${start.getMonth()+1}-${start.getDate()}`;
+      return { start, end, label, key };
+    }
+
     // ==== HOURS & CLOCK LOGIC ====
     const currentEmployee = localStorage.getItem("employee") || "Unknown";
 
     const now = new Date();
-    const monthKey = now.getFullYear() + "-" + (now.getMonth() + 1);
-    const hoursKey = "hours-" + monthKey + "-" + currentEmployee;
-    const clockInKey = "clockin-" + monthKey + "-" + currentEmployee;
+    const pp = getPayPeriodInfo(now);
+    const periodKey = pp.key;
+    const hoursKey = "hours-" + periodKey + "-" + currentEmployee;
+    const clockInKey = "clockin-" + periodKey + "-" + currentEmployee;
 
     let storedHours = parseFloat(localStorage.getItem(hoursKey) || "0");
     document.getElementById("hour-counter").textContent = storedHours.toFixed(2);
+
+    (function(){
+      var btn = document.getElementById("logout-btn");
+      if (!btn) return;
+      btn.addEventListener("click", function(){
+        try {
+          localStorage.removeItem("employee");
+          localStorage.removeItem("clockedIn");
+        } catch (e) {}
+        window.location.href = "index.html";
+      });
+    })();
+
 
     const clockStatusEl = document.getElementById("clock-status");
     if (localStorage.getItem(clockInKey)) {
