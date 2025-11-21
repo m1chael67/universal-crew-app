@@ -82,6 +82,7 @@
           var ppNow = getPayPeriodInfo(nowTs);
           fetch(WEB_APP_URL, {
             method: "POST",
+            mode: "no-cors",
             body: new URLSearchParams({
               employee: currentEmployee,
               event: eventType === "Clock In" ? "clock_in" : "clock_out",
@@ -298,13 +299,17 @@
               crewLabel = "All crew";
             }
 
-            // Type color
+            // Type color (Pickup = blue, Setup = green, Strike = red)
             var typeColor = "#333";
             if (job.Type && typeof job.Type === "string") {
               var t = job.Type.toLowerCase();
-              if (t.includes("pickup")) typeColor = "#1e88e5";      // blue
-              else if (t.includes("setup")) typeColor = "#43a047";  // green
-              else if (t.includes("strike")) typeColor = "#e53935"; // red
+              if (t.includes("pickup") || t.includes("pick-up") || t.includes("pick up")) {
+                typeColor = "#1e88e5";      // Pickup
+              } else if (t.includes("setup") || t.includes("set-up") || t.includes("set up")) {
+                typeColor = "#43a047";      // Setup
+              } else if (t.includes("strike")) {
+                typeColor = "#e53935";      // Strike
+              }
             }
 
             block.style.borderLeft = "4px solid " + typeColor;

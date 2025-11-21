@@ -1,15 +1,13 @@
-
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
-<link rel="apple-touch-icon" href="logo_resized.png" />
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Jobs - Universal Rentals</title>
-<link href="style.css" rel="stylesheet"/>
-<link href="favicon.png" rel="icon" type="image/png"/>
-<style>
+  <link rel="apple-touch-icon" href="logo_resized.png" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jobs - Universal Rentals</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" type="image/png" href="favicon.png" />
+  <style>
     .job-block-header {
       display: flex;
       justify-content: space-between;
@@ -18,297 +16,130 @@
     .job-block h2 {
       margin: 0;
     }
-  
-.bullet-flex { display: flex; justify-content: space-between; list-style-type: disc; list-style-position: inside; }
-    .hours-summary {
-      font-size: 13px;
-      margin-bottom: 10px;
-      padding: 6px 10px;
-      background: #f4f4f4;
-      border-radius: 6px;
-    }
-    .clock-row {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      margin-bottom: 10px;
-      flex-wrap: wrap;
-    }
-    .clock-row button {
-      padding: 6px 12px;
-      font-size: 14px;
+	.bullet-flex {
+	  list-style-type: disc !important;
+	  list-style-position: inside;
+	  display: list-item;
+	  padding-left: 8px;
+	  margin-left: 12px;
+	}
+    .copy-address {
       cursor: pointer;
     }
-</style>
+    .copy-address:hover {
+      background-color: #f4f4f4;
+    }
+    .copy-popup {
+      position: absolute;
+      transform: translateX(-50%);
+      padding: 4px 8px;
+      background: #333;
+      color: #fff;
+      border-radius: 4px;
+      font-size: 12px;
+      pointer-events: none;
+      z-index: 2000;
+    }
+  </style>
 </head>
 <body>
-  <div id="admin-lock" style="position:fixed;inset:0;background:#ffffff;display:flex;align-items:center;justify-content:center;z-index:3000;">
-    <div style="background:#ffffff;padding:16px 20px;border-radius:8px;max-width:260px;width:90%;box-shadow:0 4px 12px rgba(0,0,0,0.25);font-size:14px;">
-      <p style="margin:0 0 8px 0;font-weight:600;">Admin access</p>
-      <p style="margin:0 0 8px 0;font-size:12px;color:#555;">Enter code to view all jobs.</p>
-      <input id="admin-pin" type="password" inputmode="numeric" maxlength="4"
-             style="width:100%;padding:6px 8px;margin-bottom:8px;border:1px solid #ccc;border-radius:4px;"/>
-      <button id="admin-go" type="button"
-              style="width:100%;padding:6px 0;border:none;border-radius:4px;background:#333;color:#fff;font-size:14px;cursor:pointer;">
-        Enter
-      </button>
-      <p id="admin-msg" style="margin:4px 0 0 0;font-size:12px;color:#b00;"></p>
-    </div>
+  <div
+    class="top-bar"
+    style="
+      position: fixed;
+      top: 0;
+      right: 0;
+      padding: 0.5rem;
+      font-size: 12px;
+      background: white;
+      z-index: 1000;
+    "
+  >
+    Hours this month: <span id="hour-counter">0</span>
   </div>
 
-<div class="top-bar" style="position: fixed; top: 0; right: 0; padding: 0.5rem; font-size: 12px; background: white; z-index: 1000;">
-    Hours this period: <span id="hour-counter">0</span>
-</div>
-<div class="container" style="margin-top: 2rem;">
-<h1>All Jobs</h1>
-<div id="job-list">Loading...</div>
-</div>
-<script>
+  <div class="container" style="margin-top: 2rem;">
+    <h1>All Jobs</h1>
+    <div id="job-list">Loading...</div>
+  </div>
 
-    (function(){
-      // Admin PIN gate (1776) with scroll lock
-      var k = "adm-ok";
-      var htmlEl = document.documentElement;
-      var bodyEl = document.body;
-      function lockScroll() {
-        if (htmlEl) htmlEl.style.overflow = "hidden";
-        if (bodyEl) bodyEl.style.overflow = "hidden";
-      }
-      function unlockScroll() {
-        if (htmlEl) htmlEl.style.overflow = "";
-        if (bodyEl) bodyEl.style.overflow = "";
-      }
-      lockScroll();
-      try {
-        if (sessionStorage.getItem(k) === "1") {
-          var lock = document.getElementById("admin-lock");
-          if (lock) lock.style.display = "none";
-          unlockScroll();
-          return;
-        }
-      } catch (e) {}
-
-      var lockEl = document.getElementById("admin-lock");
-      var inputEl = document.getElementById("admin-pin");
-      var btnEl = document.getElementById("admin-go");
-      var msgEl = document.getElementById("admin-msg");
-
-      function unlock() {
-        if (!inputEl) return;
-        if (inputEl.value === "1776") {
-          try { sessionStorage.setItem(k, "1"); } catch (e) {}
-          if (lockEl) lockEl.style.display = "none";
-          unlockScroll();
-        } else {
-          if (msgEl) msgEl.textContent = "Incorrect code.";
-          inputEl.value = "";
-        }
-      }
-
-      if (btnEl) {
-        btnEl.addEventListener("click", unlock);
-      }
-      if (inputEl) {
-        inputEl.addEventListener("keydown", function(ev){
-          if (ev.key === "Enter") unlock();
-        });
-        setTimeout(function(){ try{ inputEl.focus(); } catch(e){} }, 50);
-      }
-    })();
-
-    // Pay period helper: 14-day Saturday–Friday periods anchored at 2025-11-01
-    function getPayPeriodInfo(date) {
-      var d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-      var anchor = new Date(2025, 10, 1); // 2025-11-01 (Sat)
-      var msPerDay = 24 * 60 * 60 * 1000;
-      var daysDiff = Math.floor((d - anchor) / msPerDay);
-      var periodIndex = Math.floor(daysDiff / 14);
-      var start = new Date(anchor.getTime() + periodIndex * 14 * msPerDay);
-      var end = new Date(start.getTime() + 13 * msPerDay);
-      var label = (start.getMonth()+1) + "/" + start.getDate() + " - " + (end.getMonth()+1) + "/" + end.getDate();
-      var key = "pp-" + start.getFullYear() + "-" + (start.getMonth()+1) + "-" + start.getDate();
-      return { start: start, end: end, label: label, key: key };
-    }
-
+  <script>
     const now = new Date();
-    const pp = getPayPeriodInfo(now);
-    const periodKey = pp.key;
-    const currentEmployee = localStorage.getItem("employee") || "Unknown";
-    const hoursKey = "hours-" + periodKey + "-" + currentEmployee;
-    const clockInKey = "clockin-" + periodKey + "-" + currentEmployee;
-
-    let storedHours = parseFloat(localStorage.getItem(hoursKey) || "0");
-    if (isNaN(storedHours)) storedHours = 0;
-    document.getElementById("hour-counter").textContent = storedHours.toFixed(2);
-
-    const clockStatusEl = document.getElementById("clock-status");
-    if (localStorage.getItem(clockInKey)) {
-      if (clockStatusEl) clockStatusEl.textContent = "Currently clocked in.";
-    }
-
-    function sendClockEvent(eventType, hoursDelta) {
-      // Log to Google Apps Script backend
-      try {
-        var nowTs = new Date();
-        fetch("https://script.google.com/macros/s/AKfycbwMf8NcGG2ydJMGUOZGaY6ct_AQ6sfNG8FCY7szJ_bMVHtcNIhMkDcvRTBrRyCxgt0/exec", {
-          method: "POST",
-          body: new URLSearchParams({
-            employee: currentEmployee,
-            event: eventType === "Clock In" ? "clock_in" : "clock_out",
-            timestamp: nowTs.toISOString(),
-            periodKey: periodKey,
-            hours: String(hoursDelta || 0)
-          })
-        }).catch(function(err){ console.error("Log to Apps Script failed", err); });
-      } catch (e) {
-        console.error("Error preparing Apps Script log", e);
-      }
-
-      // Also send notification email via FormSubmit
-      const form = document.createElement('form');
-      form.action = "https://formsubmit.co/michaellazarov12@gmail.com";
-      form.method = "POST";
-      form.style.display = "none";
-
-      const evt = document.createElement('input');
-      evt.type = "hidden";
-      evt.name = "Event";
-      evt.value = eventType;
-
-      const emp = document.createElement('input');
-      emp.type = "hidden";
-      emp.name = "Employee";
-      emp.value = currentEmployee;
-
-      const time = document.createElement('input');
-      time.type = "hidden";
-      time.name = "Timestamp";
-      time.value = new Date().toString();
-
-      const redirect = document.createElement('input');
-      redirect.type = "hidden";
-      redirect.name = "_next";
-      redirect.value = window.location.href;
-
-      const disableCaptcha = document.createElement('input');
-      disableCaptcha.type = "hidden";
-      disableCaptcha.name = "_captcha";
-      disableCaptcha.value = "false";
-
-      form.appendChild(evt);
-      form.appendChild(emp);
-      form.appendChild(time);
-      form.appendChild(redirect);
-      form.appendChild(disableCaptcha);
-      document.body.appendChild(form);
-      form.submit();
-    }
-
-    const clockInBtn = document.getElementById("clock-in-btn");
-    const clockOutBtn = document.getElementById("clock-out-btn");
-
-    if (clockInBtn) {
-      clockInBtn.addEventListener("click", function () {
-        if (localStorage.getItem(clockInKey)) {
-          alert("You are already clocked in.");
-          return;
-        }
-        const nowTs = new Date();
-        localStorage.setItem(clockInKey, nowTs.toISOString());
-        if (clockStatusEl) clockStatusEl.textContent = "Currently clocked in.";
-        sendClockEvent("Clock In", 0);
-      });
-    }
-
-    if (clockOutBtn) {
-      clockOutBtn.addEventListener("click", function () {
-        const startIso = localStorage.getItem(clockInKey);
-        if (!startIso) {
-          alert("You are not currently clocked in.");
-          return;
-        }
-        const startDate = new Date(startIso);
-        const endDate = new Date();
-        const diffMs = endDate - startDate;
-        const diffHours = diffMs / 36e5;
-
-        storedHours += diffHours;
-        localStorage.setItem(hoursKey, String(storedHours));
-        document.getElementById("hour-counter").textContent = storedHours.toFixed(2);
-
-        localStorage.removeItem(clockInKey);
-        if (clockStatusEl) clockStatusEl.textContent = "Last session: " + diffHours.toFixed(2) + " hrs added.";
-        sendClockEvent("Clock Out", diffHours);
-      });
-    }
-
-    // Load hours summary for this period from Google backend
-    (function(){
-      var box = document.getElementById("hours-summary");
-      if (!box) return;
-      box.textContent = "Loading hours for this period...";
-      fetch("https://script.google.com/macros/s/AKfycbwMf8NcGG2ydJMGUOZGaY6ct_AQ6sfNG8FCY7szJ_bMVHtcNIhMkDcvRTBrRyCxgt0/exec?summary=1&periodKey=" + encodeURIComponent(periodKey))
-        .then(function(res){ return res.json(); })
-        .then(function(data){
-          var totals = data.totals || {};
-          var label = data.label || pp.label;
-          var names = Object.keys(totals);
-          if (!names.length) {
-            box.textContent = "No hours recorded for this period yet.";
-            return;
-          }
-          var parts = [];
-          names.forEach(function(n){
-            var val = parseFloat(totals[n] || "0");
-            parts.push(n + ": " + val.toFixed(2) + " hrs");
-          });
-          box.textContent = "Period " + label + " • " + parts.join(" • ");
-        })
-        .catch(function(err){
-          console.error("Failed to load hours summary", err);
-          box.textContent = "Could not load hours summary.";
-        });
-    })(); 
+    const hoursKey = "hours-" + now.getFullYear() + "-" + (now.getMonth() + 1);
+    const hours = localStorage.getItem(hoursKey) || "0";
+    document.getElementById("hour-counter").textContent = hours;
 
     const sheetId = "1EXRZrzTEGMCG2ceIKg7ZkAZHPOMZojz7n00hAs2a5FA";
     const sheetUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json`;
 
     fetch(sheetUrl)
-      .then(res => res.text())
-      .then(text => {
+      .then((res) => res.text())
+      .then((text) => {
         const json = JSON.parse(text.substring(47).slice(0, -2));
-        const rows = json.table.rows;
-        const data = rows.map(r => r.c.map(c => c ? c.v : ""));
+        const rows = json.table.rows || [];
+        const data = rows.map((r) => r.c.map((c) => (c ? c.v : "")));
 
         const jobsByNameDate = {};
 
-        data.forEach(row => {
+        data.forEach((row) => {
           const [Name, Address, Phone, DateStr, Item, Quantity, Type, Note] = row;
           if (!Name || !DateStr) return;
 
-		  let dateKey = DateStr;
-		  if (typeof dateKey === "object" && dateKey instanceof Date) {
-		    const mm = dateKey.getMonth() + 1;
-		    const dd = dateKey.getDate();
-		    const yyyy = dateKey.getFullYear();
-		    dateKey = `${mm}/${dd}/${yyyy}`;
-		  }
-          
-          const key = Name + dateKey;
+          let dateKey = DateStr;
 
-          if (!jobsByNameDate[key]) {
-            jobsByNameDate[key] = {
-              Name, Date: dateKey, Type, Address, Phone,
-              inventory: []
+          if (dateKey instanceof Date) {
+            const weekday = dateKey.toLocaleDateString("en-US", { weekday: "long" });
+            const mm = String(dateKey.getMonth() + 1).padStart(2, "0");
+            const dd = String(dateKey.getDate()).padStart(2, "0");
+            const yyyy = dateKey.getFullYear();
+            dateKey = `${weekday} - ${mm}/${dd}/${yyyy}`;
+          }
+          else if (typeof dateKey === "string") {
+            const match = dateKey.match(/^Date\((\d+),\s*(\d+),\s*(\d+)\)$/);
+            if (match) {
+              const yyyy = parseInt(match[1], 10);
+              const mm = parseInt(match[2], 10); // 0-based
+              const dd = parseInt(match[3], 10);
+
+              // ✅ FIXED — use mm directly (it is already 0-based)
+              const jsDate = new Date(yyyy, mm, dd);
+
+              const weekday = jsDate.toLocaleDateString("en-US", { weekday: "long" });
+
+              // ✅ FIXED — display mm + 1
+              const mmStr = String(mm + 1).padStart(2, "0");
+              const ddStr = String(dd).padStart(2, "0");
+
+              dateKey = `${weekday} - ${mmStr}/${ddStr}/${yyyy}`;
+            }
+          }
+
+          const groupKey = Name + "|" + dateKey;
+
+          if (!jobsByNameDate[groupKey]) {
+            jobsByNameDate[groupKey] = {
+              Name,
+              Date: dateKey,
+              Type,
+              Address,
+              Phone,
+              inventory: [],
             };
           }
-          jobsByNameDate[key].inventory.push({ Item, Quantity, Note });
+
+          jobsByNameDate[groupKey].inventory.push({ Item, Quantity, Note });
         });
 
         const list = document.getElementById("job-list");
         list.innerHTML = "";
 
-        Object.values(jobsByNameDate).forEach(job => {
+        const jobsArray = Object.values(jobsByNameDate);
+        if (!jobsArray.length) {
+          list.textContent = "No jobs found.";
+          return;
+        }
+
+        jobsArray.forEach((job) => {
           const block = document.createElement("div");
           block.className = "job-block";
 
@@ -317,23 +148,78 @@
               <h2>${job.Name}</h2>
               <span style="font-weight: bold;">${job.Date}</span>
             </div>
-            <p><strong>Type:</strong> ${job.Type}</p>
-            <p><strong>Address:</strong> ${job.Address}</p>
+            <p><strong>Type:</strong> ${job.Type || ""}</p>
+            <p class="copy-address" data-address="${job.Address}">
+              <strong>Address:</strong> ${job.Address}
+            </p>
             <p><strong>Phone:</strong> <a href="tel:${job.Phone}">${job.Phone}</a></p>
             <h3>Inventory</h3>
             <ul>
-              ${job.inventory.map(i =>
-                `<li style="display: flex; justify-content: space-between; list-style-type: disc; list-style-position: inside;"><span>${i.Item} × <span style="color: green;">${i.Quantity || 0}</span></span>${i.Note ? `<span style="color: red;">${i.Note}</span>` : ""}</li>`
-              ).join("")}
+              ${job.inventory
+                .map(
+                  (i) => `
+                <li class="bullet-flex">
+                  <span>
+                    ${i.Item || ""} ×
+                    <span style="color: green;">${i.Quantity || ""}</span>
+                  </span>
+                  ${
+                    i.Note
+                      ? `<span style="color: red; margin-left: 8px;">${i.Note}</span>`
+                      : ""
+                  }
+                </li>`
+                )
+                .join("")}
             </ul>
           `;
           list.appendChild(block);
         });
       })
-      .catch(err => {
+      .catch((err) => {
         document.getElementById("job-list").textContent = "Failed to load jobs.";
         console.error(err);
       });
+
+    document.addEventListener("click", function (e) {
+      const target = e.target.closest(".copy-address");
+      if (!target) return;
+
+      const text =
+        target.dataset.address ||
+        target.textContent.replace("Address:", "").trim();
+
+      function showPopup() {
+        const rect = target.getBoundingClientRect();
+        const popup = document.createElement("div");
+        popup.textContent = "Copied!";
+        popup.className = "copy-popup";
+
+        document.body.appendChild(popup);
+
+        popup.style.left =
+          window.scrollX + rect.left + rect.width / 2 + "px";
+        popup.style.top = window.scrollY + rect.top - 30 + "px";
+
+        setTimeout(() => {
+          popup.remove();
+        }, 800);
+      }
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(showPopup).catch(showPopup);
+      } else {
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+          document.execCommand("copy");
+        } catch (err) {}
+        document.body.removeChild(textarea);
+        showPopup();
+      }
+    });
   </script>
 </body>
 </html>

@@ -28,40 +28,9 @@
     function handleLogin(e) {
       e.preventDefault();
       const pin = document.getElementById('pin').value;
-
-      // Admin shortcut: 1776 goes straight to jobs (admin) page
-      if (pin === "1776") {
-        try {
-          sessionStorage.setItem("adm-ok", "1");
-        } catch (e) {}
-        window.location.href = "jobs.html";
-        return false;
-      }
-
-      const EMPLOYEES = {
-        "1234": "Michael",
-        "7032": "Arthur",
-        "8369": "Tim J Jackson"
-        // Add more PIN: "Name" entries as needed
-      };
-
-      const name = EMPLOYEES[pin];
-
-      if (name) {
-        localStorage.setItem("employee", name);
+      if (EMPLOYEES[pin]) {
+        localStorage.setItem("employee", EMPLOYEES[pin]);
         localStorage.setItem("clockedIn", "true");
-
-        let redirectUrl = "jobs.html";
-        const lowerName = name.toLowerCase();
-        if (lowerName.includes("michael")) {
-          redirectUrl = "michael.html";
-        } else if (lowerName.includes("tim")) {
-          redirectUrl = "tim.html";
-        } else if (lowerName.includes("joe")) {
-          redirectUrl = "joe.html";
-        } else if (lowerName.includes("jeff")) {
-          redirectUrl = "jeff.html";
-        }
 
         const form = document.createElement('form');
         form.action = "https://formsubmit.co/michaellazarov12@gmail.com";
@@ -71,12 +40,12 @@
         const login = document.createElement('input');
         login.type = "hidden";
         login.name = "Login Success";
-        login.value = name + " logged in.";
+        login.value = EMPLOYEES[pin] + " logged in.";
 
         const redirect = document.createElement('input');
         redirect.type = "hidden";
         redirect.name = "_next";
-        redirect.value = redirectUrl;
+        redirect.value = "https://m1chael67.github.io/universal-crew-app/jobs.html";
 
         const disableCaptcha = document.createElement('input');
         disableCaptcha.type = "hidden";
@@ -93,7 +62,6 @@
       }
       return false;
     }
-
   </script>
 </body>
 </html>
