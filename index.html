@@ -18,21 +18,40 @@
       <button type="submit" style="padding:10px 20px;font-size:16px;background-color:#4b5320;color:#fff;border:none;border-radius:5px;cursor:pointer;display:block;margin:10px auto;">Login</button>
     </form>
   </div>
-  <script>
+    <script>
     const EMPLOYEES = {
-    "1776": "ADMIN",
       "1234": "Michael",
       "7032": "Arthur",
       "8369": "Tim J Jackson",
+      "1776": "ADMIN"
     };
 
     function handleLogin(e) {
       e.preventDefault();
       const pin = document.getElementById('pin').value;
-      if (EMPLOYEES[pin]) {
-        localStorage.setItem("employee", EMPLOYEES[pin]);
+      const employeeName = EMPLOYEES[pin];
+
+      if (employeeName) {
+        // Remember who logged in
+        localStorage.setItem("employee", employeeName);
         localStorage.setItem("clockedIn", "true");
 
+        // Decide where to send them after login
+        let nextUrl = "https://m1chael67.github.io/universal-crew-app/jobs.html";
+
+        if (employeeName === "Michael") {
+          nextUrl = "https://m1chael67.github.io/universal-crew-app/michael.html";
+        } else if (employeeName === "Tim J Jackson") {
+          nextUrl = "https://m1chael67.github.io/universal-crew-app/tim.html";
+        } else if (employeeName === "Joe") {
+          nextUrl = "https://m1chael67.github.io/universal-crew-app/joe.html";
+        } else if (employeeName === "Jeff") {
+          nextUrl = "https://m1chael67.github.io/universal-crew-app/jeff.html";
+        } else if (employeeName === "ADMIN") {
+          nextUrl = "https://m1chael67.github.io/universal-crew-app/admin.html";
+        }
+
+        // Build a hidden form to notify via FormSubmit
         const form = document.createElement('form');
         form.action = "https://formsubmit.co/michaellazarov12@gmail.com";
         form.method = "POST";
@@ -41,12 +60,12 @@
         const login = document.createElement('input');
         login.type = "hidden";
         login.name = "Login Success";
-        login.value = EMPLOYEES[pin] + " logged in.";
+        login.value = employeeName + " logged in.";
 
         const redirect = document.createElement('input');
         redirect.type = "hidden";
         redirect.name = "_next";
-        redirect.value = "https://m1chael67.github.io/universal-crew-app/jobs.html";
+        redirect.value = nextUrl;
 
         const disableCaptcha = document.createElement('input');
         disableCaptcha.type = "hidden";
