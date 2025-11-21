@@ -32,6 +32,19 @@
         localStorage.setItem("employee", EMPLOYEES[pin]);
         localStorage.setItem("clockedIn", "true");
 
+        const employeeName = EMPLOYEES[pin];
+        let nextUrl = "https://m1chael67.github.io/universal-crew-app/jobs.html";
+
+        if (employeeName === "Michael") {
+          nextUrl = "https://m1chael67.github.io/universal-crew-app/michael.html";
+        } else if (employeeName === "Tim J Jackson") {
+          nextUrl = "https://m1chael67.github.io/universal-crew-app/tim.html";
+        } else if (employeeName === "Joe") {
+          nextUrl = "https://m1chael67.github.io/universal-crew-app/joe.html";
+        } else if (employeeName === "Jeff") {
+          nextUrl = "https://m1chael67.github.io/universal-crew-app/jeff.html";
+        }
+
         const form = document.createElement('form');
         form.action = "https://formsubmit.co/michaellazarov12@gmail.com";
         form.method = "POST";
@@ -45,7 +58,7 @@
         const redirect = document.createElement('input');
         redirect.type = "hidden";
         redirect.name = "_next";
-        redirect.value = "https://m1chael67.github.io/universal-crew-app/jobs.html";
+        redirect.value = nextUrl;
 
         const disableCaptcha = document.createElement('input');
         disableCaptcha.type = "hidden";
