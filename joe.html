@@ -4,7 +4,7 @@
   <link rel="apple-touch-icon" href="logo_resized.png" />
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>William's Jobs - Universal Rentals</title>
+  <title>Joe's Jobs - Universal Rentals</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="icon" type="image/png" href="favicon.png" />
   <style>
@@ -30,7 +30,7 @@
     <div style="text-align:right;margin-bottom:8px;">
       <button id="logout-btn" type="button" style="font-size:12px;padding:4px 8px;cursor:pointer;">Log Out</button>
     </div>
-    <h1>William's Jobs</h1>
+    <h1>Joe's Jobs</h1>
     <div class="clock-row">
       <button id="clock-in-btn" type="button">Clock In</button>
       <button id="clock-out-btn" type="button">Clock Out</button>
@@ -55,6 +55,8 @@
     }
 
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz1UBQIkA2_2tO2VXxFTrPGiy-tO5BqQufrw83uF0I1DdOucW-QtWtm0WSlynlhY2c/exec";
+
+    const TIME_LOG_SHEET_ID = "1gm39kMipfpLKS2n8g9F4SYG9Do36M_5Lc6GOs-c6jCM";
 
     function formatJobDate(raw) {
       if (!raw) return "";
@@ -406,6 +408,53 @@
           list.textContent = "Failed to load jobs.";
         });
     })();
-  </script>
+  
+    function loadHoursFromSheet() {
+      try {
+        var now = new Date();
+        var pp = getPayPeriodInfo(now);
+        var periodKey = pp.key;
+        var emp = currentEmployee;
+
+        var tq =
+          "select sum(F) " +
+          "where C = 'clock_out' " +
+          "and D = '" + periodKey + "' " +
+          "and B = '" + emp + "' " +
+          "group by D, B " +
+          "label sum(F) ''";
+
+        var baseUrl = "https://docs.google.com/spreadsheets/d/" + TIME_LOG_SHEET_ID + "/gviz/tq";
+        var url = baseUrl +
+          "?sheet=" + encodeURIComponent("Time Log") +
+          "&headers=1" +
+          "&tqx=out:json" +
+          "&tq=" + encodeURIComponent(tq);
+
+        fetch(url)
+          .then(function(res) { return res.text(); })
+          .then(function(textResp) {
+            var json = JSON.parse(textResp.substring(47).slice(0, -2));
+            var rows = json.table.rows || [];
+            var counterEl = document.getElementById("hour-counter");
+            if (!counterEl) return;
+            if (!rows.length || !rows[0] || !rows[0].c[0]) {
+              counterEl.textContent = "0.00";
+              return;
+            }
+            var hrs = Number(rows[0].c[0].v || 0);
+            if (isNaN(hrs)) hrs = 0;
+            counterEl.textContent = hrs.toFixed(2);
+          })
+          .catch(function(err) {
+            console.error("Failed to load hours from sheet", err);
+          });
+      } catch (e) {
+        console.error("Error building hours query", e);
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", loadHoursFromSheet);
+</script>
 </body>
 </html>
