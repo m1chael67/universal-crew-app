@@ -121,65 +121,75 @@
         clockStatusEl.textContent = "Currently clocked in.";
       }
 
-      function sendClockEvent(eventType, hoursDelta) {
-        try {
-          var nowTs = new Date();
-          var ppNow = getPayPeriodInfo(nowTs);
-          fetch(WEB_APP_URL, {
-            method: "POST",
-            mode: "no-cors",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: new URLSearchParams({
-              employee: currentEmployee,
-              event: eventType === "Clock In" ? "clock_in" : "clock_out",
-              timestamp: nowTs.toISOString(),
-              periodKey: ppNow.key,
-              hours: String(hoursDelta || 0)
-            })
-          }).catch(function(err){ console.error("Log to Apps Script failed", err); });
-        } catch (e) {
-          console.error("Error preparing Apps Script log", e);
-        }
+	  function sendClockEvent(eventType, hoursDelta) {
+	    try {
+	      var nowTs = new Date();
+	      var ppNow = getPayPeriodInfo(nowTs);
 
-        // Also send notification email via FormSubmit
-        var form = document.createElement('form');
-        form.action = "https://formsubmit.co/michaellazarov12@gmail.com";
-        form.method = "POST";
-        form.style.display = "none";
+	      var payload = new URLSearchParams({
+	        employee: currentEmployee,
+	        event: eventType === "Clock In" ? "clock_in" : "clock_out",
+	        timestamp: nowTs.toISOString(),
+	        periodKey: ppNow.key,
+	        hours: String(hoursDelta || 0)
+	      });
 
-        var evt = document.createElement('input');
-        evt.type = "hidden";
-        evt.name = "Event";
-        evt.value = eventType;
+	      // Let this fire even if the page navigates away
+	      fetch(WEB_APP_URL, {
+	        method: "POST",
+	        mode: "no-cors",
+	        keepalive: true,
+	        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+	        body: payload
+	      }).catch(function(err) {
+	        console.error("Log to Apps Script failed", err);
+	      });
+	    } catch (e) {
+	      console.error("Error preparing Apps Script log", e);
+	    }
 
-        var emp = document.createElement('input');
-        emp.type = "hidden";
-        emp.name = "Employee";
-        emp.value = currentEmployee;
+	    // Give the fetch a moment to leave before redirecting for email
+	    setTimeout(function () {
+	      var form = document.createElement('form');
+	      form.action = "https://formsubmit.co/michaellazarov12@gmail.com";
+	      form.method = "POST";
+	      form.style.display = "none";
 
-        var time = document.createElement('input');
-        time.type = "hidden";
-        time.name = "Timestamp";
-        time.value = new Date().toString();
+	      var evt = document.createElement('input');
+	      evt.type = "hidden";
+	      evt.name = "Event";
+	      evt.value = eventType;
 
-        var redirect = document.createElement('input');
-        redirect.type = "hidden";
-        redirect.name = "_next";
-        redirect.value = window.location.href;
+	      var emp = document.createElement('input');
+	      emp.type = "hidden";
+	      emp.name = "Employee";
+	      emp.value = currentEmployee;
 
-        var disableCaptcha = document.createElement('input');
-        disableCaptcha.type = "hidden";
-        disableCaptcha.name = "_captcha";
-        disableCaptcha.value = "false";
+	      var time = document.createElement('input');
+	      time.type = "hidden";
+	      time.name = "Timestamp";
+	      time.value = new Date().toString();
 
-        form.appendChild(evt);
-        form.appendChild(emp);
-        form.appendChild(time);
-        form.appendChild(redirect);
-        form.appendChild(disableCaptcha);
-        document.body.appendChild(form);
-        form.submit();
-      }
+	      var redirect = document.createElement('input');
+	      redirect.type = "hidden";
+	      redirect.name = "_next";
+	      redirect.value = window.location.href;
+
+	      var disableCaptcha = document.createElement('input');
+	      disableCaptcha.type = "hidden";
+	      disableCaptcha.name = "_captcha";
+	      disableCaptcha.value = "false";
+
+	      form.appendChild(evt);
+	      form.appendChild(emp);
+	      form.appendChild(time);
+	      form.appendChild(redirect);
+	      form.appendChild(disableCaptcha);
+	      document.body.appendChild(form);
+	      form.submit();
+	    }, 300); // ~0.3 seconds is plenty
+	  }
+      
 
       var clockInBtn = document.getElementById("clock-in-btn");
       var clockOutBtn = document.getElementById("clock-out-btn");
