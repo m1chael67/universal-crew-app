@@ -8,31 +8,6 @@
   <link rel="stylesheet" href="style.css" />
   <link rel="icon" type="image/png" href="favicon.png" />
   <style>
-    .job-block-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .job-block h2 {
-      margin: 0;
-    }
-    .copy-address {
-      cursor: pointer;
-    }
-    .copy-address:hover {
-      background-color: #f4f4f4;
-    }
-    .copy-popup {
-      position: absolute;
-      transform: translateX(-50%);
-      padding: 4px 8px;
-      background: #333;
-      color: #fff;
-      border-radius: 4px;
-      font-size: 12px;
-      pointer-events: none;
-      z-index: 2000;
-    }
     .clock-row {
       display: flex;
       gap: 10px;
@@ -51,10 +26,9 @@
   <div class="top-bar" style="position: fixed; top: 0; right: 0; padding: 0.5rem; font-size: 12px; background: white; z-index: 1000;">
     Hours this period: <span id="hour-counter">0</span>
   </div>
-
   <div class="container" style="margin-top: 2.5rem;">
     <div style="text-align:right;margin-bottom:8px;">
-    <button id="logout-btn" type="button" style="font-size:12px;padding:4px 8px;cursor:pointer;">Log Out</button>
+      <button id="logout-btn" type="button" style="font-size:12px;padding:4px 8px;cursor:pointer;">Log Out</button>
     </div>
     <h1>Jeff's Jobs</h1>
     <div class="clock-row">
@@ -66,37 +40,144 @@
   </div>
 
   <script>
-
-    // === Pay Period Logic (14-day Saturday–Friday blocks) ===
+    // Pay period helper: 14-day Saturday–Friday periods anchored at 2025-11-01
     function getPayPeriodInfo(date) {
-      const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-      const anchor = new Date(2025, 10, 1); // 2025-11-01 (Sat)
-      const msPerDay = 24 * 60 * 60 * 1000;
-      const daysDiff = Math.floor((d - anchor) / msPerDay);
-      const periodIndex = Math.floor(daysDiff / 14);
-      const start = new Date(anchor.getTime() + periodIndex * 14 * msPerDay);
-      const end = new Date(start.getTime() + 13 * msPerDay);
-      const label = `${start.getMonth()+1}/${start.getDate()} - ${end.getMonth()+1}/${end.getDate()}`;
-      const key = `pp-${start.getFullYear()}-${start.getMonth()+1}-${start.getDate()}`;
-      return { start, end, label, key };
+      var d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      var anchor = new Date(2025, 10, 1); // 2025-11-01 (Sat)
+      var msPerDay = 24 * 60 * 60 * 1000;
+      var daysDiff = Math.floor((d - anchor) / msPerDay);
+      var periodIndex = Math.floor(daysDiff / 14);
+      var start = new Date(anchor.getTime() + periodIndex * 14 * msPerDay);
+      var end   = new Date(start.getTime() + 13 * msPerDay);
+      var label = (start.getMonth()+1) + "/" + start.getDate() + " - " + (end.getMonth()+1) + "/" + end.getDate();
+      var key   = "pp-" + start.getFullYear() + "-" + (start.getMonth()+1) + "-" + start.getDate();
+      return { start: start, end: end, label: label, key: key };
     }
 
-    // ==== HOURS & CLOCK LOGIC ====
-    const currentEmployee = localStorage.getItem("employee") || "Unknown";
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwMf8NcGG2ydJMGUOZGaY6ct_AQ6sfNG8FCY7szJ_bMVHtcNIhMkDcvRTBrRyCxgt0/exec";
+    const FILTER_EMPLOYEE = "Jeff";
 
-    const now = new Date();
-    const pp = getPayPeriodInfo(now);
-    const periodKey = pp.key;
-    const hoursKey = "hours-" + periodKey + "-" + currentEmployee;
-    const clockInKey = "clockin-" + periodKey + "-" + currentEmployee;
+    const currentEmployee = localStorage.getItem("employee") || "Jeff";
 
-    let storedHours = parseFloat(localStorage.getItem(hoursKey) || "0");
-    document.getElementById("hour-counter").textContent = storedHours.toFixed(2);
+    (function initClock() {
+      var now = new Date();
+      var pp = getPayPeriodInfo(now);
+      var periodKey = pp.key;
+      var hoursKey = "hours-" + periodKey + "-" + currentEmployee;
+      var clockInKey = "clockin-" + periodKey + "-" + currentEmployee;
 
-    (function(){
+      var storedHours = parseFloat(localStorage.getItem(hoursKey) || "0");
+      if (isNaN(storedHours)) storedHours = 0;
+      var counterEl = document.getElementById("hour-counter");
+      if (counterEl) counterEl.textContent = storedHours.toFixed(2);
+
+      var clockStatusEl = document.getElementById("clock-status");
+      if (localStorage.getItem(clockInKey) && clockStatusEl) {
+        clockStatusEl.textContent = "Currently clocked in.";
+      }
+
+      function sendClockEvent(eventType, hoursDelta) {
+        try {
+          var nowTs = new Date();
+          var ppNow = getPayPeriodInfo(nowTs);
+          fetch(WEB_APP_URL, {
+            method: "POST",
+            body: new URLSearchParams({
+              employee: currentEmployee,
+              event: eventType === "Clock In" ? "clock_in" : "clock_out",
+              timestamp: nowTs.toISOString(),
+              periodKey: ppNow.key,
+              hours: String(hoursDelta || 0)
+            })
+          }).catch(function(err){ console.error("Log to Apps Script failed", err); });
+        } catch (e) {
+          console.error("Error preparing Apps Script log", e);
+        }
+
+        // Also send notification email via FormSubmit
+        var form = document.createElement('form');
+        form.action = "https://formsubmit.co/michaellazarov12@gmail.com";
+        form.method = "POST";
+        form.style.display = "none";
+
+        var evt = document.createElement('input');
+        evt.type = "hidden";
+        evt.name = "Event";
+        evt.value = eventType;
+
+        var emp = document.createElement('input');
+        emp.type = "hidden";
+        emp.name = "Employee";
+        emp.value = currentEmployee;
+
+        var time = document.createElement('input');
+        time.type = "hidden";
+        time.name = "Timestamp";
+        time.value = new Date().toString();
+
+        var redirect = document.createElement('input');
+        redirect.type = "hidden";
+        redirect.name = "_next";
+        redirect.value = window.location.href;
+
+        var disableCaptcha = document.createElement('input');
+        disableCaptcha.type = "hidden";
+        disableCaptcha.name = "_captcha";
+        disableCaptcha.value = "false";
+
+        form.appendChild(evt);
+        form.appendChild(emp);
+        form.appendChild(time);
+        form.appendChild(redirect);
+        form.appendChild(disableCaptcha);
+        document.body.appendChild(form);
+        form.submit();
+      }
+
+      var clockInBtn = document.getElementById("clock-in-btn");
+      var clockOutBtn = document.getElementById("clock-out-btn");
+
+      if (clockInBtn) {
+        clockInBtn.addEventListener("click", function () {
+          if (localStorage.getItem(clockInKey)) {
+            alert("You are already clocked in.");
+            return;
+          }
+          var nowTs = new Date();
+          localStorage.setItem(clockInKey, nowTs.toISOString());
+          if (clockStatusEl) clockStatusEl.textContent = "Currently clocked in.";
+          sendClockEvent("Clock In", 0);
+        });
+      }
+
+      if (clockOutBtn) {
+        clockOutBtn.addEventListener("click", function () {
+          var startIso = localStorage.getItem(clockInKey);
+          if (!startIso) {
+            alert("You are not currently clocked in.");
+            return;
+          }
+          var startDate = new Date(startIso);
+          var endDate = new Date();
+          var diffMs = endDate - startDate;
+          var diffHours = diffMs / 36e5;
+
+          storedHours += diffHours;
+          localStorage.setItem(hoursKey, String(storedHours));
+          if (counterEl) counterEl.textContent = storedHours.toFixed(2);
+
+          localStorage.removeItem(clockInKey);
+          if (clockStatusEl) clockStatusEl.textContent = "Last session: " + diffHours.toFixed(2) + " hrs added.";
+          sendClockEvent("Clock Out", diffHours);
+        });
+      }
+    })();
+
+    // Logout button
+    (function() {
       var btn = document.getElementById("logout-btn");
       if (!btn) return;
-      btn.addEventListener("click", function(){
+      btn.addEventListener("click", function() {
         try {
           localStorage.removeItem("employee");
           localStorage.removeItem("clockedIn");
@@ -105,271 +186,173 @@
       });
     })();
 
+    // Job loading with employee filter
+    (function loadJobs() {
+      var sheetId = "1EXRZrzTEGMCG2ceIKg7ZkAZHPOMZojz7n00hAs2a5FA";
+      var sheetUrl = "https://docs.google.com/spreadsheets/d/" + sheetId + "/gviz/tq?tqx=out:json";
 
-    const clockStatusEl = document.getElementById("clock-status");
-    if (localStorage.getItem(clockInKey)) {
-      clockStatusEl.textContent = "Currently clocked in.";
-    }
+      fetch(sheetUrl)
+        .then(function(res) { return res.text(); })
+        .then(function(text) {
+          var json = JSON.parse(text.substring(47).slice(0, -2));
+          var rows = json.table.rows;
+          var data = rows.map(function(r) { return r.c.map(function(c) { return c ? c.v : ""; }); });
 
-    function sendClockEvent(eventType) {
-      const form = document.createElement('form');
-      form.action = "https://formsubmit.co/michaellazarov12@gmail.com";
-      form.method = "POST";
-      form.style.display = "none";
+          var jobsByNameDate = {};
 
-      const evt = document.createElement('input');
-      evt.type = "hidden";
-      evt.name = "Event";
-      evt.value = eventType;
+          data.forEach(function(row) {
+            // Name, Address, Phone, Date, Item, Qty, Type, Note, All, Michael, Tim, Joe, Jeff
+            var Name        = row[0];
+            var Address     = row[1];
+            var Phone       = row[2];
+            var DateStr     = row[3];
+            var Item        = row[4];
+            var Quantity    = row[5];
+            var Type        = row[6];
+            var Note        = row[7];
+            var AllCol      = row[8];
+            var MichaelCol  = row[9];
+            var TimCol      = row[10];
+            var JoeCol      = row[11];
+            var JeffCol     = row[12];
 
-      const emp = document.createElement('input');
-      emp.type = "hidden";
-      emp.name = "Employee";
-      emp.value = currentEmployee;
+            if (!Name || !DateStr) return;
 
-      const time = document.createElement('input');
-      time.type = "hidden";
-      time.name = "Timestamp";
-      time.value = new Date().toString();
-
-      const redirect = document.createElement('input');
-      redirect.type = "hidden";
-      redirect.name = "_next";
-      redirect.value = window.location.href;
-
-      const disableCaptcha = document.createElement('input');
-      disableCaptcha.type = "hidden";
-      disableCaptcha.name = "_captcha";
-      disableCaptcha.value = "false";
-
-      form.appendChild(evt);
-      form.appendChild(emp);
-      form.appendChild(time);
-      form.appendChild(redirect);
-      form.appendChild(disableCaptcha);
-      document.body.appendChild(form);
-      form.submit();
-    }
-
-    document.getElementById("clock-in-btn").addEventListener("click", function () {
-      if (localStorage.getItem(clockInKey)) {
-        alert("You are already clocked in.");
-        return;
-      }
-      const now = new Date();
-      localStorage.setItem(clockInKey, now.toISOString());
-      clockStatusEl.textContent = "Currently clocked in.";
-      sendClockEvent("Clock In");
-    });
-
-    document.getElementById("clock-out-btn").addEventListener("click", function () {
-      const start = localStorage.getItem(clockInKey);
-      if (!start) {
-        alert("You are not currently clocked in.");
-        return;
-      }
-      const startDate = new Date(start);
-      const endDate = new Date();
-      const diffMs = endDate - startDate;
-      const diffHours = diffMs / 36e5;
-
-      const prev = parseFloat(localStorage.getItem(hoursKey) || "0");
-      const total = prev + diffHours;
-      localStorage.setItem(hoursKey, String(total));
-      document.getElementById("hour-counter").textContent = total.toFixed(2);
-
-      localStorage.removeItem(clockInKey);
-      clockStatusEl.textContent = "Last session: " + diffHours.toFixed(2) + " hrs added.";
-      sendClockEvent("Clock Out");
-    });
-
-    // ==== JOBS LOADING & DISPLAY ====
-    const FILTER_EMPLOYEE = "Jeff";
-
-    const sheetId = "1EXRZrzTEGMCG2ceIKg7ZkAZHPOMZojz7n00hAs2a5FA";
-    const sheetUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json`;
-
-    fetch(sheetUrl)
-      .then(res => res.text())
-      .then(text => {
-        const json = JSON.parse(text.substring(47).slice(0, -2));
-        const rows = json.table.rows || [];
-        const data = rows.map(r => r.c.map(c => c ? c.v : ""));
-
-        const jobsByNameDate = {};
-
-        data.forEach(row => {
-          const [Name, Address, Phone, DateStr, Item, Quantity, Type, Note, AllCol, MichaelCol, TimCol, JoeCol, JeffCol] = row;
-          if (!Name || !DateStr) return;
-
-          const hasAll = !!AllCol;
-          const assignedEmployees = [];
-          if (MichaelCol) assignedEmployees.push("Michael");
-          if (TimCol) assignedEmployees.push("Tim");
-          if (JoeCol) assignedEmployees.push("Joe");
-          if (JeffCol) assignedEmployees.push("Jeff");
-
-          let includeForThisPage = true;
-          if (FILTER_EMPLOYEE) {
-            if (!hasAll) {
-              if (FILTER_EMPLOYEE === "Tim" && !TimCol) includeForThisPage = false;
-              if (FILTER_EMPLOYEE === "Joe" && !JoeCol) includeForThisPage = false;
-              if (FILTER_EMPLOYEE === "Jeff" && !JeffCol) includeForThisPage = false;
-              if (FILTER_EMPLOYEE === "Michael" && !MichaelCol) includeForThisPage = false;
+            var dateKey = DateStr;
+            if (dateKey && typeof dateKey === "object" && dateKey.getMonth) {
+              var mm = dateKey.getMonth() + 1;
+              var dd = dateKey.getDate();
+              var yyyy = dateKey.getFullYear();
+              dateKey = mm + "/" + dd + "/" + yyyy;
             }
-          }
-          if (!includeForThisPage) return;
 
-          let dateKey = DateStr;
-          let dateObj = null;
-
-          if (dateKey instanceof Date) {
-            dateObj = dateKey;
-            const weekday = dateKey.toLocaleDateString("en-US", { weekday: "long" });
-            const mm = String(dateKey.getMonth() + 1).padStart(2, "0");
-            const dd = String(dateKey.getDate()).padStart(2, "0");
-            const yyyy = dateKey.getFullYear();
-            dateKey = `${weekday} - ${mm}/${dd}/${yyyy}`;
-          } else if (typeof dateKey === "string") {
-            const match = dateKey.match(/^Date\((\d+),\s*(\d+),\s*(\d+)\)$/);
-            if (match) {
-              const yyyy = parseInt(match[1], 10);
-              const mm = parseInt(match[2], 10);
-              const dd = parseInt(match[3], 10);
-
-              const jsDate = new Date(yyyy, mm, dd);
-              dateObj = jsDate;
-
-              const weekday = jsDate.toLocaleDateString("en-US", { weekday: "long" });
-              const mmStr = String(mm + 1).padStart(2, "0");
-              const ddStr = String(dd).padStart(2, "0");
-
-              dateKey = `${weekday} - ${mmStr}/${ddStr}/${yyyy}`;
+            // Determine if this job should show on this employee page
+            var hasAll = AllCol && String(AllCol).trim() !== "";
+            var show = false;
+            if (!FILTER_EMPLOYEE) {
+              show = true;
             } else {
-              dateKey = String(dateKey);
+              var fname = FILTER_EMPLOYEE;
+              var hasEmployee = false;
+              if (fname === "Michael" && MichaelCol && String(MichaelCol).trim() !== "") hasEmployee = true;
+              if (fname === "Tim" && TimCol && String(TimCol).trim() !== "") hasEmployee = true;
+              if (fname === "Joe" && JoeCol && String(JoeCol).trim() !== "") hasEmployee = true;
+              if (fname === "Jeff" && JeffCol && String(JeffCol).trim() !== "") hasEmployee = true;
+              if (hasAll || hasEmployee) show = true;
             }
-          } else {
-            dateKey = String(dateKey);
-          }
+            if (!show) return;
 
-          const groupKey = Name + "|" + dateKey;
+            var key = Name + dateKey;
+            if (!jobsByNameDate[key]) {
+              jobsByNameDate[key] = {
+                Name: Name,
+                Date: dateKey,
+                Type: Type,
+                Address: Address,
+                Phone: Phone,
+                crew: {},
+                inventory: []
+              };
+            }
 
-          if (!jobsByNameDate[groupKey]) {
-            jobsByNameDate[groupKey] = {
-              Name,
-              Date: dateKey,
-              dateObj,
-              Type,
-              Address,
-              Phone,
-              inventory: [],
-              employees: assignedEmployees
-            };
-          }
+            var job = jobsByNameDate[key];
 
-          jobsByNameDate[groupKey].inventory.push({ Item, Quantity, Note });
+            // Track crew columns
+            if (AllCol && String(AllCol).trim() !== "") job.crew.all = true;
+            if (MichaelCol && String(MichaelCol).trim() !== "") job.crew.michael = true;
+            if (TimCol && String(TimCol).trim() !== "") job.crew.tim = true;
+            if (JoeCol && String(JoeCol).trim() !== "") job.crew.joe = true;
+            if (JeffCol && String(JeffCol).trim() !== "") job.crew.jeff = true;
+
+            job.inventory.push({
+              Item: Item,
+              Quantity: Quantity,
+              Note: Note
+            });
+          });
+
+          var list = document.getElementById("job-list");
+          list.innerHTML = "";
+
+          var jobsArray = Object.values(jobsByNameDate);
+          // Sort by date ascending (if parsable)
+          jobsArray.sort(function(a, b) {
+            var da = Date.parse(a.Date) || 0;
+            var db = Date.parse(b.Date) || 0;
+            return da - db;
+          });
+
+          jobsArray.forEach(function(job) {
+            var block = document.createElement("div");
+            block.className = "job-block";
+
+            var crewNames = [];
+            if (job.crew.michael) crewNames.push("Michael");
+            if (job.crew.tim) crewNames.push("Tim");
+            if (job.crew.joe) crewNames.push("Joe");
+            if (job.crew.jeff) crewNames.push("Jeff");
+            var crewLabel = "";
+            if (crewNames.length) {
+              crewLabel = crewNames.join(", ");
+            } else if (job.crew.all) {
+              crewLabel = "All crew";
+            }
+
+            // Type color
+            var typeColor = "#333";
+            if (job.Type && typeof job.Type === "string") {
+              var t = job.Type.toLowerCase();
+              if (t.includes("pickup")) typeColor = "#1e88e5";      // blue
+              else if (t.includes("setup")) typeColor = "#43a047";  // green
+              else if (t.includes("strike")) typeColor = "#e53935"; // red
+            }
+
+            block.style.borderLeft = "4px solid " + typeColor;
+
+            var inventoryHtml = job.inventory.map(function(i) {
+              var notePart = i.Note ? ' <span style="color:red;">' + i.Note + '</span>' : '';
+              return '<li style="display:flex;justify-content:space-between;"><span>' +
+                     (i.Item || '') + '</span><span>' +
+                     (i.Quantity || '') + '</span>' + notePart + '</li>';
+            }).join("");
+
+            block.innerHTML = ''
+              + '<div class="job-block-header">'
+              +   '<h2>' + job.Name + '</h2>'
+              +   '<span style="font-weight:bold;">' + job.Date + '</span>'
+              + '</div>'
+              + '<p><strong>Type:</strong> ' + (job.Type || '') + '</p>'
+              + '<p><strong>Address:</strong> <span class="job-address" style="text-decoration:underline;cursor:pointer;">'
+              +    (job.Address || '') + '</span></p>'
+              + '<p><strong>Phone:</strong> <a href="tel:' + (job.Phone || '') + '">' + (job.Phone || '') + '</a></p>'
+              + (crewLabel ? '<p><strong>Crew:</strong> ' + crewLabel + '</p>' : '')
+              + '<h3>Inventory</h3>'
+              + '<ul>' + inventoryHtml + '</ul>';
+
+            list.appendChild(block);
+          });
+
+          // Click-to-copy address
+          list.addEventListener("click", function(ev) {
+            var target = ev.target;
+            if (target.classList.contains("job-address")) {
+              var addr = target.textContent || "";
+              if (!addr) return;
+              navigator.clipboard.writeText(addr).then(function() {
+                target.style.backgroundColor = "#fffa9c";
+                setTimeout(function() { target.style.backgroundColor = ""; }, 400);
+              }).catch(function(err) {
+                console.error("Copy failed", err);
+              });
+            }
+          });
+        })
+        .catch(function(err) {
+          console.error(err);
+          var list = document.getElementById("job-list");
+          list.textContent = "Failed to load jobs.";
         });
-
-        const list = document.getElementById("job-list");
-        list.innerHTML = "";
-
-        let jobsArray = Object.values(jobsByNameDate);
-
-        if (!jobsArray.length) {
-          list.textContent = "No jobs found.";
-          return;
-        }
-
-        jobsArray.sort((a, b) => {
-          if (a.dateObj && b.dateObj) return a.dateObj - b.dateObj;
-          if (a.dateObj) return -1;
-          if (b.dateObj) return 1;
-          return a.Name.localeCompare(b.Name);
-        });
-
-        jobsArray.forEach(job => {
-          const block = document.createElement("div");
-          block.className = "job-block";
-
-          const typeText = (job.Type || "").toLowerCase();
-          let borderColor = "#007bff";
-          if (typeText.includes("setup") || typeText.includes("set-up") || typeText.includes("set up")) {
-            borderColor = "#28a745";
-          } else if (typeText.includes("strike")) {
-            borderColor = "#dc3545";
-          } else if (typeText.includes("pickup") || typeText.includes("pick-up") || typeText.includes("pick up")) {
-            borderColor = "#007bff";
-          }
-          block.style.borderLeft = "5px solid " + borderColor;
-
-          const crewLabel = job.employees && job.employees.length
-            ? `<p><strong>Crew:</strong> ${job.employees.join(", ")}</p>`
-            : "";
-
-          block.innerHTML = `
-            <div class="job-block-header">
-              <h2>${job.Name}</h2>
-              <span style="font-weight: bold;">${job.Date}</span>
-            </div>
-            <p><strong>Type:</strong> ${job.Type || ""}</p>
-            ${crewLabel}
-            <p class="copy-address" data-address="${job.Address || ""}">
-              <strong>Address:</strong> ${job.Address || ""}</p>
-            <p><strong>Phone:</strong> <a href="tel:${job.Phone || ""}">${job.Phone || ""}</a></p>
-            <h3>Inventory</h3>
-            <ul>
-              ${job.inventory.map(i => `
-                <li>
-                  ${i.Item || ""} × <span style="color: green;">${i.Quantity || ""}</span>
-                  ${i.Note ? `<span style="color: red; margin-left: 8px;">${i.Note}</span>` : ""}
-                </li>
-              `).join("")}
-            </ul>
-          `;
-          list.appendChild(block);
-        });
-      })
-      .catch(err => {
-        document.getElementById("job-list").textContent = "Failed to load jobs.";
-        console.error(err);
-      });
-
-    document.addEventListener("click", function (e) {
-      const target = e.target.closest(".copy-address");
-      if (!target) return;
-
-      const text = target.dataset.address || target.textContent.replace("Address:", "").trim();
-
-      function showPopup() {
-        const rect = target.getBoundingClientRect();
-        const popup = document.createElement("div");
-        popup.textContent = "Copied!";
-        popup.className = "copy-popup";
-
-        document.body.appendChild(popup);
-
-        popup.style.left = window.scrollX + rect.left + rect.width / 2 + "px";
-        popup.style.top = window.scrollY + rect.top - 30 + "px";
-
-        setTimeout(() => {
-          popup.remove();
-        }, 800);
-      }
-
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).then(showPopup).catch(showPopup);
-      } else {
-        const textarea = document.createElement("textarea");
-        textarea.value = text;
-        document.body.appendChild(textarea);
-        textarea.select();
-        try {
-          document.execCommand("copy");
-        } catch (err) {}
-        document.body.removeChild(textarea);
-        showPopup();
-      }
-    });
+    })();
   </script>
 </body>
 </html>
