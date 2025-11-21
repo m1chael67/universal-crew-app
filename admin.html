@@ -2,111 +2,189 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Admin – Crew Hours</title>
+  <title>Admin – Crew Hours History</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="style.css" />
+  <style>
+    .history-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+      font-size: 14px;
+    }
+    .history-table th,
+    .history-table td {
+      padding: 4px 8px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    .history-table th {
+      text-align: left;
+      background: #f9f9f9;
+    }
+    .history-table td.num {
+      text-align: right;
+      white-space: nowrap;
+    }
+    .pill {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: #f0f0f0;
+      font-size: 11px;
+      margin-left: 4px;
+    }
+  </style>
 </head>
 <body>
-  <div class="top-bar" style="position:fixed;top:0;right:0;padding:0.5rem;font-size:12px;background:#fff;z-index:1000;">
-    Pay period: <span id="pay-period-label">Loading...</span>
-  </div>
-
   <div class="container" style="margin-top:2.5rem;">
-    <h1>Admin – Crew Hours</h1>
+    <h1>Admin – Crew Hours History</h1>
     <p id="admin-status" style="font-size:14px;color:#555;">Loading hours...</p>
 
-    <table style="width:100%;border-collapse:collapse;margin-top:1rem;">
+    <table class="history-table">
       <thead>
         <tr>
-          <th style="text-align:left;border-bottom:1px solid #ddd;padding:4px 8px;">Employee</th>
-          <th style="text-align:right;border-bottom:1px solid #ddd;padding:4px 8px;">Hours this period</th>
+          <th>Pay Period</th>
+          <th>Michael</th>
+          <th>Tim</th>
+          <th>Joe</th>
+          <th>Jeff</th>
+          <th>Total</th>
         </tr>
       </thead>
-      <tbody id="hours-body">
-      </tbody>
+      <tbody id="history-body"></tbody>
     </table>
+
+    <p style="font-size:12px;color:#777;margin-top:0.75rem;">
+      Each row is a 14-day Saturday–Friday pay period. Hours come from
+      <strong>clock_out</strong> events logged in the Time&nbsp;Log sheet.
+    </p>
   </div>
 
   <script>
     const TIME_LOG_SHEET_ID = "1gm39kMipfpLKS2n8g9F4SYG9Do36M_5Lc6GOs-c6jCM";
+    const EMPLOYEES = ["Michael","Tim","Joe","Jeff"];
 
-    function getPayPeriodInfo(date) {
-      var d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-      var anchor = new Date(2025, 10, 1); // 2025-11-01 (month is 0-based)
-      var msPerDay = 24 * 60 * 60 * 1000;
-      var daysDiff = Math.floor((d - anchor) / msPerDay);
-      var periodIndex = Math.floor(daysDiff / 14);
-      var start = new Date(anchor.getTime() + periodIndex * 14 * msPerDay);
-      var end   = new Date(start.getTime() + 13 * msPerDay);
-      var label = (start.getMonth() + 1) + "/" + start.getDate() +
-                  " - " + (end.getMonth() + 1) + "/" + end.getDate();
-      var key   = "pp-" + start.getFullYear() + "-" +
-                  (start.getMonth() + 1) + "-" + start.getDate();
-      return { start: start, end: end, label: label, key: key };
+    function parsePeriodKey(periodKey) {
+      // periodKey format: "pp-YYYY-M-D"
+      var m = /^pp-(\d+)-(\d+)-(\d+)$/.exec(periodKey || "");
+      if (!m) return null;
+      var year  = parseInt(m[1], 10);
+      var month = parseInt(m[2], 10) - 1; // 0-based
+      var day   = parseInt(m[3], 10);
+      var d = new Date(year, month, day);
+      if (isNaN(d.getTime())) return null;
+      return d;
     }
 
-    function loadAdminHours() {
-      var now = new Date();
-      var pp = getPayPeriodInfo(now);
-      var periodKey = pp.key;
+    function labelForPeriodKey(periodKey) {
+      var start = parsePeriodKey(periodKey);
+      if (!start) return periodKey || "";
+      var end = new Date(start.getTime() + 13 * 24 * 60 * 60 * 1000);
+      function fmt(d) {
+        var mm = String(d.getMonth() + 1).padStart(2, "0");
+        var dd = String(d.getDate()).padStart(2, "0");
+        var yyyy = d.getFullYear();
+        return mm + "/" + dd + "/" + yyyy;
+      }
+      return fmt(start) + " - " + fmt(end);
+    }
 
-      var labelEl = document.getElementById("pay-period-label");
-      if (labelEl) labelEl.textContent = pp.label;
+    function loadHistory() {
+      var statusEl = document.getElementById("admin-status");
+      var bodyEl = document.getElementById("history-body");
+      if (statusEl) statusEl.textContent = "Loading hours...";
 
       var tq =
-        "select B, sum(F) " +
+        "select D, B, sum(F) " +
         "where C = 'clock_out' " +
-        "and D = '" + periodKey + "' " +
-        "group by B " +
+        "group by D, B " +
         "label sum(F) ''";
 
-      var url =
-        "https://docs.google.com/spreadsheets/d/" +
-        TIME_LOG_SHEET_ID +
-        "/gviz/tq?tqx=out:json&sheet=Time%20Log&headers=1&tq=" +
-        encodeURIComponent(tq);
+      var baseUrl = "https://docs.google.com/spreadsheets/d/" + TIME_LOG_SHEET_ID + "/gviz/tq";
+      var url = baseUrl +
+        "?sheet=" + encodeURIComponent("Time Log") +
+        "&headers=1" +
+        "&tqx=out:json" +
+        "&tq=" + encodeURIComponent(tq);
 
       fetch(url)
         .then(function(res) { return res.text(); })
         .then(function(text) {
-          var statusEl = document.getElementById("admin-status");
-          var bodyEl   = document.getElementById("hours-body");
-
-          var json = JSON.parse(text.substring(47).slice(0, - 2));
+          var json = JSON.parse(text.substring(47).slice(0, -2));
           var rows = json.table.rows || [];
 
-          if (!rows.length) {
-            if (statusEl) statusEl.textContent = "No hours logged for this period yet.";
-            return;
-          }
+          var byPeriod = {};
+          rows.forEach(function(row) {
+            var pkCell  = row.c[0];
+            var empCell = row.c[1];
+            var hrsCell = row.c[2];
+            if (!pkCell || !empCell || !hrsCell) return;
 
-          if (statusEl) statusEl.textContent = "";
+            var pk  = String(pkCell.v || "");
+            var emp = String(empCell.v || "");
+            var hrs = Number(hrsCell.v || 0);
+            if (!pk || !emp || isNaN(hrs)) return;
+
+            if (!byPeriod[pk]) {
+              byPeriod[pk] = {
+                key: pk,
+                startDate: parsePeriodKey(pk),
+                employees: {}
+              };
+            }
+            var p = byPeriod[pk];
+            if (!p.employees[emp]) p.employees[emp] = 0;
+            p.employees[emp] += hrs;
+          });
+
+          var periods = Object.keys(byPeriod).map(function(k) { return byPeriod[k]; });
+          periods.sort(function(a, b) {
+            var da = a.startDate ? a.startDate.getTime() : 0;
+            var db = b.startDate ? b.startDate.getTime() : 0;
+            return db - da; // newest first
+          });
 
           bodyEl.innerHTML = "";
-          rows.forEach(function(row) {
-            var empCell   = row.c[0];
-            var hoursCell = row.c[1];
-            if (!empCell || !hoursCell) return;
 
-            var name = String(empCell.v || "");
-            var hrs  = Number(hoursCell.v || 0);
+          if (!periods.length) {
+            if (statusEl) statusEl.textContent = "No hours logged yet.";
+            return;
+          }
+          if (statusEl) statusEl.textContent = "";
 
+          periods.forEach(function(p) {
             var tr = document.createElement("tr");
-            tr.innerHTML =
-              "<td style='padding:4px 8px;border-bottom:1px solid #f0f0f0;'>" + name + "</td>" +
-              "<td style='padding:4px 8px;border-bottom:1px solid #f0f0f0;text-align:right;'>" +
-              hrs.toFixed(2) + "</td>";
+            var label = labelForPeriodKey(p.key);
+            var rowHtml = "<td>" + label + "<span class='pill'>" + p.key + "</span></td>";
+            var total = 0;
+
+            EMPLOYEES.forEach(function(emp) {
+              var val = p.employees[emp] || 0;
+              if (val < 0.0001) {
+                rowHtml += "<td class='num'></td>";
+              } else {
+                total += val;
+                rowHtml += "<td class='num'>" + val.toFixed(2) + "</td>";
+              }
+            });
+
+            if (total < 0.0001) {
+              rowHtml += "<td class='num'></td>";
+            } else {
+              rowHtml += "<td class='num'><strong>" + total.toFixed(2) + "</strong></td>";
+            }
+
+            tr.innerHTML = rowHtml;
             bodyEl.appendChild(tr);
           });
         })
         .catch(function(err) {
-          console.error("Failed to load admin hours", err);
-          var statusEl = document.getElementById("admin-status");
+          console.error("Failed to load history", err);
           if (statusEl) statusEl.textContent = "Failed to load hours.";
         });
     }
 
-    document.addEventListener("DOMContentLoaded", loadAdminHours);
+    document.addEventListener("DOMContentLoaded", loadHistory);
   </script>
 </body>
 </html>
