@@ -4,7 +4,7 @@
   <link rel="apple-touch-icon" href="logo_resized.png" />
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Jeff's Jobs - Universal Rentals</title>
+  <title>Jeff - Universal Rentals</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="icon" type="image/png" href="favicon.png" />
   <style>
@@ -30,7 +30,7 @@
     <div style="text-align:right;margin-bottom:8px;">
       <button id="logout-btn" type="button" style="font-size:12px;padding:4px 8px;cursor:pointer;">Log Out</button>
     </div>
-    <h1>Jeff's Jobs</h1>
+    <h1>Jeff</h1>
     <div class="clock-row">
       <button id="clock-in-btn" type="button">Clock In</button>
       <button id="clock-out-btn" type="button">Clock Out</button>
@@ -101,9 +101,9 @@
     }
 
     const FILTER_EMPLOYEE = "Jeff";
-
     const currentEmployee = localStorage.getItem("employee") || "Jeff";
 
+    // Clock in / out + send to Apps Script + email
     (function initClock() {
       var now = new Date();
       var pp = getPayPeriodInfo(now);
@@ -243,7 +243,15 @@
         .then(function(text) {
           var json = JSON.parse(text.substring(47).slice(0, -2));
           var rows = json.table.rows;
-          var data = rows.map(function(r) { return r.c.map(function(c) { return c ? c.v : ""; }); });
+          // Prefer formatted values when available (e.g. "11/20/2025")
+          var data = rows.map(function(r) {
+            return r.c.map(function(c) {
+              if (!c) return "";
+              if (typeof c.f !== "undefined" && c.f !== null) return c.f;
+              if (typeof c.v !== "undefined" && c.v !== null) return c.v;
+              return "";
+            });
+          });
 
           var jobsByNameDate = {};
 
@@ -411,73 +419,6 @@
           var list = document.getElementById("job-list");
           list.textContent = "Failed to load jobs.";
         });
-    })();
-	
-  <script>
-    (function() {
-      const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwMf8NcGG2ydJMGUOZGaY6ct_AQ6sfNG8FCY7szJ_bMVHtcNIhMkDcvRTBrRyCxgt0/exec";
-      const EMPLOYEE_NAME = "Jeff";  // <- change per file
-      const CLOCK_KEY = "uc_clock_start_" + EMPLOYEE_NAME;
-
-      function getPayPeriodInfo(date) {
-        const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-        const anchor = new Date(2025, 10, 1); // 2025-11-01 (month is 0-based)
-        const msPerDay = 24 * 60 * 60 * 1000;
-        const daysDiff = Math.floor((d - anchor) / msPerDay);
-        const periodIndex = Math.floor(daysDiff / 14);
-        const start = new Date(anchor.getTime() + periodIndex * 14 * msPerDay);
-        const key = "pp-" + start.getFullYear() + "-" + (start.getMonth() + 1) + "-" + start.getDate();
-        return { key };
-      }
-
-      function sendToServer(eventType, hoursDelta) {
-        const now = new Date();
-        const pp = getPayPeriodInfo(now);
-
-        const payload = new URLSearchParams({
-          employee: EMPLOYEE_NAME,
-          event: eventType,
-          timestamp: now.toISOString(),
-          periodKey: pp.key,
-          device: navigator.userAgent || "",
-          hours: String(hoursDelta || 0)
-        });
-
-        fetch(WEB_APP_URL, {
-          method: "POST",
-          mode: "no-cors",
-          body: payload
-        });
-      }
-
-      document.addEventListener("DOMContentLoaded", function() {
-        const clockInBtn = document.getElementById("clockInBtn");
-        const clockOutBtn = document.getElementById("clockOutBtn");
-
-        if (clockInBtn) {
-          clockInBtn.addEventListener("click", function() {
-            // for server logging, start a timer if not already set
-            if (!localStorage.getItem(CLOCK_KEY)) {
-              localStorage.setItem(CLOCK_KEY, new Date().toISOString());
-            }
-            sendToServer("clock_in", 0);
-          });
-        }
-
-        if (clockOutBtn) {
-          clockOutBtn.addEventListener("click", function() {
-            const startIso = localStorage.getItem(CLOCK_KEY);
-            let hoursDelta = 0;
-            if (startIso) {
-              const start = new Date(startIso);
-              const diffMs = Date.now() - start.getTime();
-              hoursDelta = diffMs / 1000 / 60 / 60;
-            }
-            sendToServer("clock_out", hoursDelta);
-            localStorage.removeItem(CLOCK_KEY);
-          });
-        }
-      });
     })();
   </script>
 </body>
