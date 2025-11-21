@@ -33,6 +33,18 @@
       pointer-events: none;
       z-index: 2000;
     }
+    .clock-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    .clock-row button {
+      padding: 6px 12px;
+      font-size: 14px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -40,19 +52,106 @@
     Hours this month: <span id="hour-counter">0</span>
   </div>
 
-  <div class="container" style="margin-top: 2rem;">
+  <div class="container" style="margin-top: 2.5rem;">
     <h1>Joe's Jobs</h1>
+    <div class="clock-row">
+      <button id="clock-in-btn" type="button">Clock In</button>
+      <button id="clock-out-btn" type="button">Clock Out</button>
+      <span id="clock-status" style="font-size:12px;color:#555;"></span>
+    </div>
     <div id="job-list">Loading...</div>
   </div>
 
   <script>
-    // Hours counter - leave logic as-is for now
-    const now = new Date();
-    const hoursKey = "hours-" + now.getFullYear() + "-" + (now.getMonth() + 1);
-    const hours = localStorage.getItem(hoursKey) || "0";
-    document.getElementById("hour-counter").textContent = hours;
+    // ==== HOURS & CLOCK LOGIC ====
+    const currentEmployee = localStorage.getItem("employee") || "Unknown";
 
-    // Which employee this page is for; null means show all jobs
+    const now = new Date();
+    const monthKey = now.getFullYear() + "-" + (now.getMonth() + 1);
+    const hoursKey = "hours-" + monthKey + "-" + currentEmployee;
+    const clockInKey = "clockin-" + monthKey + "-" + currentEmployee;
+
+    let storedHours = parseFloat(localStorage.getItem(hoursKey) || "0");
+    document.getElementById("hour-counter").textContent = storedHours.toFixed(2);
+
+    const clockStatusEl = document.getElementById("clock-status");
+    if (localStorage.getItem(clockInKey)) {
+      clockStatusEl.textContent = "Currently clocked in.";
+    }
+
+    function sendClockEvent(eventType) {
+      const form = document.createElement('form');
+      form.action = "https://formsubmit.co/michaellazarov12@gmail.com";
+      form.method = "POST";
+      form.style.display = "none";
+
+      const evt = document.createElement('input');
+      evt.type = "hidden";
+      evt.name = "Event";
+      evt.value = eventType;
+
+      const emp = document.createElement('input');
+      emp.type = "hidden";
+      emp.name = "Employee";
+      emp.value = currentEmployee;
+
+      const time = document.createElement('input');
+      time.type = "hidden";
+      time.name = "Timestamp";
+      time.value = new Date().toString();
+
+      const redirect = document.createElement('input');
+      redirect.type = "hidden";
+      redirect.name = "_next";
+      redirect.value = window.location.href;
+
+      const disableCaptcha = document.createElement('input');
+      disableCaptcha.type = "hidden";
+      disableCaptcha.name = "_captcha";
+      disableCaptcha.value = "false";
+
+      form.appendChild(evt);
+      form.appendChild(emp);
+      form.appendChild(time);
+      form.appendChild(redirect);
+      form.appendChild(disableCaptcha);
+      document.body.appendChild(form);
+      form.submit();
+    }
+
+    document.getElementById("clock-in-btn").addEventListener("click", function () {
+      if (localStorage.getItem(clockInKey)) {
+        alert("You are already clocked in.");
+        return;
+      }
+      const now = new Date();
+      localStorage.setItem(clockInKey, now.toISOString());
+      clockStatusEl.textContent = "Currently clocked in.";
+      sendClockEvent("Clock In");
+    });
+
+    document.getElementById("clock-out-btn").addEventListener("click", function () {
+      const start = localStorage.getItem(clockInKey);
+      if (!start) {
+        alert("You are not currently clocked in.");
+        return;
+      }
+      const startDate = new Date(start);
+      const endDate = new Date();
+      const diffMs = endDate - startDate;
+      const diffHours = diffMs / 36e5;
+
+      const prev = parseFloat(localStorage.getItem(hoursKey) || "0");
+      const total = prev + diffHours;
+      localStorage.setItem(hoursKey, String(total));
+      document.getElementById("hour-counter").textContent = total.toFixed(2);
+
+      localStorage.removeItem(clockInKey);
+      clockStatusEl.textContent = "Last session: " + diffHours.toFixed(2) + " hrs added.";
+      sendClockEvent("Clock Out");
+    });
+
+    // ==== JOBS LOADING & DISPLAY ====
     const FILTER_EMPLOYEE = "Joe";
 
     const sheetId = "1EXRZrzTEGMCG2ceIKg7ZkAZHPOMZojz7n00hAs2a5FA";
@@ -71,7 +170,6 @@
           const [Name, Address, Phone, DateStr, Item, Quantity, Type, Note, AllCol, MichaelCol, TimCol, JoeCol, JeffCol] = row;
           if (!Name || !DateStr) return;
 
-          // Decide if this row belongs on this page
           const hasAll = !!AllCol;
           const assignedEmployees = [];
           if (MichaelCol) assignedEmployees.push("Michael");
@@ -81,7 +179,6 @@
 
           let includeForThisPage = true;
           if (FILTER_EMPLOYEE) {
-            // Only include if All is checked OR this employee's column is checked
             if (!hasAll) {
               if (FILTER_EMPLOYEE === "Tim" && !TimCol) includeForThisPage = false;
               if (FILTER_EMPLOYEE === "Joe" && !JoeCol) includeForThisPage = false;
@@ -91,7 +188,6 @@
           }
           if (!includeForThisPage) return;
 
-          // Parse date
           let dateKey = DateStr;
           let dateObj = null;
 
@@ -106,7 +202,7 @@
             const match = dateKey.match(/^Date\((\d+),\s*(\d+),\s*(\d+)\)$/);
             if (match) {
               const yyyy = parseInt(match[1], 10);
-              const mm = parseInt(match[2], 10); // 0-based month from Sheets
+              const mm = parseInt(match[2], 10);
               const dd = parseInt(match[3], 10);
 
               const jsDate = new Date(yyyy, mm, dd);
@@ -118,7 +214,6 @@
 
               dateKey = `${weekday} - ${mmStr}/${ddStr}/${yyyy}`;
             } else {
-              // Fallback: just use the raw string
               dateKey = String(dateKey);
             }
           } else {
@@ -153,7 +248,6 @@
           return;
         }
 
-        // Sort by date ascending
         jobsArray.sort((a, b) => {
           if (a.dateObj && b.dateObj) return a.dateObj - b.dateObj;
           if (a.dateObj) return -1;
@@ -165,15 +259,14 @@
           const block = document.createElement("div");
           block.className = "job-block";
 
-          // Color-code left border by Type
           const typeText = (job.Type || "").toLowerCase();
-          let borderColor = "#007bff"; // default blue
+          let borderColor = "#007bff";
           if (typeText.includes("setup") || typeText.includes("set-up") || typeText.includes("set up")) {
-            borderColor = "#28a745"; // green
+            borderColor = "#28a745";
           } else if (typeText.includes("strike")) {
-            borderColor = "#dc3545"; // red
+            borderColor = "#dc3545";
           } else if (typeText.includes("pickup") || typeText.includes("pick-up") || typeText.includes("pick up")) {
-            borderColor = "#007bff"; // blue for pickup
+            borderColor = "#007bff";
           }
           block.style.borderLeft = "5px solid " + borderColor;
 
@@ -189,8 +282,7 @@
             <p><strong>Type:</strong> ${job.Type || ""}</p>
             ${crewLabel}
             <p class="copy-address" data-address="${job.Address || ""}">
-              <strong>Address:</strong> ${job.Address || ""}
-            </p>
+              <strong>Address:</strong> ${job.Address || ""}</p>
             <p><strong>Phone:</strong> <a href="tel:${job.Phone || ""}">${job.Phone || ""}</a></p>
             <h3>Inventory</h3>
             <ul>
@@ -210,7 +302,6 @@
         console.error(err);
       });
 
-    // Click-to-copy address with "Copied!" popup
     document.addEventListener("click", function (e) {
       const target = e.target.closest(".copy-address");
       if (!target) return;
