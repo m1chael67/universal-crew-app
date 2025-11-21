@@ -4,7 +4,7 @@
   <link rel="apple-touch-icon" href="logo_resized.png" />
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tim's Jobs - Universal Rentals</title>
+  <title>Tim</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="icon" type="image/png" href="favicon.png" />
   <style>
@@ -30,7 +30,7 @@
     <div style="text-align:right;margin-bottom:8px;">
       <button id="logout-btn" type="button" style="font-size:12px;padding:4px 8px;cursor:pointer;">Log Out</button>
     </div>
-    <h1>Tim's Jobs</h1>
+    <h1>Tim</h1>
     <div class="clock-row">
       <button id="clock-in-btn" type="button">Clock In</button>
       <button id="clock-out-btn" type="button">Clock Out</button>
@@ -54,7 +54,57 @@
       return { start: start, end: end, label: label, key: key };
     }
 
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz1UBQIkA2_2tO2VXxFTrPGiy-tO5BqQufrw83uF0I1DdOucW-QtWtm0WSlynlhY2c/exec";
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwMf8NcGG2ydJMGUOZGaY6ct_AQ6sfNG8FCY7szJ_bMVHtcNIhMkDcvRTBrRyCxgt0/exec";
+    const TIME_LOG_SHEET_ID = "1gm39kMipfpLKS2n8g9F4SYG9Do36M_5Lc6GOs-c6jCM"; // Time Log sheet
+
+    function fetchHoursFromSheet(employeeName) {
+      var now = new Date();
+      var pp = getPayPeriodInfo(now);
+      var periodKey = pp.key;
+
+      var tq =
+        "select B, sum(F) " +
+        "where C = 'clock_out' " +
+        "and D = '" + periodKey + "' " +
+        "group by B " +
+        "label sum(F) ''";
+
+      var url =
+        "https://docs.google.com/spreadsheets/d/" +
+        TIME_LOG_SHEET_ID +
+        "/gviz/tq?tqx=out:json&sheet=Time%20Log&headers=1&tq=" +
+        encodeURIComponent(tq);
+
+      fetch(url)
+        .then(function(res) { return res.text(); })
+        .then(function(text) {
+          var json = JSON.parse(text.substring(47).slice(0, - 2));
+          var rows = json.table.rows || [];
+          var total = 0;
+
+          rows.forEach(function(row) {
+            var empCell   = row.c[0];
+            var hoursCell = row.c[1];
+            if (!empCell || !hoursCell) return;
+
+            var empName = String(empCell.v || "").trim().toLowerCase();
+            var hrs     = Number(hoursCell.v || 0);
+
+            if (empName === employeeName.toLowerCase()) {
+              total = hrs;
+            }
+          });
+
+          var counterEl = document.getElementById("hour-counter");
+          if (counterEl) {
+            counterEl.textContent = total.toFixed(2);
+          }
+        })
+        .catch(function(err) {
+          console.error("Failed to load hours from sheet", err);
+        });
+    }
+
 
     function formatJobDate(raw) {
       if (!raw) return "";
@@ -101,7 +151,7 @@
     }
 
     const FILTER_EMPLOYEE = "Tim";
-    const currentEmployee = "Tim";
+    const currentEmployee = localStorage.getItem("employee") || "Tim";
 
     // Clock in / out + send to Apps Script + email
     (function initClock() {
@@ -204,6 +254,8 @@
           sendClockEvent("Clock Out", diffHours);
         });
       }
+
+      fetchHoursFromSheet(currentEmployee);
     })();
 
     // Logout button
