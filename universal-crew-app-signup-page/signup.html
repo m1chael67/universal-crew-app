@@ -17,6 +17,34 @@
     </form>
   </div>
   <script>
+
+    let existingPins = null;
+
+    function fetchExistingPins() {
+      fetch("https://m1chael67.github.io/universal-crew-app/index.html")
+        .then(function(res) { return res.text(); })
+        .then(function(html) {
+          var match = html.match(/const\s+EMPLOYEES\s*=\s*({[\s\S]*?});/);
+          if (!match) {
+            console.warn("EMPLOYEES definition not found on index page.");
+            return;
+          }
+          try {
+            var objLiteral = match[1];
+            var fn = new Function('"use strict"; return (' + objLiteral + ');');
+            var employees = fn();
+            existingPins = Object.keys(employees);
+          } catch (e) {
+            console.error("Failed to parse EMPLOYEES from index.html", e);
+          }
+        })
+        .catch(function(err) {
+          console.error("Failed to fetch index.html for PIN check", err);
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", fetchExistingPins);
+
     function handleSignup(e) {
       e.preventDefault();
       const name = document.getElementById('name').value;
@@ -25,6 +53,11 @@
 
       if (pin1 !== pin2) {
         alert("PINs do not match. Please try again.");
+        return false;
+      }
+
+      if (existingPins && existingPins.indexOf(pin1) !== -1) {
+        alert("That PIN is already in use. Please choose a different PIN.");
         return false;
       }
 
