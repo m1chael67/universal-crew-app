@@ -55,6 +55,51 @@
     }
 
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwMf8NcGG2ydJMGUOZGaY6ct_AQ6sfNG8FCY7szJ_bMVHtcNIhMkDcvRTBrRyCxgt0/exec";
+
+    function formatJobDate(raw) {
+      if (!raw) return "";
+
+      var jsDate = null;
+
+      if (raw instanceof Date) {
+        jsDate = raw;
+      } else if (typeof raw === "string") {
+        if (raw.indexOf("Date(") === 0) {
+          try {
+            var inside = raw.replace("Date(", "").replace(")", "");
+            var parts = inside.split(",");
+            var y = parseInt(parts[0], 10);
+            var m = parseInt(parts[1], 10);
+            var d = parseInt(parts[2] || "1", 10);
+            jsDate = new Date(y, m, d);
+          } catch (e) {
+            jsDate = null;
+          }
+        } else if (raw.indexOf("/") !== -1) {
+          var bits = raw.split("/");
+          var mm = parseInt(bits[0], 10);
+          var dd = parseInt(bits[1], 10);
+          var yyyy = parseInt(bits[2], 10);
+          if (!isNaN(mm) && !isNaN(dd) && !isNaN(yyyy)) {
+            jsDate = new Date(yyyy, mm - 1, dd);
+          }
+        }
+      }
+
+      if (!jsDate || isNaN(jsDate.getTime())) {
+        return String(raw);
+      }
+
+      var days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+      var dow = days[jsDate.getDay()];
+
+      var mmStr = String(jsDate.getMonth() + 1).padStart(2, "0");
+      var ddStr = String(jsDate.getDate()).padStart(2, "0");
+      var yyyyStr = jsDate.getFullYear();
+
+      return dow + " - " + mmStr + "/" + ddStr + "/" + yyyyStr;
+    }
+
     const FILTER_EMPLOYEE = "Jeff";
 
     const currentEmployee = localStorage.getItem("employee") || "Jeff";
@@ -83,6 +128,7 @@
           fetch(WEB_APP_URL, {
             method: "POST",
             mode: "no-cors",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
             body: new URLSearchParams({
               employee: currentEmployee,
               event: eventType === "Clock In" ? "clock_in" : "clock_out",
@@ -225,6 +271,15 @@
               var dd = dateKey.getDate();
               var yyyy = dateKey.getFullYear();
               dateKey = mm + "/" + dd + "/" + yyyy;
+            } else if (typeof dateKey === "string" && dateKey.indexOf("Date(") === 0) {
+              // Handle strings like "Date(2025,10,20)"
+              var m = dateKey.match(/Date\((\d+),(\d+),(\d+)\)/);
+              if (m) {
+                var yyyy = parseInt(m[1], 10);
+                var mm = parseInt(m[2], 10) + 1; // month is 0-based in this format
+                var dd = parseInt(m[3], 10);
+                dateKey = mm + "/" + dd + "/" + yyyy;
+              }
             }
 
             // Determine if this job should show on this employee page
@@ -316,23 +371,22 @@
 
             var inventoryHtml = job.inventory.map(function(i) {
               var notePart = i.Note ? ' <span style="color:red;">' + i.Note + '</span>' : '';
-              return '<li style="display:flex;justify-content:space-between;"><span>' +
-                     (i.Item || '') + '</span><span>' +
-                     (i.Quantity || '') + '</span>' + notePart + '</li>';
+              var qtyPart = i.Quantity ? ' × ' + i.Quantity : '';
+              return '<li>' + (i.Item || '') + qtyPart + notePart + '</li>';
             }).join("");
 
             block.innerHTML = ''
               + '<div class="job-block-header">'
               +   '<h2>' + job.Name + '</h2>'
-              +   '<span style="font-weight:bold;">' + job.Date + '</span>'
+              +   '<span style="font-weight:bold;">' + formatJobDate(job.Date) + '</span>'
               + '</div>'
               + '<p><strong>Type:</strong> ' + (job.Type || '') + '</p>'
               + '<p><strong>Address:</strong> <span class="job-address" style="text-decoration:underline;cursor:pointer;">'
               +    (job.Address || '') + '</span></p>'
               + '<p><strong>Phone:</strong> <a href="tel:' + (job.Phone || '') + '">' + (job.Phone || '') + '</a></p>'
               + (crewLabel ? '<p><strong>Crew:</strong> ' + crewLabel + '</p>' : '')
-              + '<h3>Inventory</h3>'
-              + '<ul>' + inventoryHtml + '</ul>';
+              + '<div class="job-inventory"><h3>Inventory</h3>'
+              + '<ul>' + inventoryHtml + '</ul></div>';
 
             list.appendChild(block);
           });
