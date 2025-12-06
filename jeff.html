@@ -43,7 +43,7 @@
     // Pay period helper: 14-day Saturday–Friday periods anchored at 2025-11-01
     function getPayPeriodInfo(date) {
       var d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-      var anchor = new Date(2025, 10, 1); // 2025-11-01 (Sat)
+      var anchor = new Date(2025, 10, 14); // 2025-11-14 (Fri, pay period anchor)
       var msPerDay = 24 * 60 * 60 * 1000;
       var daysDiff = Math.floor((d - anchor) / msPerDay);
       var periodIndex = Math.floor(daysDiff / 14);
@@ -54,11 +54,10 @@
       return { start: start, end: end, label: label, key: key };
     }
 
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz1UBQIkA2_2tO2VXxFTrPGiy-tO5BqQufrw83uF0I1DdOucW-QtWtm0WSlynlhY2c/exec";
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwDMoZjhy2IHA0PFEqSwd79cOteIBX-QhIVjLh8pXHnzm6frGjoO1FkS9_xrdIQh8M/exec";
 
     const TIME_LOG_SHEET_ID = "1gm39kMipfpLKS2n8g9F4SYG9Do36M_5Lc6GOs-c6jCM";
     const EMPLOYEE_NAME = "Jeff";
-
 function parseSheetDateTime(cell) {
   if (!cell) return null;
   var value = null;
@@ -97,7 +96,6 @@ function parseSheetDateTime(cell) {
 
   return null;
 }
-
 
 
     function formatJobDate(raw) {
@@ -148,13 +146,13 @@ function parseSheetDateTime(cell) {
     const currentEmployee = "Jeff";
 
     // Clock in / out + send to Apps Script + email
-(function initClock() {
+    (function initClock() {
   var clockStatusEl = document.getElementById("clock-status");
   var clockInBtn = document.getElementById("clock-in-btn");
   var clockOutBtn = document.getElementById("clock-out-btn");
   if (!clockInBtn || !clockOutBtn) return;
 
-  function fetchClockState(callback) {
+  function fetchClockStateFromSheet(callback) {
     try {
       var now = new Date();
       var pp = getPayPeriodInfo(now);
@@ -188,11 +186,11 @@ function parseSheetDateTime(cell) {
             if (!evtCell) return;
             var evt = String(evtCell.v || "");
             var ts  = parseSheetDateTime(tsCell);
-            if (!ts || !evt) return;
+            if (!evt) return;
 
             if (evt === "clock_in") {
               state = "in";
-              lastClockIn = ts;
+              if (ts) lastClockIn = ts;
             } else if (evt === "clock_out") {
               state = "out";
               lastClockIn = null;
@@ -200,31 +198,35 @@ function parseSheetDateTime(cell) {
           });
 
           callback({
-            isClockedIn: state === "in",
+            state: state,
             lastClockIn: lastClockIn,
             error: false
           });
         })
         .catch(function(err) {
           console.error("Failed to fetch clock state", err);
-          callback({ isClockedIn: false, lastClockIn: null, error: true });
+          callback({ state: "out", lastClockIn: null, error: true });
         });
     } catch (e) {
       console.error("Error building clock-state query", e);
-      callback({ isClockedIn: false, lastClockIn: null, error: true });
+      callback({ state: "out", lastClockIn: null, error: true });
     }
   }
 
   function refreshClockStatus() {
     if (!clockStatusEl) return;
-    clockStatusEl.textContent = "Checking server status...";
-    fetchClockState(function(info) {
+    clockStatusEl.textContent = "Checking status...";
+    fetchClockStateFromSheet(function(info) {
       if (info.error) {
         clockStatusEl.textContent = "Could not reach timesheet.";
         return;
       }
-      if (info.isClockedIn && info.lastClockIn) {
-        clockStatusEl.textContent = "Clocked in since " + info.lastClockIn.toLocaleString();
+      if (info.state === "in") {
+        if (info.lastClockIn) {
+          clockStatusEl.textContent = "Clocked in since " + info.lastClockIn.toLocaleString();
+        } else {
+          clockStatusEl.textContent = "Clocked in (no time).";
+        }
       } else {
         clockStatusEl.textContent = "Currently clocked out.";
       }
@@ -237,7 +239,7 @@ function parseSheetDateTime(cell) {
       var ppNow = getPayPeriodInfo(nowTs);
 
       var payload = new URLSearchParams({
-        employee: "Jeff",
+        employee: EMPLOYEE_NAME,
         event: eventType === "Clock In" ? "clock_in" : "clock_out",
         timestamp: nowTs.toISOString(),
         periodKey: ppNow.key,
@@ -256,7 +258,7 @@ function parseSheetDateTime(cell) {
 
       var emailPayload = new URLSearchParams({
         Event: eventType,
-        Employee: "Jeff",
+        Employee: EMPLOYEE_NAME,
         Timestamp: new Date().toString(),
         _captcha: "false"
       });
@@ -277,15 +279,19 @@ function parseSheetDateTime(cell) {
   clockInBtn.addEventListener("click", function () {
     clockInBtn.disabled = true;
     clockOutBtn.disabled = true;
-    fetchClockState(function(info) {
+    fetchClockStateFromSheet(function(info) {
       if (info.error) {
         alert("Couldn't reach timesheet. Try again in a moment.");
         clockInBtn.disabled = false;
         clockOutBtn.disabled = false;
         return;
       }
-      if (info.isClockedIn && info.lastClockIn) {
-        alert("Server already shows you clocked in since " + info.lastClockIn.toLocaleString() + ".");
+      if (info.state === "in") {
+        if (info.lastClockIn) {
+          alert("Server already shows you clocked in since " + info.lastClockIn.toLocaleString() + ".");
+        } else {
+          alert("Server already shows you clocked in.");
+        }
         clockInBtn.disabled = false;
         clockOutBtn.disabled = false;
         refreshClockStatus();
@@ -305,36 +311,27 @@ function parseSheetDateTime(cell) {
   clockOutBtn.addEventListener("click", function () {
     clockInBtn.disabled = true;
     clockOutBtn.disabled = true;
-    fetchClockState(function(info) {
+    fetchClockStateFromSheet(function(info) {
       if (info.error) {
         alert("Couldn't reach timesheet. Try again in a moment.");
         clockInBtn.disabled = false;
         clockOutBtn.disabled = false;
         return;
       }
-      if (!info.isClockedIn) {
+      if (info.state !== "in") {
         alert("Server says you are not currently clocked in for this pay period.");
         clockInBtn.disabled = false;
         clockOutBtn.disabled = false;
         refreshClockStatus();
         return;
       }
-      if (!info.lastClockIn) {
-        alert("Could not read your last clock-in time from the sheet. Ask admin to adjust manually.");
-        clockInBtn.disabled = false;
-        clockOutBtn.disabled = false;
-        refreshClockStatus();
-        return;
-      }
 
-      var now = new Date();
-      var diffMs = now - info.lastClockIn;
-      var diffHours = diffMs / 36e5;
-      if (!isFinite(diffHours) || diffHours < 0) diffHours = 0;
-
-      sendClockEvent("Clock Out", diffHours);
+      // We no longer rely on the browser copy of the clock-in time.
+      // The Apps Script will look up the last clock_in in the sheet
+      // and calculate hours from that.
+      sendClockEvent("Clock Out", 0);
       if (clockStatusEl) {
-        clockStatusEl.textContent = "Clocked out. Last session: " + diffHours.toFixed(2) + " hrs.";
+        clockStatusEl.textContent = "Clocked out. Last session complete.";
       }
 
       setTimeout(function() {
@@ -350,21 +347,18 @@ function parseSheetDateTime(cell) {
     });
   });
 
+  // Initial status from sheet
   refreshClockStatus();
 })();
 
     // Logout button
-    (function() {
-      var btn = document.getElementById("logout-btn");
-      if (!btn) return;
-      btn.addEventListener("click", function() {
-        try {
-          localStorage.removeItem("employee");
-          localStorage.removeItem("clockedIn");
-        } catch (e) {}
-        window.location.href = "index.html";
-      });
-    })();
+(function() {
+  var btn = document.getElementById("logout-btn");
+  if (!btn) return;
+  btn.addEventListener("click", function() {
+    window.location.href = "index.html";
+  });
+})();
 
     // Job loading with employee filter
     (function loadJobs() {
