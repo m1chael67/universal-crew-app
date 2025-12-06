@@ -200,7 +200,7 @@ function parseSheetDateTime(cell) {
           });
 
           callback({
-            isClockedIn: state === "in" && !!lastClockIn,
+            isClockedIn: state === "in",
             lastClockIn: lastClockIn,
             error: false
           });
@@ -312,8 +312,15 @@ function parseSheetDateTime(cell) {
         clockOutBtn.disabled = false;
         return;
       }
-      if (!info.isClockedIn || !info.lastClockIn) {
+      if (!info.isClockedIn) {
         alert("Server says you are not currently clocked in for this pay period.");
+        clockInBtn.disabled = false;
+        clockOutBtn.disabled = false;
+        refreshClockStatus();
+        return;
+      }
+      if (!info.lastClockIn) {
+        alert("Could not read your last clock-in time from the sheet. Ask admin to adjust manually.");
         clockInBtn.disabled = false;
         clockOutBtn.disabled = false;
         refreshClockStatus();

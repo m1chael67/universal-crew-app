@@ -492,7 +492,7 @@ function getOpenClockInForEmployee(periodKey, employee, callback) {
         });
 
         callback({
-          isClockedIn: state === "in" && !!lastClockIn,
+          isClockedIn: state === "in",
           lastClockIn: lastClockIn,
           error: false
         });
@@ -525,8 +525,12 @@ function sendAdminForceClockOut() {
       if (statusEl) statusEl.textContent = "Failed to reach sheet.";
       return;
     }
-    if (!info.isClockedIn || !info.lastClockIn) {
+    if (!info.isClockedIn) {
       if (statusEl) statusEl.textContent = emp + " is not currently clocked in (per sheet).";
+      return;
+    }
+    if (!info.lastClockIn) {
+      if (statusEl) statusEl.textContent = "Could not read last clock-in time from sheet. Use manual adjustment.";
       return;
     }
 
