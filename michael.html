@@ -54,7 +54,7 @@
       return { start: start, end: end, label: label, key: key };
     }
 
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz1UBQIkA2_2tO2VXxFTrPGiy-tO5BqQufrw83uF0I1DdOucW-QtWtm0WSlynlhY2c/exec";
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwDMoZjhy2IHA0PFEqSwd79cOteIBX-QhIVjLh8pXHnzm6frGjoO1FkS9_xrdIQh8M/exec";
 
     const TIME_LOG_SHEET_ID = "1gm39kMipfpLKS2n8g9F4SYG9Do36M_5Lc6GOs-c6jCM";
     const EMPLOYEE_NAME = "Michael";
@@ -326,22 +326,13 @@ function parseSheetDateTime(cell) {
         refreshClockStatus();
         return;
       }
-      if (!info.lastClockIn) {
-        alert("Could not read your last clock-in time from the sheet. Ask admin to adjust manually.");
-        clockInBtn.disabled = false;
-        clockOutBtn.disabled = false;
-        refreshClockStatus();
-        return;
-      }
 
-      var now = new Date();
-      var diffMs = now - info.lastClockIn;
-      var diffHours = diffMs / 36e5;
-      if (!isFinite(diffHours) || diffHours < 0) diffHours = 0;
-
-      sendClockEvent("Clock Out", diffHours);
+      // We no longer rely on the browser copy of the clock-in time.
+      // The Apps Script will look up the last clock_in in the sheet
+      // and calculate hours from that.
+      sendClockEvent("Clock Out", 0);
       if (clockStatusEl) {
-        clockStatusEl.textContent = "Clocked out. Last session: " + diffHours.toFixed(2) + " hrs.";
+        clockStatusEl.textContent = "Clocked out. Last session complete.";
       }
 
       setTimeout(function() {
