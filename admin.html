@@ -74,6 +74,28 @@
 
 
     <div id="admin-adjust" style="margin-top:1.5rem;padding:0.75rem 0;border-top:1px solid #e0e0e0;">
+<div id="admin-force" style="margin-top:1.0rem;padding:0.75rem 0;border-top:1px solid #e0e0e0;">
+  <h2 style="font-size:16px;margin-bottom:0.5rem;">Force Clock Out (Uses Sheet)</h2>
+  <p style="font-size:12px;color:#555;margin-bottom:0.5rem;">
+    Use this if someone is stuck as clocked in on the sheet. This finds their last
+    open <code>clock_in</code> in the <strong>current</strong> pay period and writes
+    a matching <code>clock_out</code> row with the hours since that time.
+  </p>
+  <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px;">
+    <label for="force-employee">Employee:</label>
+    <select id="force-employee">
+      <option value="Michael">Michael</option>
+      <option value="Tim">Tim</option>
+      <option value="Joe">Joe</option>
+      <option value="Jeff">Jeff</option>
+    </select>
+    <button id="force-clockout-btn" type="button" style="padding:4px 10px;font-size:13px;cursor:pointer;">
+      Clock Out Now
+    </button>
+    <span id="force-status" style="font-size:12px;color:#555;margin-left:8px;"></span>
+  </div>
+</div>
+
       <h2 style="font-size:16px;margin-bottom:0.5rem;">Admin Adjustment</h2>
       <p style="font-size:12px;color:#555;margin-bottom:0.5rem;">
         Add or subtract hours for the <strong>current</strong> pay period. This writes a new
@@ -109,6 +131,46 @@
     const TIME_LOG_SHEET_ID = "1gm39kMipfpLKS2n8g9F4SYG9Do36M_5Lc6GOs-c6jCM";
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz1UBQIkA2_2tO2VXxFTrPGiy-tO5BqQufrw83uF0I1DdOucW-QtWtm0WSlynlhY2c/exec";
     const EMPLOYEES = ["Michael","Tim","Joe","Jeff"];
+
+function parseSheetDateTime(cell) {
+  if (!cell) return null;
+  var value = null;
+  if (typeof cell.v !== "undefined" && cell.v !== null) {
+    value = cell.v;
+  } else if (typeof cell.f !== "undefined" && cell.f !== null) {
+    value = cell.f;
+  }
+  if (!value) return null;
+
+  if (value instanceof Date) {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    if (value.indexOf("Date(") === 0) {
+      try {
+        var m = value.match(/Date\((\d+),(\d+),(\d+)(?:,(\d+),(\d+),(\d+))?\)/);
+        if (m) {
+          var year  = parseInt(m[1], 10);
+          var month = parseInt(m[2], 10);
+          var day   = parseInt(m[3], 10);
+          var hh    = m[4] ? parseInt(m[4], 10) : 0;
+          var mm    = m[5] ? parseInt(m[5], 10) : 0;
+          var ss    = m[6] ? parseInt(m[6], 10) : 0;
+          return new Date(year, month, day, hh, mm, ss);
+        }
+      } catch (e) {
+        return null;
+      }
+    } else {
+      var t = Date.parse(value);
+      if (!isNaN(t)) return new Date(t);
+    }
+  }
+
+  return null;
+}
+
 
     function getPayPeriodInfo(date) {
       var d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -388,10 +450,138 @@
       }
     }
 
+function getOpenClockInForEmployee(periodKey, employee, callback) {
+  try {
+    var tq =
+      "select A, C " +
+      "where D = '" + periodKey + "' " +
+      "and B = '" + employee + "' " +
+      "order by A";
+
+    var baseUrl = "https://docs.google.com/spreadsheets/d/" + TIME_LOG_SHEET_ID + "/gviz/tq";
+    var url = baseUrl +
+      "?sheet=" + encodeURIComponent("Time Log") +
+      "&headers=1" +
+      "&tqx=out:json" +
+      "&tq=" + encodeURIComponent(tq);
+
+    fetch(url)
+      .then(function(res) { return res.text(); })
+      .then(function(textResp) {
+        var json = JSON.parse(textResp.substring(47).slice(0, -2));
+        var rows = json.table.rows || [];
+
+        var state = "out";
+        var lastClockIn = null;
+
+        rows.forEach(function(row) {
+          var tsCell  = row.c[0];
+          var evtCell = row.c[1];
+          if (!evtCell) return;
+          var evt = String(evtCell.v || "");
+          var ts  = parseSheetDateTime(tsCell);
+          if (!ts || !evt) return;
+
+          if (evt === "clock_in") {
+            state = "in";
+            lastClockIn = ts;
+          } else if (evt === "clock_out") {
+            state = "out";
+            lastClockIn = null;
+          }
+        });
+
+        callback({
+          isClockedIn: state === "in" && !!lastClockIn,
+          lastClockIn: lastClockIn,
+          error: false
+        });
+      })
+      .catch(function(err) {
+        console.error("Failed to fetch open clock-in", err);
+        callback({ isClockedIn: false, lastClockIn: null, error: true });
+      });
+  } catch (e) {
+    console.error("Error building open clock-in query", e);
+    callback({ isClockedIn: false, lastClockIn: null, error: true });
+  }
+}
+
+function sendAdminForceClockOut() {
+  var empSel = document.getElementById("force-employee");
+  var statusEl = document.getElementById("force-status");
+  if (!empSel) return;
+  var emp = empSel.value;
+  var now = new Date();
+  var pp = getPayPeriodInfo(now);
+  var periodKey = pp.key;
+
+  if (statusEl) {
+    statusEl.textContent = "Checking current clock-in...";
+  }
+
+  getOpenClockInForEmployee(periodKey, emp, function(info) {
+    if (info.error) {
+      if (statusEl) statusEl.textContent = "Failed to reach sheet.";
+      return;
+    }
+    if (!info.isClockedIn || !info.lastClockIn) {
+      if (statusEl) statusEl.textContent = emp + " is not currently clocked in (per sheet).";
+      return;
+    }
+
+    var diffMs = now - info.lastClockIn;
+    var diffHours = diffMs / 36e5;
+    if (!isFinite(diffHours) || diffHours < 0) diffHours = 0;
+
+    if (statusEl) {
+      statusEl.textContent = "Clocking out " + emp + " for " + diffHours.toFixed(2) + " hrs...";
+    }
+
+    try {
+      var payload = new URLSearchParams({
+        employee: emp,
+        event: "clock_out",
+        timestamp: now.toISOString(),
+        periodKey: periodKey,
+        device: "admin_force",
+        hours: String(diffHours)
+      });
+
+      fetch(WEB_APP_URL, {
+        method: "POST",
+        mode: "no-cors",
+        body: payload
+      }).then(function() {
+        if (statusEl) {
+          statusEl.textContent = "Forced clock-out sent. Refreshing...";
+        }
+        setTimeout(function() {
+          loadHistory();
+        }, 2500);
+      }).catch(function(err) {
+        console.error("Admin force clock-out failed", err);
+        if (statusEl) {
+          statusEl.textContent = "Clock-out failed. Use manual adjustment if needed.";
+        }
+      });
+    } catch (e) {
+      console.error("Error building admin force clock-out payload", e);
+      if (statusEl) {
+        statusEl.textContent = "Clock-out failed. Use manual adjustment if needed.";
+      }
+    }
+  });
+}
+
     document.addEventListener("DOMContentLoaded", function() {
       var btn = document.getElementById("adj-submit");
       if (btn) {
         btn.addEventListener("click", sendAdminAdjustment);
+      }
+      var forceBtn = document.getElementById("force-clockout-btn");
+      if (forceBtn) {
+        forceBtn.addEventListener("click", sendAdminForceClockOut);
       }
     });
 
