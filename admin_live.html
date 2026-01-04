@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Admin Live – Crew Hours + Quick Clock</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .history-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+      font-size: 14px;
+    }
+    .history-table th,
+    .history-table td {
+      padding: 4px 8px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    .history-table th {
+      text-align: left;
+      background: #f9f9f9;
+    }
+    .history-table td.num {
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .clocked-in-cell {
+      background: #e8fbe8;
+      box-shadow: 0 0 6px rgba(46, 204, 113, 0.7);
+      font-weight: 600;
+    }
+    .pill {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: #f0f0f0;
+      font-size: 11px;
+      margin-left: 4px;
+    }
+
+    /* New quick panel */
+    .quick-panel {
+      margin-top: 1.25rem;
+      padding: 0.85rem 0 0;
+      border-top: 1px solid #e0e0e0;
+    }
+    .quick-panel h2 {
+      font-size: 16px;
+      margin: 0 0 0.25rem 0;
+    }
+    .quick-panel .sub {
+      font-size: 12px;
+      color: #555;
+      margin: 0 0 0.75rem 0;
+      line-height: 1.3;
+    }
+    .emp-list {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    .emp-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      border: 1px solid #e6e6e6;
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+    }
+    .emp-left {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+    .emp-name {
+      font-weight: 650;
+      font-size: 14px;
+      line-height: 1.2;
+    }
+    .emp-meta {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: #555;
+    }
+    .state-pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      border: 1px solid #ddd;
+      background: #f7f7f7;
+      color: #444;
+      white-space: nowrap;
+    }
+    .state-pill.in {
+      background: #e8fbe8;
+      border-color: rgba(46, 204, 113, 0.55);
+      box-shadow: 0 0 6px rgba(46, 204, 113, 0.35);
+      color: #1f6f3a;
+      font-weight: 600;
+    }
+    .btn {
+      padding: 8px 12px;
+      border-radius: 10px;
+      border: 1px solid #d8d8d8;
+      background: #fafafa;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .btn.primary {
+      background: #111;
+      color: #fff;
+      border-color: #111;
+    }
+    .btn.warn {
+      background: #fff3f3;
+      border-color: #f0b7b7;
+      color: #7a1e1e;
+    }
+    .mini {
+      font-size: 12px;
+      color: #777;
+      margin-top: 0.75rem;
+    }
+    .topbar {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 0.25rem;
+    }
+    .refresh-pill {
+      font-size: 12px;
+      color: #555;
+    }
+    code { font-size: 12px; }
+  </style>
+</head>
+
+<body>
+  <div class="container" style="margin-top:2.5rem;">
+    <h1>Admin Live – Crew Hours History</h1>
+
+    <div class="topbar">
+      <p id="admin-status" style="font-size:14px;color:#555;margin:0;">Loading hours...</p>
+      <p class="refresh-pill" style="margin:0;">
+        Auto-refresh: <span id="refresh-seconds">—</span>s
+      </p>
+    </div>
+
+    <p id="currently-logged" style="font-size:13px;color:#333;margin-top:0.5rem;">
+      Currently clocked in: <span id="clocked-list" style="font-weight:500;">Checking...</span>
+    </p>
+
+    <table class="history-table">
+      <thead>
+        <tr>
+          <th>Pay Period</th>
+          <th>Michael</th>
+          <th>Tim</th>
+          <th>Joe</th>
+          <th>Jeff</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody id="history-body"></tbody>
+    </table>
+
+    <!-- NEW: Quick Clock Panel -->
+    <div class="quick-panel" id="quick-clock">
+      <h2>Quick Clock In/Out</h2>
+      <p class="sub">
+        This uses the same Apps Script endpoint and writes normal <code>clock_in</code>/<code>clock_out</code> events
+        to the Time Log for the <strong>current</strong> pay period. Buttons automatically flip based on current state.
+      </p>
+
+      <div class="emp-list" id="emp-list"></div>
+
+      <div id="quick-status" class="mini"></div>
+    </div>
+
+    <p class="mini">
+      Each row is a 14-day Saturday–Friday pay period. Hours come from <strong>clock_out</strong> events logged in the Time&nbsp;Log sheet.
+    </p>
+  </div>
+
+  <script>
+    const TIME_LOG_SHEET_ID = "1gm39kMipfpLKS2n8g9F4SYG9Do36M_5Lc6GOs-c6jCM";
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwDMoZjhy2IHA0PFEqSwd79cOteIBX-QhIVjLh8pXHnzm6frGjoO1FkS9_xrdIQh8M/exec";
+    const EMPLOYEES = ["Michael","Tim","Joe","Jeff"];
+
+    // --- Pay period logic (unchanged) ---
+    function getPayPeriodInfo(date) {
+      var d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      var anchor = new Date(2025, 10, 1); // 2025-11-01 (month is 0-based)
+      var msPerDay = 24 * 60 * 60 * 1000;
+      var daysDiff = Math.floor((d - anchor) / msPerDay);
+      var periodIndex = Math.floor(daysDiff / 14);
+      var start = new Date(anchor.getTime() + periodIndex * 14 * msPerDay);
+      var end = new Date(start.getTime() + 13 * msPerDay);
+      var label = (start.getMonth() + 1) + "/" + start.getDate() +
+                  " - " + (end.getMonth() + 1) + "/" + end.getDate();
+      var key   = "pp-" + start.getFullYear() + "-" +
+                  (start.getMonth() + 1) + "-" + start.getDate();
+      return { start: start, end: end, label: label, key: key };
+    }
+
+    function parsePeriodKey(periodKey) {
+      var m = /^pp-(\\d+)-(\\d+)-(\\d+)$/.exec(periodKey || "");
+      if (!m) return null;
+      var year  = parseInt(m[1], 10);
+      var month = parseInt(m[2], 10) - 1;
+      var day   = parseInt(m[3], 10);
+      var d = new Date(year, month, day);
+      if (isNaN(d.getTime())) return null;
+      return d;
+    }
+
+    function labelForPeriodKey(periodKey) {
+      var start = parsePeriodKey(periodKey);
+      if (!start) return periodKey || "";
+      // Shift displayed pay period by +1 day so a key like 2025-11-14 shows 11/15 - 11/28
+      start = new Date(start.getTime() + 1 * 24 * 60 * 60 * 1000);
+      var end = new Date(start.getTime() + 13 * 24 * 60 * 60 * 1000);
+      function fmt(d) {
+        var mm = String(d.getMonth() + 1).padStart(2, "0");
+        var dd = String(d.getDate()) .padStart(2, "0");
+        var yyyy = d.getFullYear();
+        return mm + "/" + dd + "/" + yyyy;
+      }
+      return fmt(start) + " - " + fmt(end);
+    }
+
+    // --- Hours table (same as admin.html) ---
+    function loadHistory() {
+      var statusEl = document.getElementById("admin-status");
+      var bodyEl = document.getElementById("history-body");
+
+      var now = new Date();
+      var pp = getPayPeriodInfo(now);
+      var currentPeriodKey = pp.key;
+      if (statusEl) statusEl.textContent = "Loading hours...";
+
+      var tq =
+        "select D, B, sum(F) " +
+        "where C = 'clock_out' " +
+        "group by D, B " +
+        "label sum(F) ''";
+
+      var baseUrl = "https://docs.google.com/spreadsheets/d/" + TIME_LOG_SHEET_ID + "/gviz/tq";
+      var url = baseUrl +
+        "?sheet=" + encodeURIComponent("Time Log") +
+        "&headers=1" +
+        "&tqx=out:json" +
+        "&tq=" + encodeURIComponent(tq);
+
+      return fetch(url)
+        .then(function(res) { return res.text(); })
+        .then(function(text) {
+          var json = JSON.parse(text.substring(47).slice(0, -2));
+          var rows = json.table.rows || [];
+
+          var byPeriod = {};
+          rows.forEach(function(row) {
+            var pkCell  = row.c[0];
+            var empCell = row.c[1];
+            var hrsCell = row.c[2];
+            if (!pkCell || !empCell || !hrsCell) return;
+
+            var pk  = String(pkCell.v || "");
+            var emp = String(empCell.v || "");
+            var hrs = Number(hrsCell.v || 0);
+            if (!pk || !emp || isNaN(hrs)) return;
+
+            if (!byPeriod[pk]) {
+              byPeriod[pk] = {
+                key: pk,
+                startDate: parsePeriodKey(pk),
+                employees: {}
+              };
+            }
+            var p = byPeriod[pk];
+            if (!p.employees[emp]) p.employees[emp] = 0;
+            p.employees[emp] += hrs;
+          });
+
+          var periods = Object.keys(byPeriod).map(function(k) { return byPeriod[k]; });
+          periods.sort(function(a, b) {
+            var da = a.startDate ? a.startDate.getTime() : 0;
+            var db = b.startDate ? b.startDate.getTime() : 0;
+            return db - da; // newest first
+          });
+
+          bodyEl.innerHTML = "";
+
+          if (!periods.length) {
+            if (statusEl) statusEl.textContent = "No hours logged yet.";
+            return { currentPeriodKey: currentPeriodKey };
+          }
+          if (statusEl) statusEl.textContent = "";
+
+          periods.forEach(function(p) {
+            var tr = document.createElement("tr");
+            var label = labelForPeriodKey(p.key);
+            var rowHtml = "<td>" + label + "<span class='pill'>" + p.key + "</span></td>";
+            var total = 0;
+
+            EMPLOYEES.forEach(function(emp) {
+              var val = p.employees[emp] || 0;
+              if (val < 0.0001) {
+                rowHtml += "<td class='num'></td>";
+              } else {
+                total += val;
+                rowHtml += "<td class='num'>" + val.toFixed(2) + "</td>";
+              }
+            });
+
+            if (total < 0.0001) {
+              rowHtml += "<td class='num'></td>";
+            } else {
+              rowHtml += "<td class='num'><strong>" + total.toFixed(2) + "</strong></td>";
+            }
+
+            tr.innerHTML = rowHtml;
+            bodyEl.appendChild(tr);
+          });
+
+          return { currentPeriodKey: currentPeriodKey };
+        })
+        .catch(function(err) {
+          console.error("Failed to load history", err);
+          if (statusEl) statusEl.textContent = "Failed to load hours.";
+          return { currentPeriodKey: currentPeriodKey, error: true };
+        });
+    }
+
+    // --- Current clocked-in list + highlight row (same logic, but returns the list) ---
+    function loadClockedInStatus(currentPeriodKey) {
+      var statusSpan = document.getElementById("clocked-list");
+      if (statusSpan) statusSpan.textContent = "Checking...";
+
+      var tq =
+        "select A, B, C, D " +
+        "where D = '" + currentPeriodKey + "' " +
+        "order by A";
+
+      var baseUrl = "https://docs.google.com/spreadsheets/d/" + TIME_LOG_SHEET_ID + "/gviz/tq";
+      var url = baseUrl +
+        "?sheet=" + encodeURIComponent("Time Log") +
+        "&headers=1" +
+        "&tqx=out:json" +
+        "&tq=" + encodeURIComponent(tq);
+
+      return fetch(url)
+        .then(function(res) { return res.text(); })
+        .then(function(textResp) {
+          var json = JSON.parse(textResp.substring(47).slice(0, -2));
+          var rows = json.table.rows || [];
+          var lastEvent = {};
+
+          rows.forEach(function(row) {
+            var empCell = row.c[1];
+            var evtCell = row.c[2];
+            if (!empCell || !evtCell) return;
+            var emp = String(empCell.v || "");
+            var evt = String(evtCell.v || "");
+            if (!emp) return;
+            lastEvent[emp] = evt; // last event in time order
+          });
+
+          var clocked = [];
+          Object.keys(lastEvent).forEach(function(emp) {
+            if (lastEvent[emp] === "clock_in") clocked.push(emp);
+          });
+
+          if (statusSpan) {
+            if (!clocked.length) statusSpan.textContent = "No one is currently clocked in.";
+            else statusSpan.textContent = clocked.join(", ");
+          }
+
+          // Highlight cells in current period row
+          var bodyEl = document.getElementById("history-body");
+          if (!bodyEl) return clocked;
+          var rowsDom = bodyEl.querySelectorAll("tr");
+          rowsDom.forEach(function(tr) {
+            var td0 = tr.querySelector("td:first-child");
+            if (!td0) return;
+            if (td0.textContent.indexOf(currentPeriodKey) === -1) return;
+
+            EMPLOYEES.forEach(function(emp, idx) {
+              var td = tr.querySelectorAll("td")[idx + 1];
+              if (!td) return;
+              if (clocked.indexOf(emp) !== -1) td.classList.add("clocked-in-cell");
+              else td.classList.remove("clocked-in-cell");
+            });
+          });
+
+          return clocked;
+        })
+        .catch(function(err) {
+          console.error("Failed to load clocked-in status", err);
+          if (statusSpan) statusSpan.textContent = "Failed to check.";
+          return [];
+        });
+    }
+
+    // --- Helper: fetch an employee's current state for THIS pay period ---
+    function fetchClockStateForEmployee(emp) {
+      var now = new Date();
+      var pp = getPayPeriodInfo(now);
+      var periodKey = pp.key;
+
+      var tq =
+        "select A, C " +
+        "where D = '" + periodKey + "' " +
+        "and B = '" + emp + "' " +
+        "order by A";
+
+      var baseUrl = "https://docs.google.com/spreadsheets/d/" + TIME_LOG_SHEET_ID + "/gviz/tq";
+      var url = baseUrl +
+        "?sheet=" + encodeURIComponent("Time Log") +
+        "&headers=1" +
+        "&tqx=out:json" +
+        "&tq=" + encodeURIComponent(tq);
+
+      return fetch(url)
+        .then(function(res) { return res.text(); })
+        .then(function(textResp) {
+          var json = JSON.parse(textResp.substring(47).slice(0, -2));
+          var rows = json.table.rows || [];
+          var state = "out";
+
+          rows.forEach(function(row) {
+            var evtCell = row.c[1];
+            if (!evtCell) return;
+            var evt = String(evtCell.v || "");
+            if (evt === "clock_in") state = "in";
+            else if (evt === "clock_out") state = "out";
+          });
+
+          return { emp: emp, state: state, periodKey: periodKey, error: false };
+        })
+        .catch(function(err) {
+          console.error("Failed to fetch clock state for", emp, err);
+          return { emp: emp, state: "out", periodKey: periodKey, error: true };
+        });
+    }
+
+    // --- POST a clock event (clock_in / clock_out) ---
+    function postClockEvent(emp, eventName, periodKey) {
+      var now = new Date();
+      var payload = new URLSearchParams({
+        employee: emp,
+        event: eventName,
+        timestamp: now.toISOString(),
+        periodKey: periodKey,
+        device: "admin_quick",
+        hours: "0"
+      });
+
+      return fetch(WEB_APP_URL, {
+        method: "POST",
+        mode: "no-cors",
+        body: payload
+      }).then(function() {
+        return true;
+      }).catch(function(err) {
+        console.error("POST failed", err);
+        return false;
+      });
+    }
+
+    // --- UI: build employee rows once ---
+    function buildQuickPanel() {
+      var list = document.getElementById("emp-list");
+      if (!list) return;
+
+      list.innerHTML = "";
+      EMPLOYEES.forEach(function(emp) {
+        var row = document.createElement("div");
+        row.className = "emp-row";
+        row.id = "emp-row-" + emp;
+
+        var left = document.createElement("div");
+        left.className = "emp-left";
+
+        var name = document.createElement("div");
+        name.className = "emp-name";
+        name.textContent = emp;
+
+        var meta = document.createElement("div");
+        meta.className = "emp-meta";
+
+        var pill = document.createElement("span");
+        pill.className = "state-pill";
+        pill.id = "state-pill-" + emp;
+        pill.textContent = "Checking…";
+
+        meta.appendChild(pill);
+
+        left.appendChild(name);
+        left.appendChild(meta);
+
+        var btn = document.createElement("button");
+        btn.className = "btn";
+        btn.id = "btn-" + emp;
+        btn.type = "button";
+        btn.disabled = true;
+        btn.textContent = "…";
+        btn.dataset.emp = emp;
+        btn.dataset.state = "out";
+
+        btn.addEventListener("click", function() {
+          var empName = this.dataset.emp;
+          var currentState = this.dataset.state || "out";
+          var eventName = (currentState === "in") ? "clock_out" : "clock_in";
+
+          // freeze button immediately
+          this.disabled = true;
+
+          var status = document.getElementById("quick-status");
+          if (status) status.textContent = "Sending " + eventName + " for " + empName + "…";
+
+          // get fresh period key (avoid any mismatch across midnight)
+          fetchClockStateForEmployee(empName).then(function(info) {
+            if (info.error) {
+              if (status) status.textContent = "Could not reach timesheet for " + empName + ".";
+              refreshQuickPanel();
+              return;
+            }
+            // If the sheet changed since we last rendered, respect server state
+            var intendedEvent = (info.state === "in") ? "clock_out" : "clock_in";
+
+            postClockEvent(empName, intendedEvent, info.periodKey).then(function(ok) {
+              if (status) status.textContent = ok
+                ? ("Sent " + intendedEvent + " for " + empName + ".")
+                : ("Failed to send " + intendedEvent + " for " + empName + ".");
+              refreshAll();
+            });
+          });
+        });
+
+        row.appendChild(left);
+        row.appendChild(btn);
+        list.appendChild(row);
+      });
+    }
+
+    // --- UI: update each employee row state + button label ---
+    function applyEmpStateToUI(emp, state, error) {
+      var pill = document.getElementById("state-pill-" + emp);
+      var btn  = document.getElementById("btn-" + emp);
+
+      if (pill) {
+        pill.classList.remove("in");
+        if (error) {
+          pill.textContent = "Offline";
+        } else if (state === "in") {
+          pill.textContent = "Clocked In";
+          pill.classList.add("in");
+        } else {
+          pill.textContent = "Clocked Out";
+        }
+      }
+
+      if (btn) {
+        btn.disabled = !!error;
+        btn.dataset.state = state || "out";
+
+        if (error) {
+          btn.className = "btn";
+          btn.textContent = "Offline";
+        } else if (state === "in") {
+          btn.className = "btn warn";
+          btn.textContent = "Clock Out";
+        } else {
+          btn.className = "btn primary";
+          btn.textContent = "Clock In";
+        }
+      }
+    }
+
+    function refreshQuickPanel() {
+      return Promise.all(
+        EMPLOYEES.map(function(emp) {
+          return fetchClockStateForEmployee(emp).then(function(info) {
+            applyEmpStateToUI(emp, info.state, info.error);
+            return info;
+          });
+        })
+      );
+    }
+
+    // --- One refresh to rule them all ---
+    function refreshAll() {
+      return loadHistory().then(function(info) {
+        return loadClockedInStatus(info.currentPeriodKey).then(function() {
+          return refreshQuickPanel();
+        });
+      });
+    }
+
+    // --- Auto-refresh with countdown ---
+    var REFRESH_EVERY_MS = 20000; // 20s
+    var countdownMs = REFRESH_EVERY_MS;
+
+    function startAutoRefresh() {
+      var secEl = document.getElementById("refresh-seconds");
+      if (secEl) secEl.textContent = String(Math.round(countdownMs / 1000));
+
+      setInterval(function() {
+        countdownMs -= 1000;
+        if (countdownMs < 0) countdownMs = 0;
+        if (secEl) secEl.textContent = String(Math.round(countdownMs / 1000));
+
+        if (countdownMs <= 0) {
+          countdownMs = REFRESH_EVERY_MS;
+          refreshAll();
+        }
+      }, 1000);
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+      buildQuickPanel();
+      refreshAll();
+      startAutoRefresh();
+    });
+  </script>
+</body>
+</html>
