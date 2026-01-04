@@ -241,6 +241,26 @@
     /* Remove fixed layout so the scroll container can do its job */
     .history-table { table-layout: auto; }
 
+    /* Strong override: never truncate Pay Period dates in ANY section (current/last/older). */
+    .history-table th:first-child,
+    .history-table td:first-child {
+      white-space: normal !important;
+      overflow: visible !important;
+      text-overflow: clip !important;
+      word-break: break-word !important;
+    }
+    /* Avoid ellipsis on the pay period column even if earlier rules apply */
+    .history-table th:first-child,
+    .history-table td:first-child { max-width: none !important; }
+
+    /* Ensure older table inherits the same behavior */
+    .older-periods .history-table th:first-child,
+    .older-periods .history-table td:first-child {
+      white-space: normal !important;
+      overflow: visible !important;
+      text-overflow: clip !important;
+    }
+
   </style>
 </head>
 
