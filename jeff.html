@@ -10,7 +10,7 @@
   <link rel="apple-touch-icon" href="logo_resized.png" />
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Michael's Jobs - Universal Rentals</title>
+  <title>Jeff</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="icon" type="image/png" href="favicon.png" />
   <style>
@@ -45,7 +45,7 @@
       opacity: 0.6;
       cursor: not-allowed;
     }
-    </style>
+</style>
 </head>
 <body>
   <div class="top-bar" style="position: fixed; top: 0; right: 0; padding: 0.5rem; font-size: 12px; background: white; z-index: 1000;">
@@ -55,7 +55,7 @@
     <div style="text-align:right;margin-bottom:8px;">
       <button id="logout-btn" type="button" style="font-size:12px;padding:4px 8px;cursor:pointer;">Log Out</button>
     </div>
-    <h1>Michael's Jobs</h1>
+    <h1>Jeff</h1>
     <div class="clock-row">
       <button id="clock-toggle-btn" type="button" class="btn primary" disabled>Loading…</button>
       <span id="clock-status" style="font-size:12px;color:#555;"></span>
@@ -122,7 +122,6 @@ function parseSheetDateTime(cell) {
 }
 
 
-
     function formatJobDate(raw) {
       if (!raw) return "";
 
@@ -167,11 +166,11 @@ function parseSheetDateTime(cell) {
       return dow + " - " + mmStr + "/" + ddStr + "/" + yyyyStr;
     }
 
-    const FILTER_EMPLOYEE = "Michael";
-    const currentEmployee = "Michael";
+    const FILTER_EMPLOYEE = "Jeff";
+    const currentEmployee = "Jeff";
 
-// Clock in / out + send to Apps Script + email
-
+    // Clock in / out + send to Apps Script + email
+    
 (function initClock() {
   var clockStatusEl = document.getElementById("clock-status");
   var toggleBtn = document.getElementById("clock-toggle-btn");
@@ -257,7 +256,6 @@ function parseSheetDateTime(cell) {
     fetchClockStateFromSheet(function(info) {
       if (info.error) {
         if (clockStatusEl) clockStatusEl.textContent = "Could not reach timesheet.";
-        // Default to clock-in button so page isn't stuck
         setBtn("out");
         return;
       }
@@ -321,7 +319,6 @@ function parseSheetDateTime(cell) {
   toggleBtn.addEventListener("click", function () {
     toggleBtn.disabled = true;
 
-    // Re-check state right before writing, then do the correct action.
     fetchClockStateFromSheet(function(info) {
       if (info.error) {
         alert("Couldn't reach timesheet. Try again in a moment.");
@@ -332,15 +329,12 @@ function parseSheetDateTime(cell) {
       var doClockOut = (info.state === "in");
       var eventType = doClockOut ? "Clock Out" : "Clock In";
 
-      // Safety: if they tap Clock In but sheet says already in, we just do Clock Out (and vice versa)
       sendClockEvent(eventType, 0);
 
-      // Refresh 1 second after button press (per your request)
       setTimeout(function() { location.reload(); }, 3000);
     });
   });
 
-  // Initial status from sheet
   refreshClockStatus();
 })();
 // Logout button

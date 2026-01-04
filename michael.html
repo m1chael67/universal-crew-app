@@ -45,7 +45,7 @@
       opacity: 0.6;
       cursor: not-allowed;
     }
-    </style>
+</style>
 </head>
 <body>
   <div class="top-bar" style="position: fixed; top: 0; right: 0; padding: 0.5rem; font-size: 12px; background: white; z-index: 1000;">
@@ -257,7 +257,6 @@ function parseSheetDateTime(cell) {
     fetchClockStateFromSheet(function(info) {
       if (info.error) {
         if (clockStatusEl) clockStatusEl.textContent = "Could not reach timesheet.";
-        // Default to clock-in button so page isn't stuck
         setBtn("out");
         return;
       }
@@ -321,7 +320,6 @@ function parseSheetDateTime(cell) {
   toggleBtn.addEventListener("click", function () {
     toggleBtn.disabled = true;
 
-    // Re-check state right before writing, then do the correct action.
     fetchClockStateFromSheet(function(info) {
       if (info.error) {
         alert("Couldn't reach timesheet. Try again in a moment.");
@@ -332,15 +330,12 @@ function parseSheetDateTime(cell) {
       var doClockOut = (info.state === "in");
       var eventType = doClockOut ? "Clock Out" : "Clock In";
 
-      // Safety: if they tap Clock In but sheet says already in, we just do Clock Out (and vice versa)
       sendClockEvent(eventType, 0);
 
-      // Refresh 1 second after button press (per your request)
       setTimeout(function() { location.reload(); }, 3000);
     });
   });
 
-  // Initial status from sheet
   refreshClockStatus();
 })();
 // Logout button
