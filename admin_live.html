@@ -209,6 +209,38 @@
       .history-table th { font-size: 12px; }
     }
 
+    /* Show full pay-period dates (no ...). Let the first column wrap. */
+    .history-table th:first-child,
+    .history-table td:first-child {
+      white-space: normal;
+      overflow: visible;
+      text-overflow: clip;
+      word-break: break-word;
+    }
+
+    /* Give the pay period column more room */
+    .history-table th:first-child,
+    .history-table td:first-child {
+      width: 42%;
+    }
+
+    /* Keep employee/hour columns compact */
+    .history-table th:not(:first-child),
+    .history-table td:not(:first-child) {
+      width: 11.5%;
+      white-space: nowrap;
+    }
+
+    /* Ellipsis only for non-first columns if needed */
+    .history-table th:not(:first-child),
+    .history-table td:not(:first-child) {
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Remove fixed layout so the scroll container can do its job */
+    .history-table { table-layout: auto; }
+
   </style>
 </head>
 
