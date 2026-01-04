@@ -293,7 +293,9 @@
     }
 
     function parsePeriodKey(periodKey) {
-      var m = /^pp-(\\d+)-(\\d+)-(\\d+)$/.exec(periodKey || "");
+      var s = String(periodKey || "").trim();
+      // Accept keys like "pp-2025-12-26" and tolerate accidental suffixes (spaces, timestamps, etc.)
+      var m = /^pp-(\d+)-(\d+)-(\d+)/.exec(s);
       if (!m) return null;
       var year  = parseInt(m[1], 10);
       var month = parseInt(m[2], 10) - 1;
@@ -305,8 +307,12 @@
 
     function labelForPeriodKey(periodKey) {
       var start = parsePeriodKey(periodKey);
-      if (!start) return periodKey || "";
-      // Shift displayed pay period by +1 day so a key like 2025-11-14 shows 11/15 - 11/28
+      if (!start && String(periodKey||"").indexOf("pp-") !== -1) {
+        var s = String(periodKey||"");
+        start = parsePeriodKey(s.substring(s.indexOf("pp-")));
+      }
+      if (!start) return "";
+// Shift displayed pay period by +1 day so a key like 2025-11-14 shows 11/15 - 11/28
       start = new Date(start.getTime() + 1 * 24 * 60 * 60 * 1000);
       var end = new Date(start.getTime() + 13 * 24 * 60 * 60 * 1000);
       function fmt(d) {
