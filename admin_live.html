@@ -218,7 +218,7 @@
       </div>
 
       <div class="period-block period-last">
-        <div class="period-title">Last Pay Period</div>
+        <div class="period-title">Latest Completed Pay Period</div>
         <table class="history-table history-table-last">
           <thead>
             <tr>
@@ -419,21 +419,29 @@
           if (statusEl) statusEl.textContent = "";
 
           var currentPeriod = periods.find(function(p) { return p.key === currentPeriodKey; }) || periods[0];
-          var idxCurrent = periods.findIndex(function(p) { return p.key === currentPeriod.key; });
-          var lastPeriod = (idxCurrent >= 0 && idxCurrent + 1 < periods.length) ? periods[idxCurrent + 1] : null;
+
+// Latest COMPLETED pay period = most recent period that is NOT the current pay period
+var latestCompleted = null;
+for (var i = 0; i < periods.length; i++) {
+  if (periods[i].key !== currentPeriodKey) { latestCompleted = periods[i]; break; }
+}
 
           renderPeriodRow(currentEl, currentPeriod);
-          if (lastPeriod) renderPeriodRow(lastEl, lastPeriod);
+          if (latestCompleted) renderPeriodRow(lastEl, latestCompleted);
+          // Hide the "Latest Completed" block if we don't have any completed periods yet
+          var lastBlock = document.querySelector(".period-last");
+          if (lastBlock) lastBlock.style.display = latestCompleted ? "" : "none";
+
 
           periods.forEach(function(p) {
             if (p.key === currentPeriod.key) return;
-            if (lastPeriod && p.key === lastPeriod.key) return;
+            if (latestCompleted && p.key === latestCompleted.key) return;
             renderPeriodRow(olderEl, p);
           });
 
           var olderDetails = document.getElementById("older-details");
           if (olderDetails) {
-            olderDetails.style.display = (periods.length > (lastPeriod ? 2 : 1)) ? "" : "none";
+            olderDetails.style.display = (periods.length > (latestCompleted ? 2 : 1)) ? "" : "none";
           }
 
           return { currentPeriodKey: currentPeriodKey };
