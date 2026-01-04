@@ -180,6 +180,35 @@
     }
     details > summary::-webkit-details-marker { display:none; }
 
+  
+    /* Mobile: prevent the whole page from expanding horizontally because of tables */
+    .table-scroll {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .history-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+    .history-table th,
+    .history-table td {
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    /* Ensure numeric columns don't force extra width */
+    .history-table td.num { white-space: nowrap; }
+
+    /* On small screens, slightly tighten paddings + font so it fits nicer */
+    @media (max-width: 480px) {
+      .history-table-current { font-size: 14px; }
+      .history-table-current td, .history-table-current th { padding: 8px 6px; }
+      .history-table-last { font-size: 12px; }
+      .history-table-last td, .history-table-last th { padding: 6px 6px; }
+      .history-table th { font-size: 12px; }
+    }
+
   </style>
 </head>
 
@@ -202,6 +231,7 @@
     <div id="periods-wrap">
       <div class="period-block period-current">
         <div class="period-title">Current Pay Period</div>
+        <div class="table-scroll">
         <table class="history-table history-table-current">
           <thead>
             <tr>
@@ -216,9 +246,11 @@
           <tbody id="current-body"></tbody>
         </table>
       </div>
+      </div>
 
       <div class="period-block period-last">
         <div class="period-title">Latest Pay Period</div>
+        <div class="table-scroll">
         <table class="history-table history-table-last">
           <thead>
             <tr>
@@ -233,9 +265,11 @@
           <tbody id="last-body"></tbody>
         </table>
       </div>
+      </div>
 
       <details class="older-periods" id="older-details">
         <summary class="older-summary">Show older pay periods</summary>
+        <div class="table-scroll">
         <table class="history-table">
           <thead>
             <tr>
@@ -249,6 +283,7 @@
           </thead>
           <tbody id="older-body"></tbody>
         </table>
+      </div>
       </details>
     </div>
 
@@ -520,7 +555,7 @@
           });
 
           if (statusSpan) {
-            if (!clocked.length) statusSpan.textContent = "No one is currently clocked in.";
+            if (!clocked.length) statusSpan.textContent = "None";
             else statusSpan.textContent = clocked.join(", ");
           }
 
@@ -549,7 +584,7 @@
         })
         .catch(function(err) {
           console.error("Failed to load clocked-in status", err);
-          if (statusSpan) statusSpan.textContent = "Failed to check.";
+          if (statusSpan) statusSpan.textContent = "None";
           return [];
         });
     }
