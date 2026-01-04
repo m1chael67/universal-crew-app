@@ -149,6 +149,37 @@
       color: #555;
     }
     code { font-size: 12px; }
+  
+    .period-block { margin-top: 1rem; }
+    .period-title {
+      font-size: 13px;
+      letter-spacing: 0.2px;
+      color: #555;
+      margin: 0 0 6px 0;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .history-table-current { font-size: 16px; }
+    .history-table-current td, .history-table-current th { padding: 10px 10px; }
+    .history-table-last { font-size: 13px; opacity: 0.95; }
+    .history-table-last td, .history-table-last th { padding: 6px 8px; }
+    .older-periods { margin-top: 12px; border-top: 1px solid #e0e0e0; padding-top: 10px; }
+    .older-summary {
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 13px;
+      padding: 8px 10px;
+      border: 1px solid #e6e6e6;
+      border-radius: 10px;
+      background: #fff;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+      list-style: none;
+      user-select: none;
+      display: inline-block;
+      margin-bottom: 10px;
+    }
+    details > summary::-webkit-details-marker { display:none; }
+
   </style>
 </head>
 
@@ -167,19 +198,60 @@
       Currently clocked in: <span id="clocked-list" style="font-weight:500;">Checking...</span>
     </p>
 
-    <table class="history-table">
-      <thead>
-        <tr>
-          <th>Pay Period</th>
-          <th>Michael</th>
-          <th>Tim</th>
-          <th>Joe</th>
-          <th>Jeff</th>
-          <th>Total</th>
-        </tr>
-      </thead>
-      <tbody id="history-body"></tbody>
-    </table>
+    
+    <div id="periods-wrap">
+      <div class="period-block period-current">
+        <div class="period-title">Current Pay Period</div>
+        <table class="history-table history-table-current">
+          <thead>
+            <tr>
+              <th>Pay Period</th>
+              <th>Michael</th>
+              <th>Tim</th>
+              <th>Joe</th>
+              <th>Jeff</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody id="current-body"></tbody>
+        </table>
+      </div>
+
+      <div class="period-block period-last">
+        <div class="period-title">Last Pay Period</div>
+        <table class="history-table history-table-last">
+          <thead>
+            <tr>
+              <th>Pay Period</th>
+              <th>Michael</th>
+              <th>Tim</th>
+              <th>Joe</th>
+              <th>Jeff</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody id="last-body"></tbody>
+        </table>
+      </div>
+
+      <details class="older-periods" id="older-details">
+        <summary class="older-summary">Show older pay periods</summary>
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>Pay Period</th>
+              <th>Michael</th>
+              <th>Tim</th>
+              <th>Joe</th>
+              <th>Jeff</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody id="older-body"></tbody>
+        </table>
+      </details>
+    </div>
+
 
     <!-- NEW: Quick Clock Panel -->
     <div class="quick-panel" id="quick-clock">
@@ -249,7 +321,9 @@
     // --- Hours table (same as admin.html) ---
     function loadHistory() {
       var statusEl = document.getElementById("admin-status");
-      var bodyEl = document.getElementById("history-body");
+      var currentEl = document.getElementById("current-body");
+      var lastEl = document.getElementById("last-body");
+      var olderEl = document.getElementById("older-body");
 
       var now = new Date();
       var pp = getPayPeriodInfo(now);
@@ -306,15 +380,9 @@
             return db - da; // newest first
           });
 
-          bodyEl.innerHTML = "";
-
-          if (!periods.length) {
-            if (statusEl) statusEl.textContent = "No hours logged yet.";
-            return { currentPeriodKey: currentPeriodKey };
-          }
-          if (statusEl) statusEl.textContent = "";
-
-          periods.forEach(function(p) {
+          
+          function renderPeriodRow(tbody, p) {
+            if (!tbody || !p) return;
             var tr = document.createElement("tr");
             var label = labelForPeriodKey(p.key);
             var rowHtml = "<td>" + label + "<span class='pill'>" + p.key + "</span></td>";
@@ -337,10 +405,39 @@
             }
 
             tr.innerHTML = rowHtml;
-            bodyEl.appendChild(tr);
+            tbody.appendChild(tr);
+          }
+
+          if (currentEl) currentEl.innerHTML = "";
+          if (lastEl) lastEl.innerHTML = "";
+          if (olderEl) olderEl.innerHTML = "";
+
+          if (!periods.length) {
+            if (statusEl) statusEl.textContent = "No hours logged yet.";
+            return { currentPeriodKey: currentPeriodKey };
+          }
+          if (statusEl) statusEl.textContent = "";
+
+          var currentPeriod = periods.find(function(p) { return p.key === currentPeriodKey; }) || periods[0];
+          var idxCurrent = periods.findIndex(function(p) { return p.key === currentPeriod.key; });
+          var lastPeriod = (idxCurrent >= 0 && idxCurrent + 1 < periods.length) ? periods[idxCurrent + 1] : null;
+
+          renderPeriodRow(currentEl, currentPeriod);
+          if (lastPeriod) renderPeriodRow(lastEl, lastPeriod);
+
+          periods.forEach(function(p) {
+            if (p.key === currentPeriod.key) return;
+            if (lastPeriod && p.key === lastPeriod.key) return;
+            renderPeriodRow(olderEl, p);
           });
 
+          var olderDetails = document.getElementById("older-details");
+          if (olderDetails) {
+            olderDetails.style.display = (periods.length > (lastPeriod ? 2 : 1)) ? "" : "none";
+          }
+
           return { currentPeriodKey: currentPeriodKey };
+
         })
         .catch(function(err) {
           console.error("Failed to load history", err);
@@ -394,10 +491,13 @@
           }
 
           // Highlight cells in current period row
-          var bodyEl = document.getElementById("history-body");
-          if (!bodyEl) return clocked;
-          var rowsDom = bodyEl.querySelectorAll("tr");
-          rowsDom.forEach(function(tr) {
+          var currentEl = document.getElementById("current-body");
+      var lastEl = document.getElementById("last-body");
+      var olderEl = document.getElementById("older-body");
+          if (!bodyEls.length) return clocked;
+          bodyEls.forEach(function(tbody) {
+            var rowsDom = tbody.querySelectorAll("tr");
+            rowsDom.forEach(function(tr) {
             var td0 = tr.querySelector("td:first-child");
             if (!td0) return;
             if (td0.textContent.indexOf(currentPeriodKey) === -1) return;
@@ -407,6 +507,7 @@
               if (!td) return;
               if (clocked.indexOf(emp) !== -1) td.classList.add("clocked-in-cell");
               else td.classList.remove("clocked-in-cell");
+            });
             });
           });
 
