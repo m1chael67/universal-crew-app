@@ -1,12 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <link rel=\"manifest\" href=\"manifest.json\">
-  <meta name=\"theme-color\" content=\"#ffffff\">
-  <meta name=\"apple-mobile-web-app-capable\" content=\"yes\">
-  <meta name=\"apple-mobile-web-app-status-bar-style\" content=\"default\">
-  <link rel=\"apple-touch-icon\" href=\"icon-192.png\">
-
   <meta charset="utf-8" />
   <title>Admin – Crew Hours History</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -79,6 +73,31 @@
     </table>
 
 
+    <div id="admin-adjust" style="margin-top:1.5rem;padding:0.75rem 0;border-top:1px solid #e0e0e0;">
+      <h2 style="font-size:16px;margin-bottom:0.5rem;">Admin Adjustment</h2>
+      <p style="font-size:12px;color:#555;margin-bottom:0.5rem;">
+        Add or subtract hours for the <strong>current</strong> pay period. This writes a new
+        <code>clock_out</code> row into the Time Log sheet.
+      </p>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px;">
+        <label for="adj-employee">Employee:</label>
+        <select id="adj-employee">
+          <option value="Michael">Michael</option>
+          <option value="Tim">Tim</option>
+          <option value="Joe">Joe</option>
+          <option value="Jeff">Jeff</option>
+        </select>
+
+        <label for="adj-hours">Hours (+/-):</label>
+        <input id="adj-hours" type="number" step="0.01" style="width:80px;" />
+
+        <button id="adj-submit" type="button" style="padding:4px 10px;font-size:13px;cursor:pointer;">
+          Add Adjustment
+        </button>
+
+        <span id="adj-status" style="font-size:12px;color:#555;margin-left:8px;"></span>
+      </div>
+
     <div id="force-clockout" style="margin-top:1.5rem;padding:0.75rem 0;border-top:1px solid #e0e0e0;">
       <h2 style="font-size:16px;margin-bottom:0.5rem;">Force Clock Out</h2>
       <p style="font-size:12px;color:#555;margin-bottom:0.5rem;">
@@ -118,7 +137,7 @@
 
     function getPayPeriodInfo(date) {
       var d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-      var anchor = new Date(2025, 10, 14); // 2025-11-14 (Fri, pay period anchor)
+      var anchor = new Date(2025, 10, 1); // 2025-11-01 (month is 0-based)
       var msPerDay = 24 * 60 * 60 * 1000;
       var daysDiff = Math.floor((d - anchor) / msPerDay);
       var periodIndex = Math.floor(daysDiff / 14);
@@ -214,7 +233,7 @@
           periods.sort(function(a, b) {
             var da = a.startDate ? a.startDate.getTime() : 0;
             var db = b.startDate ? b.startDate.getTime() : 0;
-            return da - db; // oldest first
+            return db - da; // newest first
           });
 
           bodyEl.innerHTML = "";
@@ -450,6 +469,21 @@
         }
       });
     }
+
+
+function sendAdminAdjustment() {
+      var empSel = document.getElementById("adj-employee");
+      var hoursInput = document.getElementById("adj-hours");
+      var statusEl = document.getElementById("adj-status");
+      if (!empSel || !hoursInput) return;
+
+      var emp = empSel.value;
+      var hrsStr = hoursInput.value.trim();
+      var hrs = parseFloat(hrsStr);
+      if (!hrsStr || isNaN(hrs) || !isFinite(hrs)) {
+        alert("Enter a valid number of hours (can be negative).");
+        return;
+      }
       if (hrs === 0) {
         alert("Hours cannot be 0.");
         return;
@@ -499,20 +533,18 @@
     }
 
     document.addEventListener("DOMContentLoaded", function() {
+      var btn = document.getElementById("adj-submit");
+      if (btn) {
+        btn.addEventListener("click", sendAdminAdjustment);
+      }
       var forceBtn = document.getElementById("force-submit");
       if (forceBtn) {
         forceBtn.addEventListener("click", forceClockOutEmployee);
       }
     });
 
+
     document.addEventListener("DOMContentLoaded", loadHistory);
   </script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/universal-crew-app/service-worker.js');
-    }
-
-  </script>
-
 </body>
 </html>
