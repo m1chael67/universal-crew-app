@@ -21,40 +21,31 @@
       margin-bottom: 10px;
       flex-wrap: wrap;
     }
-    .clock-row button {
-      padding: 6px 12px;
-      font-size: 14px;
+    .btn {
+      padding: 10px 16px;
+      border-radius: 12px;
+      border: 1px solid #d8d8d8;
+      background: #fafafa;
       cursor: pointer;
+      font-size: 15px;
+      font-weight: 600;
+      white-space: nowrap;
     }
-  </style>
-
-<style>
-  .btn {
-    padding: 10px 16px;
-    border-radius: 12px;
-    border: 1px solid #d8d8d8;
-    background: #fafafa;
-    cursor: pointer;
-    font-size: 15px;
-    font-weight: 600;
-    white-space: nowrap;
-  }
-  .btn.primary {
-    background: #111;
-    color: #fff;
-    border-color: #111;
-  }
-  .btn.warn {
-    background: #fff3f3;
-    border-color: #f0b7b7;
-    color: #7a1e1e;
-  }
-  .btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-</style>
-
+    .btn.primary {
+      background: #111;
+      color: #fff;
+      border-color: #111;
+    }
+    .btn.warn {
+      background: #fff3f3;
+      border-color: #f0b7b7;
+      color: #7a1e1e;
+    }
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    </style>
 </head>
 <body>
   <div class="top-bar" style="position: fixed; top: 0; right: 0; padding: 0.5rem; font-size: 12px; background: white; z-index: 1000;">
@@ -66,10 +57,9 @@
     </div>
     <h1>Michael's Jobs</h1>
     <div class="clock-row">
-      <button id="clock-in-btn" type="button">Clock In</button>
-      <button id="clock-out-btn" type="button">Clock Out</button>
+      <button id="clock-toggle-btn" type="button" class="btn primary" disabled>Loading…</button>
       <span id="clock-status" style="font-size:12px;color:#555;"></span>
-    </div>
+</div>
     <div id="job-list">Loading...</div>
   </div>
 
@@ -181,11 +171,23 @@ function parseSheetDateTime(cell) {
     const currentEmployee = "Michael";
 
 // Clock in / out + send to Apps Script + email
+
 (function initClock() {
   var clockStatusEl = document.getElementById("clock-status");
-  var clockInBtn = document.getElementById("clock-in-btn");
-  var clockOutBtn = document.getElementById("clock-out-btn");
-  if (!clockInBtn || !clockOutBtn) return;
+  var toggleBtn = document.getElementById("clock-toggle-btn");
+  if (!toggleBtn) return;
+
+  function setBtn(state) {
+    toggleBtn.disabled = false;
+    toggleBtn.dataset.state = state;
+    if (state === "in") {
+      toggleBtn.textContent = "Clock Out";
+      toggleBtn.className = "btn warn";
+    } else {
+      toggleBtn.textContent = "Clock In";
+      toggleBtn.className = "btn primary";
+    }
+  }
 
   function fetchClockStateFromSheet(callback) {
     try {
@@ -249,21 +251,27 @@ function parseSheetDateTime(cell) {
   }
 
   function refreshClockStatus() {
-    if (!clockStatusEl) return;
-    clockStatusEl.textContent = "Checking status...";
+    if (clockStatusEl) clockStatusEl.textContent = "Checking status...";
+    toggleBtn.disabled = true;
+
     fetchClockStateFromSheet(function(info) {
       if (info.error) {
-        clockStatusEl.textContent = "Could not reach timesheet.";
+        if (clockStatusEl) clockStatusEl.textContent = "Could not reach timesheet.";
+        // Default to clock-in button so page isn't stuck
+        setBtn("out");
         return;
       }
+
       if (info.state === "in") {
-        if (info.lastClockIn) {
-          clockStatusEl.textContent = "Clocked in since " + info.lastClockIn.toLocaleString();
-        } else {
-          clockStatusEl.textContent = "Clocked in (no time).";
+        if (clockStatusEl) {
+          clockStatusEl.textContent = info.lastClockIn
+            ? ("Clocked in since " + info.lastClockIn.toLocaleString())
+            : "Clocked in.";
         }
+        setBtn("in");
       } else {
-        clockStatusEl.textContent = "Currently clocked out.";
+        if (clockStatusEl) clockStatusEl.textContent = "Currently clocked out.";
+        setBtn("out");
       }
     });
   }
@@ -305,87 +313,36 @@ function parseSheetDateTime(cell) {
       }).catch(function(err) {
         console.error("FormSubmit email failed", err);
       });
-
     } catch (e) {
       console.error("Error in sendClockEvent", e);
     }
   }
 
-  clockInBtn.addEventListener("click", function () {
-    clockInBtn.disabled = true;
-    clockOutBtn.disabled = true;
+  toggleBtn.addEventListener("click", function () {
+    toggleBtn.disabled = true;
+
+    // Re-check state right before writing, then do the correct action.
     fetchClockStateFromSheet(function(info) {
       if (info.error) {
         alert("Couldn't reach timesheet. Try again in a moment.");
-        clockInBtn.disabled = false;
-        clockOutBtn.disabled = false;
-        return;
-      }
-      if (info.state === "in") {
-        if (info.lastClockIn) {
-          alert("Server already shows you clocked in since " + info.lastClockIn.toLocaleString() + ".");
-        } else {
-          alert("Server already shows you clocked in.");
-        }
-        clockInBtn.disabled = false;
-        clockOutBtn.disabled = false;
         refreshClockStatus();
         return;
       }
 
-      sendClockEvent("Clock In", 0);
-      if (clockStatusEl) clockStatusEl.textContent = "Clocked in.";
-      setTimeout(function() {
-        clockInBtn.disabled = false;
-        clockOutBtn.disabled = false;
-        refreshClockStatus();
-      }, 2000);
-    });
-  });
+      var doClockOut = (info.state === "in");
+      var eventType = doClockOut ? "Clock Out" : "Clock In";
 
-  clockOutBtn.addEventListener("click", function () {
-    clockInBtn.disabled = true;
-    clockOutBtn.disabled = true;
-    fetchClockStateFromSheet(function(info) {
-      if (info.error) {
-        alert("Couldn't reach timesheet. Try again in a moment.");
-        clockInBtn.disabled = false;
-        clockOutBtn.disabled = false;
-        return;
-      }
-      if (info.state !== "in") {
-        alert("Server says you are not currently clocked in for this pay period.");
-        clockInBtn.disabled = false;
-        clockOutBtn.disabled = false;
-        refreshClockStatus();
-        return;
-      }
+      // Safety: if they tap Clock In but sheet says already in, we just do Clock Out (and vice versa)
+      sendClockEvent(eventType, 0);
 
-      // We no longer rely on the browser copy of the clock-in time.
-      // The Apps Script will look up the last clock_in in the sheet
-      // and calculate hours from that.
-      sendClockEvent("Clock Out", 0);
-      if (clockStatusEl) {
-        clockStatusEl.textContent = "Clocked out. Last session complete.";
-      }
-
-      setTimeout(function() {
-        try {
-          if (typeof loadHoursFromSheet === "function") {
-            loadHoursFromSheet();
-          }
-        } catch (e) { }
-        clockInBtn.disabled = false;
-        clockOutBtn.disabled = false;
-        refreshClockStatus();
-      }, 2500);
+      // Refresh 1 second after button press (per your request)
+      setTimeout(function() { location.reload(); }, 1000);
     });
   });
 
   // Initial status from sheet
   refreshClockStatus();
 })();
-
 // Logout button
 (function() {
   var btn = document.getElementById("logout-btn");
@@ -636,99 +593,6 @@ function parseSheetDateTime(cell) {
     }
 
   </script>
-
-
-<div id="clock-action" style="margin-top:20px;">
-  <button id="clock-btn" class="btn primary" disabled>Loading…</button>
-</div>
-
-
-<script>
-  const EMPLOYEE_NAME = "Michael";
-  const TIME_LOG_SHEET_ID = "1gm39kMipfpLKS2n8g9F4SYG9Do36M_5Lc6GOs-c6jCM";
-  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwDMoZjhy2IHA0PFEqSwd79cOteIBX-QhIVjLh8pXHnzm6frGjoO1FkS9_xrdIQh8M/exec";
-
-  function getPayPeriodKey(date) {
-    var d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-    var anchor = new Date(2025, 10, 1);
-    var msPerDay = 24 * 60 * 60 * 1000;
-    var daysDiff = Math.floor((d - anchor) / msPerDay);
-    var periodIndex = Math.floor(daysDiff / 14);
-    var start = new Date(anchor.getTime() + periodIndex * 14 * msPerDay);
-    return "pp-" + start.getFullYear() + "-" + (start.getMonth()+1) + "-" + start.getDate();
-  }
-
-  function fetchClockState() {
-    const periodKey = getPayPeriodKey(new Date());
-    const tq =
-      "select A, C where D = '" + periodKey + "' and B = '" + EMPLOYEE_NAME + "' order by A";
-
-    const url =
-      "https://docs.google.com/spreadsheets/d/" + TIME_LOG_SHEET_ID +
-      "/gviz/tq?sheet=Time%20Log&headers=1&tqx=out:json&tq=" + encodeURIComponent(tq);
-
-    return fetch(url)
-      .then(res => res.text())
-      .then(text => {
-        const json = JSON.parse(text.substring(47).slice(0, -2));
-        let state = "out";
-        (json.table.rows || []).forEach(r => {
-          if (r.c[1] && r.c[1].v === "clock_in") state = "in";
-          if (r.c[1] && r.c[1].v === "clock_out") state = "out";
-        });
-        return state;
-      });
-  }
-
-  function postClockEvent(eventName) {
-    const payload = new URLSearchParams({
-      employee: EMPLOYEE_NAME,
-      event: eventName,
-      timestamp: new Date().toISOString(),
-      periodKey: getPayPeriodKey(new Date()),
-      device: "employee_page",
-      hours: "0"
-    });
-
-    return fetch(WEB_APP_URL, {
-      method: "POST",
-      mode: "no-cors",
-      body: payload
-    });
-  }
-
-  function updateButton(state) {
-    const btn = document.getElementById("clock-btn");
-    btn.disabled = false;
-    btn.dataset.state = state;
-
-    if (state === "in") {
-      btn.textContent = "Clock Out";
-      btn.className = "btn warn";
-    } else {
-      btn.textContent = "Clock In";
-      btn.className = "btn primary";
-    }
-  }
-
-  document.addEventListener("DOMContentLoaded", () => {
-    const btn = document.getElementById("clock-btn");
-
-    fetchClockState().then(state => {
-      updateButton(state);
-    });
-
-    btn.addEventListener("click", () => {
-      btn.disabled = true;
-      const state = btn.dataset.state;
-      const eventName = state === "in" ? "clock_out" : "clock_in";
-
-      postClockEvent(eventName).then(() => {
-        setTimeout(() => location.reload(), 1000);
-      });
-    });
-  });
-</script>
 
 </body>
 </html>
