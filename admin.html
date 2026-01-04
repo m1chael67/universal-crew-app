@@ -1,6 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <link rel=\"manifest\" href=\"manifest.json\">
+  <meta name=\"theme-color\" content=\"#ffffff\">
+  <meta name=\"apple-mobile-web-app-capable\" content=\"yes\">
+  <meta name=\"apple-mobile-web-app-status-bar-style\" content=\"default\">
+  <link rel=\"apple-touch-icon\" href=\"icon-192.png\">
+
   <meta charset="utf-8" />
   <title>Admin – Crew Hours History</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -112,7 +118,7 @@
 
     function getPayPeriodInfo(date) {
       var d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-      var anchor = new Date(2025, 10, 1); // 2025-11-01 (month is 0-based)
+      var anchor = new Date(2025, 10, 14); // 2025-11-14 (Fri, pay period anchor)
       var msPerDay = 24 * 60 * 60 * 1000;
       var daysDiff = Math.floor((d - anchor) / msPerDay);
       var periodIndex = Math.floor(daysDiff / 14);
@@ -208,7 +214,7 @@
           periods.sort(function(a, b) {
             var da = a.startDate ? a.startDate.getTime() : 0;
             var db = b.startDate ? b.startDate.getTime() : 0;
-            return db - da; // newest first
+            return da - db; // oldest first
           });
 
           bodyEl.innerHTML = "";
@@ -444,8 +450,6 @@
         }
       });
     }
-
-
       if (hrs === 0) {
         alert("Hours cannot be 0.");
         return;
@@ -495,14 +499,20 @@
     }
 
     document.addEventListener("DOMContentLoaded", function() {
-            var forceBtn = document.getElementById("force-submit");
+      var forceBtn = document.getElementById("force-submit");
       if (forceBtn) {
         forceBtn.addEventListener("click", forceClockOutEmployee);
       }
     });
 
-
     document.addEventListener("DOMContentLoaded", loadHistory);
   </script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/universal-crew-app/service-worker.js');
+    }
+
+  </script>
+
 </body>
 </html>
