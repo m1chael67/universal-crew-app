@@ -27,6 +27,34 @@
       cursor: pointer;
     }
   </style>
+
+<style>
+  .btn {
+    padding: 10px 16px;
+    border-radius: 12px;
+    border: 1px solid #d8d8d8;
+    background: #fafafa;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .btn.primary {
+    background: #111;
+    color: #fff;
+    border-color: #111;
+  }
+  .btn.warn {
+    background: #fff3f3;
+    border-color: #f0b7b7;
+    color: #7a1e1e;
+  }
+  .btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+</style>
+
 </head>
 <body>
   <div class="top-bar" style="position: fixed; top: 0; right: 0; padding: 0.5rem; font-size: 12px; background: white; z-index: 1000;">
@@ -608,6 +636,99 @@ function parseSheetDateTime(cell) {
     }
 
   </script>
+
+
+<div id="clock-action" style="margin-top:20px;">
+  <button id="clock-btn" class="btn primary" disabled>Loading…</button>
+</div>
+
+
+<script>
+  const EMPLOYEE_NAME = "Michael";
+  const TIME_LOG_SHEET_ID = "1gm39kMipfpLKS2n8g9F4SYG9Do36M_5Lc6GOs-c6jCM";
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwDMoZjhy2IHA0PFEqSwd79cOteIBX-QhIVjLh8pXHnzm6frGjoO1FkS9_xrdIQh8M/exec";
+
+  function getPayPeriodKey(date) {
+    var d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    var anchor = new Date(2025, 10, 1);
+    var msPerDay = 24 * 60 * 60 * 1000;
+    var daysDiff = Math.floor((d - anchor) / msPerDay);
+    var periodIndex = Math.floor(daysDiff / 14);
+    var start = new Date(anchor.getTime() + periodIndex * 14 * msPerDay);
+    return "pp-" + start.getFullYear() + "-" + (start.getMonth()+1) + "-" + start.getDate();
+  }
+
+  function fetchClockState() {
+    const periodKey = getPayPeriodKey(new Date());
+    const tq =
+      "select A, C where D = '" + periodKey + "' and B = '" + EMPLOYEE_NAME + "' order by A";
+
+    const url =
+      "https://docs.google.com/spreadsheets/d/" + TIME_LOG_SHEET_ID +
+      "/gviz/tq?sheet=Time%20Log&headers=1&tqx=out:json&tq=" + encodeURIComponent(tq);
+
+    return fetch(url)
+      .then(res => res.text())
+      .then(text => {
+        const json = JSON.parse(text.substring(47).slice(0, -2));
+        let state = "out";
+        (json.table.rows || []).forEach(r => {
+          if (r.c[1] && r.c[1].v === "clock_in") state = "in";
+          if (r.c[1] && r.c[1].v === "clock_out") state = "out";
+        });
+        return state;
+      });
+  }
+
+  function postClockEvent(eventName) {
+    const payload = new URLSearchParams({
+      employee: EMPLOYEE_NAME,
+      event: eventName,
+      timestamp: new Date().toISOString(),
+      periodKey: getPayPeriodKey(new Date()),
+      device: "employee_page",
+      hours: "0"
+    });
+
+    return fetch(WEB_APP_URL, {
+      method: "POST",
+      mode: "no-cors",
+      body: payload
+    });
+  }
+
+  function updateButton(state) {
+    const btn = document.getElementById("clock-btn");
+    btn.disabled = false;
+    btn.dataset.state = state;
+
+    if (state === "in") {
+      btn.textContent = "Clock Out";
+      btn.className = "btn warn";
+    } else {
+      btn.textContent = "Clock In";
+      btn.className = "btn primary";
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const btn = document.getElementById("clock-btn");
+
+    fetchClockState().then(state => {
+      updateButton(state);
+    });
+
+    btn.addEventListener("click", () => {
+      btn.disabled = true;
+      const state = btn.dataset.state;
+      const eventName = state === "in" ? "clock_out" : "clock_in";
+
+      postClockEvent(eventName).then(() => {
+        setTimeout(() => location.reload(), 1000);
+      });
+    });
+  });
+</script>
 
 </body>
 </html>
