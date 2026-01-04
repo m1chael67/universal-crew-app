@@ -261,6 +261,28 @@
       text-overflow: clip !important;
     }
 
+    /* Make older periods look as clean as current/last */
+    .history-table-older { font-size: 13px; }
+    .history-table-older td, .history-table-older th { padding: 6px 8px; }
+    .history-table-older thead th { background: #f9f9f9; }
+    .history-table-older tbody tr:nth-child(even) td { background: #fcfcfc; }
+
+    /* Give the older section a "card" feel like the other blocks */
+    details.older-periods {
+      border-top: 1px solid #e0e0e0;
+      padding-top: 12px;
+    }
+    details.older-periods[open] .table-scroll {
+      border: 1px solid #e6e6e6;
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+      padding: 6px;
+    }
+
+    /* Make the summary button match the card style */
+    .older-summary { width: 100%; text-align: center; }
+
   </style>
 </head>
 
@@ -322,7 +344,7 @@
       <details class="older-periods" id="older-details">
         <summary class="older-summary">Show older pay periods</summary>
         <div class="table-scroll">
-        <table class="history-table">
+        <table class="history-table history-table-older">
           <thead>
             <tr>
               <th>Pay Period</th>
