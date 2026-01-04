@@ -218,7 +218,7 @@
       </div>
 
       <div class="period-block period-last">
-        <div class="period-title">Latest Completed Pay Period</div>
+        <div class="period-title">Latest Pay Period</div>
         <table class="history-table history-table-last">
           <thead>
             <tr>
@@ -375,9 +375,11 @@
 
           var periods = Object.keys(byPeriod).map(function(k) { return byPeriod[k]; });
           periods.sort(function(a, b) {
-            var da = a.startDate ? a.startDate.getTime() : 0;
-            var db = b.startDate ? b.startDate.getTime() : 0;
-            return db - da; // newest first
+            var da = a.startDate ? a.startDate.getTime() : -Infinity;
+            var db = b.startDate ? b.startDate.getTime() : -Infinity;
+            // Newest first
+            if (db === da) return String(b.key).localeCompare(String(a.key));
+            return db - da;
           });
 
           
@@ -385,7 +387,7 @@
             if (!tbody || !p) return;
             var tr = document.createElement("tr");
             var label = labelForPeriodKey(p.key);
-            var rowHtml = "<td>" + label + "<span class='pill'>" + p.key + "</span></td>";
+            var rowHtml = "<td>" + label + "</td>";
             var total = 0;
 
             EMPLOYEES.forEach(function(emp) {
@@ -418,13 +420,31 @@
           }
           if (statusEl) statusEl.textContent = "";
 
-          var currentPeriod = periods.find(function(p) { return p.key === currentPeriodKey; }) || periods[0];
+          // Ensure we can display the CURRENT pay period even if there are no clock_out rows yet
+          var currentPeriod = periods.find(function(p) { return p.key === currentPeriodKey; });
+          if (!currentPeriod) {
+            currentPeriod = {
+              key: currentPeriodKey,
+              startDate: parsePeriodKey(currentPeriodKey),
+              employees: {}
+            };
+            // Put it at the top (newest) since it's the active period
+            periods.unshift(currentPeriod);
+          }
 
-// Latest COMPLETED pay period = most recent period that is NOT the current pay period
-var latestCompleted = null;
-for (var i = 0; i < periods.length; i++) {
-  if (periods[i].key !== currentPeriodKey) { latestCompleted = periods[i]; break; }
-}
+          // Latest COMPLETED pay period = most recent period that is NOT the current pay period
+          var latestCompleted = null;
+          for (var i = 0; i < periods.length; i++) {
+            if (periods[i].key !== currentPeriodKey) { latestCompleted = periods[i]; break; }
+          }
+
+          // Re-sort after possibly inserting currentPeriod
+          periods.sort(function(a, b) {
+            var da = a.startDate ? a.startDate.getTime() : -Infinity;
+            var db = b.startDate ? b.startDate.getTime() : -Infinity;
+            if (db === da) return String(b.key).localeCompare(String(a.key));
+            return db - da; // newest first
+          });
 
           renderPeriodRow(currentEl, currentPeriod);
           if (latestCompleted) renderPeriodRow(lastEl, latestCompleted);
