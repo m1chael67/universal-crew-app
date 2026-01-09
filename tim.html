@@ -21,31 +21,12 @@
       margin-bottom: 10px;
       flex-wrap: wrap;
     }
-    .btn {
-      padding: 10px 16px;
-      border-radius: 12px;
-      border: 1px solid #d8d8d8;
-      background: #fafafa;
+    .clock-row button {
+      padding: 6px 12px;
+      font-size: 14px;
       cursor: pointer;
-      font-size: 15px;
-      font-weight: 600;
-      white-space: nowrap;
     }
-    .btn.primary {
-      background: #111;
-      color: #fff;
-      border-color: #111;
-    }
-    .btn.warn {
-      background: #fff3f3;
-      border-color: #f0b7b7;
-      color: #7a1e1e;
-    }
-    .btn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-    </style>
+  </style>
 </head>
 <body>
   <div class="top-bar" style="position: fixed; top: 0; right: 0; padding: 0.5rem; font-size: 12px; background: white; z-index: 1000;">
@@ -57,24 +38,45 @@
     </div>
     <h1>Tim</h1>
     <div class="clock-row">
-      <button id="clock-toggle-btn" type="button" class="btn primary" disabled>Loading…</button>
+      <button id="clock-in-btn" type="button">Clock In</button>
+      <button id="clock-out-btn" type="button">Clock Out</button>
       <span id="clock-status" style="font-size:12px;color:#555;"></span>
-</div>
+    </div>
     <div id="job-list">Loading...</div>
   </div>
 
   <script>
     // Pay period helper: 14-day Saturday–Friday periods anchored at 2025-11-01
     function getPayPeriodInfo(date) {
-      var d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-      var anchor = new Date(2025, 10, 14); // 2025-11-14 (Fri, pay period anchor)
+      // Pay periods run Sat–Fri.
+      // The sheet key (pp-YYYY-M-D) stores the Friday BEFORE the Saturday start.
+      // To prevent rolling into the next pay period on the final Friday, we treat
+      // "today" as yesterday for all days except Saturday.
+      var base = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      var effective = new Date(base.getTime());
+      if (effective.getDay() !== 6) { // not Saturday
+        effective = new Date(effective.getTime() - 1 * 24 * 60 * 60 * 1000);
+      }
+
+      // Anchor is a known pay period KEY date (Friday) that corresponds to a Saturday start the next day.
+      var anchor = new Date(2025, 10, 14); // 2025-11-14 (Fri)
       var msPerDay = 24 * 60 * 60 * 1000;
-      var daysDiff = Math.floor((d - anchor) / msPerDay);
+      var daysDiff = Math.floor((effective - anchor) / msPerDay);
       var periodIndex = Math.floor(daysDiff / 14);
-      var start = new Date(anchor.getTime() + periodIndex * 14 * msPerDay);
-      var end   = new Date(start.getTime() + 13 * msPerDay);
-      var label = (start.getMonth()+1) + "/" + start.getDate() + " - " + (end.getMonth()+1) + "/" + end.getDate();
-      var key   = "pp-" + start.getFullYear() + "-" + (start.getMonth()+1) + "-" + start.getDate();
+
+      // startKey is Friday key date
+      var startKey = new Date(anchor.getTime() + periodIndex * 14 * msPerDay);
+
+      // Displayed start is Saturday (+1 day), end is Friday (+14 days)
+      var start = new Date(startKey.getTime() + 1 * msPerDay);
+      var end = new Date(start.getTime() + 13 * msPerDay);
+
+      var label = (start.getMonth() + 1) + "/" + start.getDate() +
+                  " - " + (end.getMonth() + 1) + "/" + end.getDate();
+
+      var key = "pp-" + startKey.getFullYear() + "-" +
+                (startKey.getMonth() + 1) + "-" + startKey.getDate();
+
       return { start: start, end: end, label: label, key: key };
     }
 
@@ -189,8 +191,7 @@ function parseSheetDateTime(cell) {
   }
 
   function fetchClockStateFromSheet(callback) {
-    // IMPORTANT: do NOT limit to current pay period.
-    // Latest event wins even across pay-period boundaries.
+    // Latest event wins across ALL pay periods.
     try {
       var tq =
         "select A, C " +
@@ -315,7 +316,6 @@ function parseSheetDateTime(cell) {
   toggleBtn.addEventListener("click", function () {
     toggleBtn.disabled = true;
 
-    // Re-check right before writing
     fetchClockStateFromSheet(function(info) {
       if (info.error) {
         alert("Couldn't reach timesheet. Try again in a moment.");
