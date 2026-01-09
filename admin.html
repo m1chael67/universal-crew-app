@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Admin – Crew Hours + Quick Clock</title>
+  <title>Admin Live – Crew Hours + Quick Clock</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="style.css" />
   <style>
@@ -591,13 +591,19 @@
 
     // --- Current clocked-in list + highlight row (same logic, but returns the list) ---
     function loadClockedInStatus(currentPeriodKey) {
+      // IMPORTANT: do NOT limit clocked-in state to the current pay period.
+      // If someone clocked in near a pay-period boundary and hasn't clocked out yet,
+      // filtering by periodKey makes them disappear.
       var statusSpan = document.getElementById("clocked-list");
       if (statusSpan) statusSpan.textContent = "Checking...";
 
+      // Pull recent events across ALL periods, newest first.
+      // Time Log columns: A=Timestamp, B=Employee, C=Event, D=PeriodKey
       var tq =
-        "select A, B, C, D " +
-        "where D = '" + currentPeriodKey + "' " +
-        "order by A";
+        "select A, B, C " +
+        "where B is not null " +
+        "order by A desc " +
+        "limit 2000";
 
       var baseUrl = "https://docs.google.com/spreadsheets/d/" + TIME_LOG_SHEET_ID + "/gviz/tq";
       var url = baseUrl +
@@ -611,27 +617,40 @@
         .then(function(textResp) {
           var json = JSON.parse(textResp.substring(47).slice(0, -2));
           var rows = json.table.rows || [];
-          var lastEvent = {};
 
+          // Latest event per employee (newest-first, so first occurrence wins)
+          var latest = {}; // emp -> { evt, ts }
           rows.forEach(function(row) {
+            var tsCell = row.c[0];
             var empCell = row.c[1];
             var evtCell = row.c[2];
             if (!empCell || !evtCell) return;
+
             var emp = String(empCell.v || "");
             var evt = String(evtCell.v || "");
-            if (!emp) return;
-            lastEvent[emp] = evt; // last event in time order
+            if (!emp || !evt) return;
+
+            if (latest[emp]) return;
+            latest[emp] = {
+              evt: evt,
+              ts: parseSheetDateTime(tsCell)
+            };
           });
 
           var clocked = [];
-          Object.keys(lastEvent).forEach(function(emp) {
-            if (lastEvent[emp] === "clock_in") clocked.push(emp);
+          EMPLOYEES.forEach(function(emp) {
+            if (latest[emp] && latest[emp].evt === "clock_in") clocked.push(emp);
           });
 
-          if (statusSpan) {
-            if (!clocked.length) statusSpan.textContent = "None";
-            else statusSpan.textContent = clocked.join(", ");
-          }
+          if (statusSpan) statusSpan.textContent = clocked.length ? clocked.join(", ") : "None";
+          return clocked;
+        })
+        .catch(function(err) {
+          console.error("Clocked-in status fetch failed", err);
+          if (statusSpan) statusSpan.textContent = "None";
+          return [];
+        });
+    }
 
           // Highlight cells in current period row
           var currentEl = document.getElementById("current-body");

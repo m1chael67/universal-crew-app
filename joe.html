@@ -45,7 +45,7 @@
       opacity: 0.6;
       cursor: not-allowed;
     }
-</style>
+    </style>
 </head>
 <body>
   <div class="top-bar" style="position: fixed; top: 0; right: 0; padding: 0.5rem; font-size: 12px; background: white; z-index: 1000;">
@@ -189,16 +189,14 @@ function parseSheetDateTime(cell) {
   }
 
   function fetchClockStateFromSheet(callback) {
+    // IMPORTANT: do NOT limit to current pay period.
+    // Latest event wins even across pay-period boundaries.
     try {
-      var now = new Date();
-      var pp = getPayPeriodInfo(now);
-      var periodKey = pp.key;
-
       var tq =
         "select A, C " +
-        "where D = '" + periodKey + "' " +
-        "and B = '" + EMPLOYEE_NAME + "' " +
-        "order by A";
+        "where B = '" + EMPLOYEE_NAME + "' " +
+        "order by A desc " +
+        "limit 50";
 
       var baseUrl = "https://docs.google.com/spreadsheets/d/" + TIME_LOG_SHEET_ID + "/gviz/tq";
       var url = baseUrl +
@@ -216,22 +214,20 @@ function parseSheetDateTime(cell) {
           var state = "out";
           var lastClockIn = null;
 
-          rows.forEach(function(row) {
-            var tsCell  = row.c[0];
-            var evtCell = row.c[1];
-            if (!evtCell) return;
-            var evt = String(evtCell.v || "");
+          if (rows.length) {
+            var tsCell  = rows[0].c[0];
+            var evtCell = rows[0].c[1];
+            var evt = evtCell ? String(evtCell.v || "") : "";
             var ts  = parseSheetDateTime(tsCell);
-            if (!evt) return;
 
             if (evt === "clock_in") {
               state = "in";
-              if (ts) lastClockIn = ts;
-            } else if (evt === "clock_out") {
+              lastClockIn = ts;
+            } else {
               state = "out";
               lastClockIn = null;
             }
-          });
+          }
 
           callback({
             state: state,
@@ -319,6 +315,7 @@ function parseSheetDateTime(cell) {
   toggleBtn.addEventListener("click", function () {
     toggleBtn.disabled = true;
 
+    // Re-check right before writing
     fetchClockStateFromSheet(function(info) {
       if (info.error) {
         alert("Couldn't reach timesheet. Try again in a moment.");
@@ -328,7 +325,6 @@ function parseSheetDateTime(cell) {
 
       var doClockOut = (info.state === "in");
       var eventType = doClockOut ? "Clock Out" : "Clock In";
-
       sendClockEvent(eventType, 0);
 
       setTimeout(function() { location.reload(); }, 3000);
