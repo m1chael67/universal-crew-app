@@ -621,7 +621,6 @@
           // Latest event per employee (newest-first, so first occurrence wins)
           var latest = {}; // emp -> { evt, ts }
           rows.forEach(function(row) {
-            var tsCell = row.c[0];
             var empCell = row.c[1];
             var evtCell = row.c[2];
             if (!empCell || !evtCell) return;
@@ -631,15 +630,12 @@
             if (!emp || !evt) return;
 
             if (latest[emp]) return;
-            latest[emp] = {
-              evt: evt,
-              ts: parseSheetDateTime(tsCell)
-            };
+            latest[emp] = evt;
           });
 
           var clocked = [];
           EMPLOYEES.forEach(function(emp) {
-            if (latest[emp] && latest[emp].evt === "clock_in") clocked.push(emp);
+            if (latest[emp] === "clock_in") clocked.push(emp);
           });
 
           if (statusSpan) statusSpan.textContent = clocked.length ? clocked.join(", ") : "None";
@@ -652,38 +648,7 @@
         });
     }
 
-          // Highlight cells in current period row
-          var currentEl = document.getElementById("current-body");
-      var lastEl = document.getElementById("last-body");
-      var olderEl = document.getElementById("older-body");
-          if (!bodyEls.length) return clocked;
-          bodyEls.forEach(function(tbody) {
-            var rowsDom = tbody.querySelectorAll("tr");
-            rowsDom.forEach(function(tr) {
-            var td0 = tr.querySelector("td:first-child");
-            if (!td0) return;
-            if (td0.textContent.indexOf(currentPeriodKey) === -1) return;
-
-            EMPLOYEES.forEach(function(emp, idx) {
-              var td = tr.querySelectorAll("td")[idx + 1];
-              if (!td) return;
-              if (clocked.indexOf(emp) !== -1) td.classList.add("clocked-in-cell");
-              else td.classList.remove("clocked-in-cell");
-            });
-            });
-          });
-
-          return clocked;
-        })
-        .catch(function(err) {
-          console.error("Failed to load clocked-in status", err);
-          if (statusSpan) statusSpan.textContent = "None";
-          return [];
-        });
-    }
-
-    // --- Helper: fetch an employee's current state for THIS pay period ---
-    function fetchClockStateForEmployee(emp) {
+function fetchClockStateForEmployee(emp) {
       var now = new Date();
       var pp = getPayPeriodInfo(now);
       var periodKey = pp.key;
