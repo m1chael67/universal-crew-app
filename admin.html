@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Admin Live – Crew Hours + Quick Clock</title>
+  <title>Admin – Crew Hours + Quick Clock</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="style.css" />
   <style>
@@ -387,35 +387,17 @@
 
     // --- Pay period logic (unchanged) ---
     function getPayPeriodInfo(date) {
-      // Pay periods run Sat–Fri.
-      // The sheet key (pp-YYYY-M-D) stores the Friday BEFORE the Saturday start.
-      // To prevent rolling into the next pay period on the final Friday, we treat
-      // "today" as yesterday for all days except Saturday.
-      var base = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-      var effective = new Date(base.getTime());
-      if (effective.getDay() !== 6) { // not Saturday
-        effective = new Date(effective.getTime() - 1 * 24 * 60 * 60 * 1000);
-      }
-
-      // Anchor is a known pay period KEY date (Friday) that corresponds to a Saturday start the next day.
-      var anchor = new Date(2025, 10, 14); // 2025-11-14 (Fri)
+      var d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      var anchor = new Date(2025, 10, 1); // 2025-11-01 (month is 0-based)
       var msPerDay = 24 * 60 * 60 * 1000;
-      var daysDiff = Math.floor((effective - anchor) / msPerDay);
+      var daysDiff = Math.floor((d - anchor) / msPerDay);
       var periodIndex = Math.floor(daysDiff / 14);
-
-      // startKey is Friday key date
-      var startKey = new Date(anchor.getTime() + periodIndex * 14 * msPerDay);
-
-      // Displayed start is Saturday (+1 day), end is Friday (+14 days)
-      var start = new Date(startKey.getTime() + 1 * msPerDay);
+      var start = new Date(anchor.getTime() + periodIndex * 14 * msPerDay);
       var end = new Date(start.getTime() + 13 * msPerDay);
-
       var label = (start.getMonth() + 1) + "/" + start.getDate() +
                   " - " + (end.getMonth() + 1) + "/" + end.getDate();
-
-      var key = "pp-" + startKey.getFullYear() + "-" +
-                (startKey.getMonth() + 1) + "-" + startKey.getDate();
-
+      var key   = "pp-" + start.getFullYear() + "-" +
+                  (start.getMonth() + 1) + "-" + start.getDate();
       return { start: start, end: end, label: label, key: key };
     }
 
@@ -612,13 +594,10 @@
       var statusSpan = document.getElementById("clocked-list");
       if (statusSpan) statusSpan.textContent = "Checking...";
 
-      // Pull recent events across ALL pay periods; latest event wins.
-      // Time Log: A=Timestamp, B=Employee, C=Event, D=PeriodKey
       var tq =
-        "select A, B, C " +
-        "where B is not null " +
-        "order by A desc " +
-        "limit 2000";
+        "select A, B, C, D " +
+        "where D = '" + currentPeriodKey + "' " +
+        "order by A";
 
       var baseUrl = "https://docs.google.com/spreadsheets/d/" + TIME_LOG_SHEET_ID + "/gviz/tq";
       var url = baseUrl +
@@ -632,44 +611,27 @@
         .then(function(textResp) {
           var json = JSON.parse(textResp.substring(47).slice(0, -2));
           var rows = json.table.rows || [];
+          var lastEvent = {};
 
-          var latestEvt = {}; // emp -> "clock_in"/"clock_out"
-          rows.forEach(function(r) {
-            var empCell = r.c[1];
-            var evtCell = r.c[2];
+          rows.forEach(function(row) {
+            var empCell = row.c[1];
+            var evtCell = row.c[2];
             if (!empCell || !evtCell) return;
-
             var emp = String(empCell.v || "");
             var evt = String(evtCell.v || "");
-            if (!emp || !evt) return;
-
-            if (latestEvt[emp]) return; // newest first
-            latestEvt[emp] = evt;
+            if (!emp) return;
+            lastEvent[emp] = evt; // last event in time order
           });
 
           var clocked = [];
-          EMPLOYEES.forEach(function(emp) {
-            if (latestEvt[emp] === "clock_in") clocked.push(emp);
-
-            // Update quick action buttons based on latest state
-            var btn = document.querySelector('[data-emp="' + emp + '"]');
-            if (!btn) return;
-            var isIn = latestEvt[emp] === "clock_in";
-            btn.textContent = isIn ? "Clock Out" : "Clock In";
-            btn.classList.remove("primary", "warn");
-            btn.classList.add(isIn ? "warn" : "primary");
-            btn.dataset.action = isIn ? "clock_out" : "clock_in";
+          Object.keys(lastEvent).forEach(function(emp) {
+            if (lastEvent[emp] === "clock_in") clocked.push(emp);
           });
 
-          if (statusSpan) statusSpan.textContent = clocked.length ? clocked.join(", ") : "None";
-          return clocked;
-        })
-        .catch(function(err) {
-          console.error("Clocked-in status fetch failed", err);
-          if (statusSpan) statusSpan.textContent = "None";
-          return [];
-        });
-    }
+          if (statusSpan) {
+            if (!clocked.length) statusSpan.textContent = "None";
+            else statusSpan.textContent = clocked.join(", ");
+          }
 
           // Highlight cells in current period row
           var currentEl = document.getElementById("current-body");
