@@ -387,17 +387,35 @@
 
     // --- Pay period logic (unchanged) ---
     function getPayPeriodInfo(date) {
-      var d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-      var anchor = new Date(2025, 10, 1); // 2025-11-01 (month is 0-based)
+      // Pay periods run Sat–Fri.
+      // The sheet key (pp-YYYY-M-D) stores the Friday BEFORE the Saturday start.
+      // To prevent rolling into the next pay period on the final Friday, we treat
+      // "today" as yesterday for all days except Saturday.
+      var base = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      var effective = new Date(base.getTime());
+      if (effective.getDay() !== 6) { // not Saturday
+        effective = new Date(effective.getTime() - 1 * 24 * 60 * 60 * 1000);
+      }
+
+      // Anchor is a known pay period KEY date (Friday) that corresponds to a Saturday start the next day.
+      var anchor = new Date(2025, 10, 14); // 2025-11-14 (Fri)
       var msPerDay = 24 * 60 * 60 * 1000;
-      var daysDiff = Math.floor((d - anchor) / msPerDay);
+      var daysDiff = Math.floor((effective - anchor) / msPerDay);
       var periodIndex = Math.floor(daysDiff / 14);
-      var start = new Date(anchor.getTime() + periodIndex * 14 * msPerDay);
+
+      // startKey is Friday key date
+      var startKey = new Date(anchor.getTime() + periodIndex * 14 * msPerDay);
+
+      // Displayed start is Saturday (+1 day), end is Friday (+14 days)
+      var start = new Date(startKey.getTime() + 1 * msPerDay);
       var end = new Date(start.getTime() + 13 * msPerDay);
+
       var label = (start.getMonth() + 1) + "/" + start.getDate() +
                   " - " + (end.getMonth() + 1) + "/" + end.getDate();
-      var key   = "pp-" + start.getFullYear() + "-" +
-                  (start.getMonth() + 1) + "-" + start.getDate();
+
+      var key = "pp-" + startKey.getFullYear() + "-" +
+                (startKey.getMonth() + 1) + "-" + startKey.getDate();
+
       return { start: start, end: end, label: label, key: key };
     }
 
@@ -591,14 +609,11 @@
 
     // --- Current clocked-in list + highlight row (same logic, but returns the list) ---
     function loadClockedInStatus(currentPeriodKey) {
-      // IMPORTANT: do NOT limit clocked-in state to the current pay period.
-      // If someone clocked in near a pay-period boundary and hasn't clocked out yet,
-      // filtering by periodKey makes them disappear.
       var statusSpan = document.getElementById("clocked-list");
       if (statusSpan) statusSpan.textContent = "Checking...";
 
-      // Pull recent events across ALL periods, newest first.
-      // Time Log columns: A=Timestamp, B=Employee, C=Event, D=PeriodKey
+      // Pull recent events across ALL pay periods; latest event wins.
+      // Time Log: A=Timestamp, B=Employee, C=Event, D=PeriodKey
       var tq =
         "select A, B, C " +
         "where B is not null " +
@@ -618,24 +633,32 @@
           var json = JSON.parse(textResp.substring(47).slice(0, -2));
           var rows = json.table.rows || [];
 
-          // Latest event per employee (newest-first, so first occurrence wins)
-          var latest = {}; // emp -> { evt, ts }
-          rows.forEach(function(row) {
-            var empCell = row.c[1];
-            var evtCell = row.c[2];
+          var latestEvt = {}; // emp -> "clock_in"/"clock_out"
+          rows.forEach(function(r) {
+            var empCell = r.c[1];
+            var evtCell = r.c[2];
             if (!empCell || !evtCell) return;
 
             var emp = String(empCell.v || "");
             var evt = String(evtCell.v || "");
             if (!emp || !evt) return;
 
-            if (latest[emp]) return;
-            latest[emp] = evt;
+            if (latestEvt[emp]) return; // newest first
+            latestEvt[emp] = evt;
           });
 
           var clocked = [];
           EMPLOYEES.forEach(function(emp) {
-            if (latest[emp] === "clock_in") clocked.push(emp);
+            if (latestEvt[emp] === "clock_in") clocked.push(emp);
+
+            // Update quick action buttons based on latest state
+            var btn = document.querySelector('[data-emp="' + emp + '"]');
+            if (!btn) return;
+            var isIn = latestEvt[emp] === "clock_in";
+            btn.textContent = isIn ? "Clock Out" : "Clock In";
+            btn.classList.remove("primary", "warn");
+            btn.classList.add(isIn ? "warn" : "primary");
+            btn.dataset.action = isIn ? "clock_out" : "clock_in";
           });
 
           if (statusSpan) statusSpan.textContent = clocked.length ? clocked.join(", ") : "None";
@@ -648,7 +671,38 @@
         });
     }
 
-function fetchClockStateForEmployee(emp) {
+          // Highlight cells in current period row
+          var currentEl = document.getElementById("current-body");
+      var lastEl = document.getElementById("last-body");
+      var olderEl = document.getElementById("older-body");
+          if (!bodyEls.length) return clocked;
+          bodyEls.forEach(function(tbody) {
+            var rowsDom = tbody.querySelectorAll("tr");
+            rowsDom.forEach(function(tr) {
+            var td0 = tr.querySelector("td:first-child");
+            if (!td0) return;
+            if (td0.textContent.indexOf(currentPeriodKey) === -1) return;
+
+            EMPLOYEES.forEach(function(emp, idx) {
+              var td = tr.querySelectorAll("td")[idx + 1];
+              if (!td) return;
+              if (clocked.indexOf(emp) !== -1) td.classList.add("clocked-in-cell");
+              else td.classList.remove("clocked-in-cell");
+            });
+            });
+          });
+
+          return clocked;
+        })
+        .catch(function(err) {
+          console.error("Failed to load clocked-in status", err);
+          if (statusSpan) statusSpan.textContent = "None";
+          return [];
+        });
+    }
+
+    // --- Helper: fetch an employee's current state for THIS pay period ---
+    function fetchClockStateForEmployee(emp) {
       var now = new Date();
       var pp = getPayPeriodInfo(now);
       var periodKey = pp.key;
