@@ -146,12 +146,7 @@
     }
 
 
-:root { --safe-top: env(safe-area-inset-top, 0px); }
 
-/* iOS safe-area fix with a minimum offset so it NEVER sits under the status bar */
-.top-bar { top: max(var(--safe-top), 16px) !important; }
-.container { margin-top: calc(2.5rem + max(var(--safe-top), 16px)) !important; }
-.hamburger-btn { top: calc(max(var(--safe-top), 16px) + 10px) !important; }
 /* iOS safe-area fix (surgical) */
 .safe-top {
   padding-top: calc(env(safe-area-inset-top, 0px) + 8px);
@@ -172,6 +167,31 @@ div[style*="position: fixed"][style*="top"] {
 /* Main white content card */
 div[style*="max-width"][style*="margin"] {
   margin-top: calc(4rem + var(--safe-top)) !important;
+}
+
+
+:root {
+  --top-bar-height: 56px;
+}
+
+/* Reserve space for fixed top bar */
+.top-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--top-bar-height);
+  z-index: 1000;
+}
+
+/* Push main content below the bar */
+.container {
+  margin-top: calc(var(--top-bar-height) + 12px) !important;
+}
+
+/* Keep hamburger aligned with bar */
+.hamburger-btn {
+  top: 10px;
 }
 
 </style>
