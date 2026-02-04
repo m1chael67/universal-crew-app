@@ -791,5 +791,19 @@ function parseSheetDateTime(cell) {
   })();
 </script>
 
+
+<script>
+  // Refresh button (robust)
+  document.addEventListener("DOMContentLoaded", function () {
+    var btn = document.getElementById("refresh-btn");
+    if (!btn) return;
+    btn.addEventListener("click", function (e) {
+      e.preventDefault();
+      // Force a real reload (helps if SW cache is involved)
+      window.location.reload(true);
+    });
+  });
+</script>
+
 </body>
 </html>
