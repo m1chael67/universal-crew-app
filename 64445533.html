@@ -147,8 +147,18 @@
 
 
 :root { --safe-top: env(safe-area-inset-top, 0px); }
-body { padding-top: calc(var(--safe-top) + 8px); }
+
+/* iOS safe-area fix WITHOUT pushing the whole page down */
+.top-bar { top: var(--safe-top) !important; }
+.container { margin-top: calc(3.25rem + var(--safe-top)) !important; }
 .hamburger-btn { top: calc(var(--safe-top) + 10px); }
+/* iOS safe-area fix (surgical) */
+.safe-top {
+  padding-top: calc(env(safe-area-inset-top, 0px) + 8px);
+}
+.tight-top {
+  margin-top: 4px;
+}
 
 </style>
 </head>
@@ -169,7 +179,7 @@ body { padding-top: calc(var(--safe-top) + 8px); }
   <div id="app-shell" class="app-shell">
 
   <div class="top-bar" style="position: fixed; top: 0; right: 0; padding: 0.5rem; font-size: 12px; background: white; z-index: 1000;">
-    Hours this period: <span id="hour-counter">0</span>
+    <span class="tight-top">Hours this period:</span> <span id="hour-counter">0</span>
   </div>
   <div class="container" style="margin-top: 2.5rem;">
     
