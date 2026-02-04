@@ -147,26 +147,16 @@
 
 
 :root { --safe-top: env(safe-area-inset-top, 0px); }
-
-/* iOS safe-area fix WITHOUT pushing the whole page down */
-.top-bar { top: var(--safe-top) !important; }
-.container { margin-top: calc(3.25rem + var(--safe-top)) !important; }
+body { padding-top: calc(var(--safe-top) + 8px); }
 .hamburger-btn { top: calc(var(--safe-top) + 10px); }
-/* iOS safe-area fix (surgical) */
-.safe-top {
-  padding-top: calc(env(safe-area-inset-top, 0px) + 8px);
-}
-.tight-top {
-  margin-top: 4px;
-}
 
 
 :root{
-  --top-bar-height: 56px;
-  --hamburger-space: 72px; /* space reserved so hours never sit under the hamburger */
+  --top-bar-height: 44px;   /* only as tall as needed */
+  --hamburger-space: 72px; /* keeps hours centered and clear of hamburger */
 }
 
-/* Fixed hour bar: centered, with reserved space */
+/* Fixed hour bar: centered, compact */
 .top-bar{
   position: fixed !important;
   top: 0 !important;
@@ -184,15 +174,17 @@
   text-align: center !important;
 }
 
-/* Push main content below the bar (enough to show BOTH Log Out + Refresh) */
+/* Push main content below the bar (extra space so Log Out never "leaks" under it) */
 .container{
-  margin-top: calc(var(--top-bar-height) + 34px) !important;
+  margin-top: calc(var(--top-bar-height) + 54px) !important;
 }
 
-/* Hamburger stays inside the bar area */
+/* Hamburger anchored to the WHITE top bar (not the gray area) */
 .hamburger-btn{
-  top: 10px !important;
+  position: absolute !important;   /* anchor inside .top-bar */
+  top: 50% !important;
   left: 10px !important;
+  transform: translateY(-50%) !important;
   z-index: 1100 !important;
 }
 
@@ -215,7 +207,7 @@
   <div id="app-shell" class="app-shell">
 
   <div class="top-bar" style="position: fixed; top: 0; right: 0; padding: 0.5rem; font-size: 12px; background: white; z-index: 1000;">
-    <span class="tight-top">Hours this period:</span> <span id="hour-counter">0</span>
+    Hours this period: <span id="hour-counter">0</span>
   </div>
   <div class="container" style="margin-top: 2.5rem;">
     
