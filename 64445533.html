@@ -148,16 +148,41 @@
 
 :root { --safe-top: env(safe-area-inset-top, 0px); }
 
-/* iOS safe-area fix WITHOUT pushing the whole page down */
-.top-bar { top: var(--safe-top) !important; }
-.container { margin-top: calc(3.25rem + var(--safe-top)) !important; }
-.hamburger-btn { top: calc(var(--safe-top) + 10px); }
+/* iOS safe-area fix (supports older iOS via constant()) */
+.top-bar {
+  top: constant(safe-area-inset-top) !important;
+  top: env(safe-area-inset-top, 0px) !important;
+}
+
+.container {
+  margin-top: calc(2.5rem + constant(safe-area-inset-top)) !important;
+  margin-top: calc(2.5rem + env(safe-area-inset-top, 0px)) !important;
+}
+
+.hamburger-btn {
+  top: calc(constant(safe-area-inset-top) + 10px) !important;
+  top: calc(env(safe-area-inset-top, 0px) + 10px) !important;
+}
 /* iOS safe-area fix (surgical) */
 .safe-top {
   padding-top: calc(env(safe-area-inset-top, 0px) + 8px);
 }
 .tight-top {
   margin-top: 4px;
+}
+
+
+/* === iOS SAFE AREA SURGICAL FIX === */
+:root { --safe-top: env(safe-area-inset-top, 0px); }
+
+/* Fixed hour bar */
+div[style*="position: fixed"][style*="top"] {
+  top: var(--safe-top) !important;
+}
+
+/* Main white content card */
+div[style*="max-width"][style*="margin"] {
+  margin-top: calc(4rem + var(--safe-top)) !important;
 }
 
 </style>
