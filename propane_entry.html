@@ -105,6 +105,7 @@
         <select id="action">
           <option value="Filled">Filled</option>
           <option value="Checked">Checked</option>
+          <option value="Used">Used</option>
         </select>
       </div>
 
@@ -128,7 +129,7 @@
       </div>
 
       <button id="submit" class="btn" type="button">Submit</button>
-      <a class="link" href="propane.html">Back to Propane</a>
+      <button id="back-btn" class="link" type="button">Back to Propane</button>
       <div id="msg" class="msg"></div>
     </div>
   </div>
@@ -284,11 +285,25 @@
       });
       msg.textContent = "Saved. Returning…";
       setTimeout(() => {
-        window.location.href = "propane.html";
+        if (window.history.length > 1) {
+          window.history.back();
+        } else {
+          window.location.href = "propane.html" + (window.location.search || "");
+        }
       }, 450);
     } catch (e) {
       console.error(e);
       msg.textContent = "Submit failed. Try again.";
+    }
+  });
+
+
+  // Back button: return to previous page (keeps ?from= on Propane)
+  document.getElementById("back-btn").addEventListener("click", () => {
+    if (window.history.length > 1) {
+      window.history.back();
+    } else {
+      window.location.href = "propane.html" + (window.location.search || "");
     }
   });
 
