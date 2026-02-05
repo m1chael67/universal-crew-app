@@ -66,17 +66,122 @@
       justify-content:center;
       gap:8px;
       height:48px;
+      line-height:48px;
       padding-left:16px;
       padding-right:16px;
       border-radius:16px;
       box-shadow: 0 8px 22px rgba(0,0,0,0.18);
+      vertical-align: middle;
+      margin-top: 0 !important;
     }
-    #refresh-btn{ min-width:54px; position:relative; }
+    #refresh-btn{ min-width:54px; position:relative; line-height: normal; }
     #refresh-btn svg{ pointer-events:none; }
+/* Align logout + refresh buttons */
+#logout-btn, #refresh-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  vertical-align:middle;
+}
+
+
+    /* Safe-area: prevent top cut-off on iPhone */
+    body{
+      padding-top: calc(env(safe-area-inset-top, 0px) + 8px);
+    }
+
+
+    /* Hamburger + Drawer (matched to Propane) */
+    .hamburger-btn{
+      position: fixed;
+      top: calc(env(safe-area-inset-top, 0px) + 10px);
+      left: 10px;
+      z-index: 1100;
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      border: 1px solid #d8d8d8;
+      background: #f2f2f2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .hamburger-lines{
+      width: 18px;
+      height: 14px;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+    }
+    .hamburger-lines span{
+      display:block;
+      height:2px;
+      background:#111;
+      border-radius:2px;
+    }
+    .drawer{
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 260px;
+      background: #fff;
+      border-right: 1px solid #e6e6e6;
+      z-index: 1200;
+      transform: translateX(-100%);
+      transition: transform 220ms ease;
+      padding: 14px 12px;
+      overflow-y: auto;
+    }
+    .drawer.open{ transform: translateX(0); }
+    .drawer h3 {
+      margin: 10px 6px 12px;
+      font-size: 14px;
+      color:#333;
+      letter-spacing: .3px;
+      text-transform: uppercase;
+    }
+    .drawer a {
+      display:block;
+      padding: 12px 12px;
+      border-radius: 12px;
+      text-decoration: none;
+      color:#111;
+      font-weight: 650;
+      border: 1px solid #efefef;
+      background: #fafafa;
+      margin: 8px 6px;
+    }
+    .drawer-overlay{
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.22);
+      z-index: 1150;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 220ms ease;
+    }
+    .drawer-overlay.open{
+      opacity: 1;
+      pointer-events: auto;
+    }
 
 </style>
 </head>
 <body>
+  <button id="hamburger-btn" class="hamburger-btn" type="button" aria-label="Open menu">
+    <div class="hamburger-lines" aria-hidden="true">
+      <span></span><span></span><span></span>
+    </div>
+  </button>
+
+  <div id="drawer" class="drawer" aria-hidden="true">
+    <h3>Menu</h3>
+    <a href="propane.html">Propane</a>
+  </div>
+  <div id="drawer-overlay" class="drawer-overlay" aria-hidden="true"></div>
+
   <div class="top-bar" style="position: fixed; top: 0; right: 0; padding: 0.5rem; font-size: 12px; background: white; z-index: 1000;">
     Hours this period: <span id="hour-counter">0</span>
   </div>
