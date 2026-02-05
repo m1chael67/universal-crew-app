@@ -1,0 +1,646 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Propane</title>
+  <style>
+    :root {
+      --bg: #f3f3f3;
+      --card: #ffffff;
+      --text: #111;
+      --muted: #666;
+      --border: #e6e6e6;
+      --shadow: 0 10px 26px rgba(0,0,0,0.10);
+      --pill-shadow: 0 8px 22px rgba(0,0,0,0.18);
+      --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .wrap {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 18px 14px 28px;
+    }
+    h1 {
+      margin: 8px 0 14px;
+      font-size: 38px;
+      letter-spacing: 0.2px;
+      text-align: center;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px 14px;
+    }
+    .card + .card { margin-top: 14px; }
+    .card-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .card-title h2 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: .2px;
+    }
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-top: 8px;
+    }
+    .filter {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      background: #fafafa;
+      border-radius: 14px;
+    }
+    .filter label {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 650;
+      letter-spacing: .2px;
+    }
+    select, input[type="date"] {
+      border: none;
+      background: transparent;
+      font-size: 14px;
+      outline: none;
+      color: var(--text);
+    }
+    .btn {
+      background: #111;
+      color: #fff;
+      border: none;
+      border-radius: 16px;
+      padding: 12px 20px;
+      font-size: 18px;
+      font-weight: 650;
+      box-shadow: var(--pill-shadow);
+      cursor: pointer;
+    }
+    .btn:active { transform: scale(0.99); }
+    .btn-row {
+      display: flex;
+      justify-content: center;
+      margin: 14px 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    th, td {
+      text-align: left;
+      padding: 10px 8px;
+      border-top: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    th {
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: .2px;
+      text-transform: uppercase;
+      font-weight: 750;
+      border-top: none;
+      padding-top: 6px;
+      padding-bottom: 6px;
+    }
+    .mono { font-variant-numeric: tabular-nums; }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 98px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-weight: 750;
+      font-size: 12px;
+      letter-spacing: .2px;
+      border: 1px solid var(--border);
+    }
+    .good { background: #e9f7ee; color: #167a3b; border-color: #cbeed6; }
+    .bad  { background: #fdecec; color: #b42318; border-color: #f6c5c5; }
+    .unk  { background: #f2f2f2; color: #555; border-color: #e1e1e1; }
+    .muted { color: var(--muted); }
+    .small {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+    /* Drawer */
+    .hamburger-btn{
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      z-index: 1100;
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      border: 1px solid #d8d8d8;
+      background: #f2f2f2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .hamburger-lines {
+      width: 18px;
+      height: 14px;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+    }
+    .hamburger-lines span {
+      display:block;
+      height:2px;
+      background:#111;
+      border-radius:2px;
+    }
+    .drawer{
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 260px;
+      background: #fff;
+      border-right: 1px solid #e6e6e6;
+      z-index: 1200;
+      transform: translateX(-100%);
+      transition: transform 220ms ease;
+      padding: 14px 12px;
+      overflow-y: auto;
+    }
+    .drawer.open{ transform: translateX(0); }
+    .drawer h3 {
+      margin: 10px 6px 12px;
+      font-size: 14px;
+      color:#333;
+      letter-spacing: .3px;
+      text-transform: uppercase;
+    }
+    .drawer a {
+      display:block;
+      padding: 12px 12px;
+      border-radius: 12px;
+      text-decoration: none;
+      color:#111;
+      font-weight: 650;
+      border: 1px solid #efefef;
+      background: #fafafa;
+      margin: 8px 6px;
+    }
+    .drawer-overlay{
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.22);
+      z-index: 1150;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 220ms ease;
+    }
+    .drawer-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  </style>
+</head>
+<body>
+  <button id="hamburger-btn" class="hamburger-btn" type="button" aria-label="Open menu">
+    <div class="hamburger-lines" aria-hidden="true">
+      <span></span><span></span><span></span>
+    </div>
+  </button>
+
+  <div id="drawer" class="drawer" aria-hidden="true">
+    <h3>Menu</h3>
+    <a href="index.html">Home</a>
+  </div>
+  <div id="drawer-overlay" class="drawer-overlay" aria-hidden="true"></div>
+
+  <div class="wrap">
+    <h1>Propane</h1>
+
+    <div class="card" id="current-card">
+      <div class="card-title">
+        <h2>Current</h2>
+        <div class="muted small" id="current-summary">Loading…</div>
+      </div>
+
+      <div class="filters">
+        <div class="filter">
+          <label for="current-type">Type</label>
+          <select id="current-type">
+            <option value="">All</option>
+          </select>
+        </div>
+        <div class="filter">
+          <label for="current-avail">Availability</label>
+          <select id="current-avail">
+            <option value="">All</option>
+            <option value="Available">Available</option>
+            <option value="Unavailable">Unavailable</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="overflow:auto; margin-top:10px;">
+        <table id="current-table" aria-label="Current propane levels">
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Number</th>
+              <th>%</th>
+              <th>Availability</th>
+              <th class="mono">BottleID</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td colspan="5" class="muted">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="small">Availability is green at or above <b>75%</b>. Under <b>75%</b> is red.</div>
+    </div>
+
+    <div class="btn-row">
+      <button id="add-entry" class="btn" type="button">Add Entry</button>
+    </div>
+
+    <div class="card" id="log-card">
+      <div class="card-title">
+        <h2>Log</h2>
+        <div class="muted small" id="log-summary">Loading…</div>
+      </div>
+
+      <div class="filters">
+        <div class="filter">
+          <label for="log-type">Type</label>
+          <select id="log-type">
+            <option value="">All</option>
+          </select>
+        </div>
+        <div class="filter">
+          <label for="log-avail">Availability</label>
+          <select id="log-avail">
+            <option value="">All</option>
+            <option value="Available">Available</option>
+            <option value="Unavailable">Unavailable</option>
+          </select>
+        </div>
+        <div class="filter">
+          <label for="log-action">Action</label>
+          <select id="log-action">
+            <option value="">All</option>
+            <option value="Filled">Filled</option>
+            <option value="Checked">Checked</option>
+            <option value="Used">Used</option>
+          </select>
+        </div>
+        <div class="filter">
+          <label for="log-filled-after">Fill after</label>
+          <input id="log-filled-after" type="date" />
+        </div>
+      </div>
+
+      <div style="overflow:auto; margin-top:10px;">
+        <table id="log-table" aria-label="Propane log">
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Action</th>
+              <th>Type</th>
+              <th>Number</th>
+              <th>Weight</th>
+              <th>%</th>
+              <th>Avail</th>
+              <th class="mono">BottleID</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td colspan="8" class="muted">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbw4IhPiozhAXTR2BIubezPBRpQA6iVoP-PmbWE78BY2QYXlpZyXH3hR2ffw4R4_rYtJ/exec";
+
+  function jsonp(url, params) {
+    return new Promise((resolve, reject) => {
+      const cb = "cb_" + Math.random().toString(36).slice(2);
+      const script = document.createElement("script");
+      const qs = new URLSearchParams(params || {});
+      qs.set("callback", cb);
+      script.src = url + (url.includes("?") ? "&" : "?") + qs.toString();
+      let done = false;
+
+      window[cb] = (data) => {
+        done = true;
+        try { resolve(data); } finally {
+          delete window[cb];
+          script.remove();
+        }
+      };
+
+      script.onerror = () => {
+        if (!done) {
+          delete window[cb];
+          script.remove();
+          reject(new Error("JSONP request failed"));
+        }
+      };
+
+      document.head.appendChild(script);
+      setTimeout(() => {
+        if (!done) {
+          delete window[cb];
+          script.remove();
+          reject(new Error("JSONP timeout"));
+        }
+      }, 15000);
+    });
+  }
+
+  function toNum(v) {
+    if (v === null || v === undefined) return null;
+    const s = String(v).trim();
+    if (!s) return null;
+    const n = Number(s);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  function fmtPct(p) {
+    if (p === null || p === undefined) return "—";
+    const n = Number(p);
+    if (!Number.isFinite(n)) return "—";
+    return (Math.round(n * 10) / 10).toFixed(1) + "%";
+  }
+
+  function availabilityFromPct(pct) {
+    const n = Number(pct);
+    if (!Number.isFinite(n)) return null;
+    return n >= 75 ? "Available" : "Unavailable";
+  }
+
+  function badgeClass(avail) {
+    if (avail === "Available") return "badge good";
+    if (avail === "Unavailable") return "badge bad";
+    return "badge unk";
+  }
+
+  function parseTimestamp(ts) {
+    const d = new Date(ts);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  let bottles = [];
+  let logRows = [];
+  let currentRows = [];
+
+  function uniqueTypesFromBottles() {
+    const set = new Set();
+    bottles.forEach(b => set.add(b.Type || b.type || ""));
+    return Array.from(set).filter(Boolean).sort((a,b)=>a.localeCompare(b));
+  }
+
+  function fillTypeSelects() {
+    const types = uniqueTypesFromBottles();
+    const curSel = document.getElementById("current-type");
+    const logSel = document.getElementById("log-type");
+    curSel.querySelectorAll("option:not(:first-child)").forEach(o=>o.remove());
+    logSel.querySelectorAll("option:not(:first-child)").forEach(o=>o.remove());
+    types.forEach(t => {
+      const o1 = document.createElement("option");
+      o1.value = t; o1.textContent = t;
+      curSel.appendChild(o1);
+
+      const o2 = document.createElement("option");
+      o2.value = t; o2.textContent = t;
+      logSel.appendChild(o2);
+    });
+  }
+
+  function computeCurrent() {
+    const latest = new Map();
+    for (const r of logRows) {
+      const id = r.BottleID || r.bottleId || r.bottleID || "";
+      if (!id) continue;
+      const d = parseTimestamp(r.Timestamp || r.timestamp || r.Time || r.time);
+      const t = d ? d.getTime() : -Infinity;
+      const prev = latest.get(id);
+      if (!prev || t > prev._t) {
+        latest.set(id, {...r, _t: t});
+      }
+    }
+
+    currentRows = bottles.map(b => {
+      const id = b.BottleID || b.bottleId || b.bottleID || "";
+      const last = latest.get(id);
+      const pct = toNum(last ? (last["Calculated %"] ?? last.CalculatedPct ?? last.Calculated ?? last.Pct ?? last.pct ?? last.calculatedPct ?? last.calculated) : null);
+      const avail = (last && (last.Availability || last.availability)) || availabilityFromPct(pct);
+      return {
+        Type: b.Type || b.type || "",
+        Number: b.Number ?? b.number ?? "",
+        BottleID: id,
+        pct,
+        Availability: avail || null
+      };
+    });
+
+    currentRows.sort((a,b)=> {
+      const t = (a.Type||"").localeCompare(b.Type||"");
+      if (t) return t;
+      const an = Number(a.Number), bn = Number(b.Number);
+      if (Number.isFinite(an) && Number.isFinite(bn)) return an - bn;
+      return String(a.Number).localeCompare(String(b.Number));
+    });
+  }
+
+  function renderCurrent() {
+    const typeFilter = document.getElementById("current-type").value;
+    const availFilter = document.getElementById("current-avail").value;
+
+    let rows = currentRows.slice();
+    if (typeFilter) rows = rows.filter(r => r.Type === typeFilter);
+    if (availFilter) rows = rows.filter(r => (r.Availability || "") === availFilter);
+
+    const tbody = document.querySelector("#current-table tbody");
+    tbody.innerHTML = "";
+    if (!rows.length) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = '<td colspan="5" class="muted">No bottles match the filter.</td>';
+      tbody.appendChild(tr);
+    } else {
+      rows.forEach(r => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${r.Type || "—"}</td>
+          <td class="mono">${r.Number}</td>
+          <td class="mono">${fmtPct(r.pct)}</td>
+          <td><span class="${badgeClass(r.Availability)}">${r.Availability || "Unknown"}</span></td>
+          <td class="mono">${r.BottleID || "—"}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+    document.getElementById("current-summary").textContent =
+      `${rows.length} bottle${rows.length===1?"":"s"} shown`;
+  }
+
+  function renderLog() {
+    const typeFilter = document.getElementById("log-type").value;
+    const availFilter = document.getElementById("log-avail").value;
+    const actionFilter = document.getElementById("log-action").value;
+    const filledAfter = document.getElementById("log-filled-after").value;
+
+    let rows = logRows.slice();
+
+    rows.sort((a,b)=> {
+      const ad = parseTimestamp(a.Timestamp || a.timestamp || "");
+      const bd = parseTimestamp(b.Timestamp || b.timestamp || "");
+      return (bd?bd.getTime():0) - (ad?ad.getTime():0);
+    });
+
+    if (typeFilter) rows = rows.filter(r => (r.Type || r.type || "") === typeFilter);
+
+    if (availFilter) {
+      rows = rows.filter(r => {
+        const avail = (r.Availability || r.availability) || availabilityFromPct(toNum(r["Calculated %"] ?? r.CalculatedPct ?? r.Pct ?? r.pct));
+        return (avail || "") === availFilter;
+      });
+    }
+
+    if (actionFilter) rows = rows.filter(r => (r.Action || r.action || "") === actionFilter);
+
+    if (filledAfter) {
+      const cutoff = new Date(filledAfter + "T00:00:00");
+      rows = rows.filter(r => {
+        const act = (r.Action || r.action || "");
+        if (act !== "Filled") return true;
+        const d = parseTimestamp(r.Timestamp || r.timestamp || "");
+        return d ? d >= cutoff : true;
+      });
+    }
+
+    const tbody = document.querySelector("#log-table tbody");
+    tbody.innerHTML = "";
+    if (!rows.length) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = '<td colspan="8" class="muted">No log entries match the filter.</td>';
+      tbody.appendChild(tr);
+    } else {
+      rows.forEach(r => {
+        const ts = r.Timestamp || r.timestamp || "—";
+        const act = r.Action || r.action || "—";
+        const type = r.Type || r.type || "—";
+        const num  = r.Number ?? r.number ?? "—";
+        const w    = r["Entered Weight"] ?? r.EnteredWeight ?? r.weight ?? "—";
+        const pctN = toNum(r["Calculated %"] ?? r.CalculatedPct ?? r.Pct ?? r.pct);
+        const pct  = fmtPct(pctN);
+        const avail = (r.Availability || r.availability) || availabilityFromPct(pctN) || "Unknown";
+        const bid  = r.BottleID || r.bottleId || r.bottleID || "—";
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${ts}</td>
+          <td>${act}</td>
+          <td>${type}</td>
+          <td class="mono">${num}</td>
+          <td class="mono">${w}</td>
+          <td class="mono">${pct}</td>
+          <td><span class="${badgeClass(avail)}">${avail}</span></td>
+          <td class="mono">${bid}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    document.getElementById("log-summary").textContent =
+      `${rows.length} entr${rows.length===1?"y":"ies"} shown`;
+  }
+
+  async function loadAll() {
+    try {
+      const b = await jsonp(WEBAPP_URL, { action: "bottles" });
+      bottles = (b && (b.bottles || b.data || b)) || [];
+      if (!Array.isArray(bottles)) bottles = [];
+
+      const l = await jsonp(WEBAPP_URL, { action: "log" });
+      logRows = (l && (l.log || l.data || l)) || [];
+      if (!Array.isArray(logRows)) logRows = [];
+
+      fillTypeSelects();
+      computeCurrent();
+      renderCurrent();
+      renderLog();
+    } catch (e) {
+      console.error(e);
+      document.querySelector("#current-table tbody").innerHTML =
+        '<tr><td colspan="5" class="muted">Could not load data. (Apps Script response not in expected JSONP format yet.)</td></tr>';
+      document.querySelector("#log-table tbody").innerHTML =
+        '<tr><td colspan="8" class="muted">Could not load data. (Apps Script response not in expected JSONP format yet.)</td></tr>';
+      document.getElementById("current-summary").textContent = "Load failed";
+      document.getElementById("log-summary").textContent = "Load failed";
+    }
+  }
+
+  document.getElementById("current-type").addEventListener("change", renderCurrent);
+  document.getElementById("current-avail").addEventListener("change", renderCurrent);
+
+  document.getElementById("log-type").addEventListener("change", renderLog);
+  document.getElementById("log-avail").addEventListener("change", renderLog);
+  document.getElementById("log-action").addEventListener("change", renderLog);
+  document.getElementById("log-filled-after").addEventListener("change", renderLog);
+
+  document.getElementById("add-entry").addEventListener("click", () => {
+    window.location.href = "propane_entry.html";
+  });
+
+  (function(){
+    var hamburger = document.getElementById("hamburger-btn");
+    var drawer = document.getElementById("drawer");
+    var overlay = document.getElementById("drawer-overlay");
+
+    function openMenu(){
+      drawer.classList.add("open");
+      overlay.classList.add("open");
+      drawer.setAttribute("aria-hidden","false");
+      overlay.setAttribute("aria-hidden","false");
+    }
+    function closeMenu(){
+      drawer.classList.remove("open");
+      overlay.classList.remove("open");
+      drawer.setAttribute("aria-hidden","true");
+      overlay.setAttribute("aria-hidden","true");
+    }
+    function toggleMenu(){
+      if (drawer.classList.contains("open")) closeMenu();
+      else openMenu();
+    }
+
+    if (hamburger) hamburger.addEventListener("click", toggleMenu);
+    if (overlay) overlay.addEventListener("click", closeMenu);
+    document.addEventListener("keydown", function(e){ if(e.key==="Escape") closeMenu(); });
+  })();
+
+  loadAll();
+</script>
+</body>
+</html>

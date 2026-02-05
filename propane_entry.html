@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Propane Entry</title>
+  <style>
+    :root {
+      --bg: #f3f3f3;
+      --card: #ffffff;
+      --text: #111;
+      --muted: #666;
+      --border: #e6e6e6;
+      --shadow: 0 10px 26px rgba(0,0,0,0.10);
+      --pill-shadow: 0 8px 22px rgba(0,0,0,0.18);
+      --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .wrap {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 18px 14px 28px;
+    }
+    h1 {
+      margin: 8px 0 14px;
+      font-size: 34px;
+      text-align: center;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px 14px;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: 10px;
+      align-items: center;
+      padding: 10px 4px;
+      border-top: 1px solid var(--border);
+    }
+    .row:first-of-type { border-top: none; }
+    .label {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 750;
+      letter-spacing: .2px;
+      text-transform: uppercase;
+    }
+    select, input {
+      width: 100%;
+      font-size: 18px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      outline: none;
+      background: #fff;
+      color: var(--text);
+    }
+    .btn {
+      background: #111;
+      color: #fff;
+      border: none;
+      border-radius: 16px;
+      padding: 12px 20px;
+      font-size: 18px;
+      font-weight: 650;
+      box-shadow: var(--pill-shadow);
+      cursor: pointer;
+      width: 100%;
+      margin-top: 14px;
+    }
+    .btn:active { transform: scale(0.99); }
+    .link {
+      display: inline-block;
+      margin-top: 12px;
+      text-decoration: none;
+      color: #111;
+      font-weight: 650;
+      text-align: center;
+      width: 100%;
+    }
+    .msg {
+      margin-top: 10px;
+      font-size: 14px;
+      color: var(--muted);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Propane Entry</h1>
+    <div class="card">
+      <div class="row">
+        <div class="label">Action</div>
+        <select id="action">
+          <option value="Filled">Filled</option>
+          <option value="Checked">Checked</option>
+          <option value="Used">Used</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <div class="label">Type</div>
+        <select id="type">
+          <option value="">Loading…</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <div class="label">Number</div>
+        <select id="number" disabled>
+          <option value="">Select type first</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <div class="label">Weight</div>
+        <input id="weight" type="number" step="0.1" inputmode="decimal" placeholder="Enter total weight (lbs)" />
+      </div>
+
+      <button id="submit" class="btn" type="button">Submit</button>
+      <a class="link" href="propane.html">Back to Propane</a>
+      <div id="msg" class="msg"></div>
+    </div>
+  </div>
+
+<script>
+  const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbw4IhPiozhAXTR2BIubezPBRpQA6iVoP-PmbWE78BY2QYXlpZyXH3hR2ffw4R4_rYtJ/exec";
+
+  function jsonp(url, params) {
+    return new Promise((resolve, reject) => {
+      const cb = "cb_" + Math.random().toString(36).slice(2);
+      const script = document.createElement("script");
+      const qs = new URLSearchParams(params || {});
+      qs.set("callback", cb);
+      script.src = url + (url.includes("?") ? "&" : "?") + qs.toString();
+      let done = false;
+
+      window[cb] = (data) => {
+        done = true;
+        try { resolve(data); } finally {
+          delete window[cb];
+          script.remove();
+        }
+      };
+
+      script.onerror = () => {
+        if (!done) {
+          delete window[cb];
+          script.remove();
+          reject(new Error("JSONP request failed"));
+        }
+      };
+
+      document.head.appendChild(script);
+      setTimeout(() => {
+        if (!done) {
+          delete window[cb];
+          script.remove();
+          reject(new Error("JSONP timeout"));
+        }
+      }, 15000);
+    });
+  }
+
+  let bottles = [];
+  let bottlesByType = new Map();
+
+  function buildMaps() {
+    bottlesByType = new Map();
+    bottles.forEach(b => {
+      const type = b.Type || b.type || "";
+      const num = b.Number ?? b.number ?? "";
+      const id  = b.BottleID || b.bottleId || b.bottleID || "";
+      if (!type || !id) return;
+      if (!bottlesByType.has(type)) bottlesByType.set(type, []);
+      bottlesByType.get(type).push({ num, id });
+    });
+    for (const [t, arr] of bottlesByType.entries()) {
+      arr.sort((a,b)=> {
+        const an = Number(a.num), bn = Number(b.num);
+        if (Number.isFinite(an) && Number.isFinite(bn)) return an - bn;
+        return String(a.num).localeCompare(String(b.num));
+      });
+    }
+  }
+
+  function fillTypeSelect() {
+    const typeSel = document.getElementById("type");
+    typeSel.innerHTML = "";
+    const types = Array.from(bottlesByType.keys()).sort((a,b)=>a.localeCompare(b));
+    const first = document.createElement("option");
+    first.value = "";
+    first.textContent = "Select type…";
+    typeSel.appendChild(first);
+    types.forEach(t => {
+      const o = document.createElement("option");
+      o.value = t;
+      o.textContent = t;
+      typeSel.appendChild(o);
+    });
+  }
+
+  function fillNumberSelect(type) {
+    const numSel = document.getElementById("number");
+    numSel.innerHTML = "";
+    if (!type || !bottlesByType.has(type)) {
+      numSel.disabled = true;
+      const o = document.createElement("option");
+      o.value = "";
+      o.textContent = "Select type first";
+      numSel.appendChild(o);
+      return;
+    }
+    const arr = bottlesByType.get(type);
+    numSel.disabled = false;
+
+    const first = document.createElement("option");
+    first.value = "";
+    first.textContent = "Select number…";
+    numSel.appendChild(first);
+
+    arr.forEach(x => {
+      const o = document.createElement("option");
+      o.value = x.id; // BottleID
+      o.textContent = String(x.num);
+      numSel.appendChild(o);
+    });
+  }
+
+  async function loadBottles() {
+    try {
+      const b = await jsonp(WEBAPP_URL, { action: "bottles" });
+      bottles = (b && (b.bottles || b.data || b)) || [];
+      if (!Array.isArray(bottles)) bottles = [];
+      buildMaps();
+      fillTypeSelect();
+      fillNumberSelect("");
+      document.getElementById("msg").textContent = "";
+    } catch (e) {
+      console.error(e);
+      document.getElementById("msg").textContent =
+        "Could not load bottles yet (Apps Script response not in expected JSONP format).";
+    }
+  }
+
+  document.getElementById("type").addEventListener("change", (e) => {
+    fillNumberSelect(e.target.value);
+  });
+
+  document.getElementById("submit").addEventListener("click", async () => {
+    const action = document.getElementById("action").value;
+    const type = document.getElementById("type").value;
+    const numberSel = document.getElementById("number");
+    const bottleId = numberSel.value;
+    const numberText = numberSel.options[numberSel.selectedIndex]?.textContent || "";
+    const weight = document.getElementById("weight").value;
+
+    const msg = document.getElementById("msg");
+    msg.textContent = "";
+
+    if (!type) { msg.textContent = "Select a type."; return; }
+    if (!bottleId) { msg.textContent = "Select a bottle number."; return; }
+    if (!weight || isNaN(Number(weight))) { msg.textContent = "Enter a valid weight."; return; }
+
+    msg.textContent = "Submitting…";
+    try {
+      await jsonp(WEBAPP_URL, {
+        action: "submit",
+        actionType: action,
+        type,
+        number: numberText,
+        bottleId,
+        enteredWeight: weight
+      });
+      msg.textContent = "Saved. Returning…";
+      setTimeout(() => {
+        window.location.href = "propane.html";
+      }, 450);
+    } catch (e) {
+      console.error(e);
+      msg.textContent = "Submit failed. Try again.";
+    }
+  });
+
+  loadBottles();
+</script>
+</body>
+</html>
