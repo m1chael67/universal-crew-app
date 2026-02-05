@@ -307,8 +307,7 @@
             <option value="">All</option>
             <option value="Filled">Filled</option>
             <option value="Checked">Checked</option>
-            <option value="Used">Used</option>
-          </select>
+            </select>
         </div>
         <div class="filter">
           <label for="log-filled-after">Fill after</label>
@@ -526,9 +525,14 @@
       });
     }
 
-    if (actionFilter) rows = rows.filter(r => (r.Action || r.action || "") === actionFilter);
-
-    if (filledAfter) {
+    if (actionFilter) {
+      rows = rows.filter(r => {
+        const act = (r.Action || r.action || "");
+        if (actionFilter === "Checked") return (act === "Checked" || act === "Used");
+        return act === actionFilter;
+      });
+    }
+if (filledAfter) {
       const cutoff = new Date(filledAfter + "T00:00:00");
       rows = rows.filter(r => {
         const act = (r.Action || r.action || "");
@@ -547,7 +551,8 @@
     } else {
       rows.forEach(r => {
         const ts = r.Timestamp || r.timestamp || "—";
-        const act = r.Action || r.action || "—";
+        let act = r.Action || r.action || "—";
+        if (act === "Used") act = "Checked";
         const type = r.Type || r.type || "—";
         const num  = r.Number ?? r.number ?? "—";
         const w    = r["Entered Weight"] ?? r.EnteredWeight ?? r.weight ?? "—";
