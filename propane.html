@@ -546,7 +546,7 @@
     if (actionFilter) {
       rows = rows.filter(r => {
         const act = (r.Action || r.action || "");
-        if (actionFilter === "Checked") return (act === "Checked" || act === "Used");
+        if (actionFilter === "Checked") return (act === "Checked");
         return act === actionFilter;
       });
     }
@@ -570,8 +570,7 @@ if (filledAfter) {
       rows.forEach(r => {
         const ts = r.Timestamp || r.timestamp || "—";
         let act = r.Action || r.action || "—";
-        if (act === "Used") act = "Checked";
-        const type = r.Type || r.type || "—";
+const type = r.Type || r.type || "—";
         const num  = r.Number ?? r.number ?? "—";
         const w    = r["Entered Weight"] ?? r.EnteredWeight ?? r.weight ?? "—";
         const pctN = toNum(r["Calculated %"] ?? r.CalculatedPct ?? r.Pct ?? r.pct);
@@ -632,7 +631,7 @@ if (filledAfter) {
   document.getElementById("log-filled-after").addEventListener("change", renderLog);
 
   document.getElementById("add-entry").addEventListener("click", () => {
-    window.location.href = "propane_entry.html" + (window.location.search || "");
+    window.location.href = "propane_entry.html";
   });
 
   document.getElementById("refresh-btn").addEventListener("click", () => {
@@ -641,7 +640,7 @@ if (filledAfter) {
 
   // Entry button
   document.getElementById("add-entry").addEventListener("click", () => {
-    window.location.href = "propane_entry.html" + (window.location.search || "");
+    window.location.href = "propane_entry.html";
   });
 
   (function(){
@@ -669,19 +668,6 @@ if (filledAfter) {
     if (hamburger) hamburger.addEventListener("click", toggleMenu);
     if (overlay) overlay.addEventListener("click", closeMenu);
     document.addEventListener("keydown", function(e){ if(e.key==="Escape") closeMenu(); });
-  })();
-
-
-  // Rewrite Add Entry to preserve ?from=... when navigating to entry page
-  (function () {
-    try {
-      var btn = document.getElementById("add-entry");
-      if (!btn) return;
-      // If it is an <a>, rewrite href; if it is a button with click handler, handler already preserves search.
-      if (btn.tagName && btn.tagName.toLowerCase() === "a") {
-        btn.setAttribute("href", "propane_entry.html" + (window.location.search || ""));
-      }
-    } catch (e) {}
   })();
 
   loadAll();
