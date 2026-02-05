@@ -94,30 +94,7 @@
       color: var(--muted);
       text-align: center;
     }
-  
-    /* Back button (secondary) */
-    #back-btn{
-      appearance:none;
-      border:none;
-      background:transparent;
-      color:#444;
-      font-size:14px;
-      font-weight:600;
-      padding:6px 10px;
-      border-radius:10px;
-      cursor:pointer;
-      opacity:0.85;
-      transition:background 120ms ease, opacity 120ms ease, transform 80ms ease;
-    }
-    #back-btn:hover{
-      background:#f0f0f0;
-      opacity:1;
-    }
-    #back-btn:active{
-      transform:scale(0.98);
-    }
-
-</style>
+  </style>
 </head>
 <body>
   <div class="wrap">
@@ -151,38 +128,12 @@
       </div>
 
       <button id="submit" class="btn" type="button">Submit</button>
-      <a id="back-to-propane" class="link" href="propane.html">Back to Propane</a>
+      <button id="back-btn" class="link" type="button" onclick="window.location.href='propane.html' + (window.location.search || '')">Back to Propane</button>
       <div id="msg" class="msg"></div>
     </div>
   </div>
 
 <script>
-  
-  // Back link: keep the same ?from=... when returning to Propane
-  (function () {
-    try {
-      var qs = window.location.search || "";
-      var a = document.getElementById("back-to-propane");
-      if (a) a.setAttribute("href", "propane.html" + qs);
-    } catch (e) {}
-  })();
-
-  // Back to Propane: always return with the same query string (?from=...)
-  document.addEventListener("DOMContentLoaded", () => {
-    const back = document.getElementById("back-to-propane");
-    if (!back) return;
-
-    back.addEventListener("click", (e) => {
-      e.preventDefault();
-      window.location.href = "propane.html" + (window.location.search || "");
-    });
-
-    // Also update the href for visibility (nice-to-have)
-    back.setAttribute("href", "propane.html" + (window.location.search || ""));
-  });
-
-
-
   const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxg8cQtsPbDIqPbTyo5g7dpeA1yGixOQ5TH1SfUEAvdinAS-9j4sfSjfo1HnqlIfvAO/exec";
 
   function jsonp(url, params) {
@@ -211,10 +162,11 @@
       };
 
       document.head.appendChild(script);
-      setTimeout(function () {
-  window.history.back();
-}, 450);
-reject(new Error("JSONP timeout"));
+      setTimeout(() => {
+        if (!done) {
+          delete window[cb];
+          script.remove();
+          reject(new Error("JSONP timeout"));
         }
       }, 15000);
     });
@@ -339,47 +291,6 @@ reject(new Error("JSONP timeout"));
       msg.textContent = "Submit failed. Try again.";
     }
   });
-
-
-  // Fallback: if we're still here after a tick, route to Propane with the best available context
-    setTimeout(() => {
-      if (window.location.href === here) {
-        const qs = window.location.search || "";
-        if (qs) {
-          window.location.href = "propane.html" + qs;
-          return;
-        }
-        // Try to keep query from referrer (Propane page)
-        const ref = document.referrer || "";
-        if (ref.includes("propane.html")) {
-          const i = ref.indexOf("?");
-          window.location.href = i >= 0 ? ref : "propane.html";
-          return;
-        }
-        window.location.href = "propane.html" + (window.location.search || "");
-      }
-    }, 120);
-  });
-
-
-
-  // Back button: prefer exact referrer (keeps Propane ?from=...); otherwise use history.back(); final fallback keeps query
-  // If back fails (new tab), fall back to Propane while keeping any query we have
-    const here = window.location.href;
-    setTimeout(() => {
-      if (window.location.href === here) {
-        window.location.href = "propane.html" + (window.location.search || "");
-      }
-    }, 200);
-  });
-
-
-
-  // Back button: always return to Propane preserving query string
-  document.getElementById("back-btn").addEventListener("click", () => {
-    window.location.href = "propane.html" + (window.location.search || "");
-  });
-
 
   loadBottles();
 </script>
