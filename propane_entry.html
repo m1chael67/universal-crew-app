@@ -105,7 +105,8 @@
         <select id="action">
           <option value="Filled">Filled</option>
           <option value="Checked">Checked</option>
-          </select>
+          <option value="Used">Used</option>
+        </select>
       </div>
 
       <div class="row">
@@ -128,7 +129,7 @@
       </div>
 
       <button id="submit" class="btn" type="button">Submit</button>
-      <a class="link" href="propane.html">Back to Propane</a>
+      <a class="link" id="back-to-propane" href="propane.html">Back to Propane</a>
       <div id="msg" class="msg"></div>
     </div>
   </div>
@@ -284,7 +285,7 @@
       });
       msg.textContent = "Saved. Returning…";
       setTimeout(() => {
-        window.location.href = "propane.html";
+        window.location.href = "propane.html" + (window.location.search || "");
       }, 450);
     } catch (e) {
       console.error(e);
@@ -294,5 +295,17 @@
 
   loadBottles();
 </script>
+
+<script>
+  // Keep the employee context using ?from=... (Option 2)
+  (function () {
+    try {
+      var params = window.location.search || "";
+      var back = document.getElementById("back-to-propane");
+      if (back) back.setAttribute("href", "propane.html" + params);
+    } catch (e) {}
+  })();
+</script>
+
 </body>
 </html>
