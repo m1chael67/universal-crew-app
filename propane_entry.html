@@ -306,7 +306,7 @@ reject(new Error("JSONP timeout"));
       });
       msg.textContent = "Saved. Returning…";
       setTimeout(() => {
-        window.location.href = "propane.html";
+        window.location.href = "propane.html" + (window.location.search || "");
       }, 450);
     } catch (e) {
       console.error(e);
@@ -315,12 +315,7 @@ reject(new Error("JSONP timeout"));
   });
 
 
-  // Back button: go back to previous page (keeps Propane ?from=...); fallback to Propane preserving query or referrer
-  document.getElementById("back-btn").addEventListener("click", () => {
-    const here = window.location.href;
-    window.history.back();
-
-    // Fallback: if we're still here after a tick, route to Propane with the best available context
+  // Fallback: if we're still here after a tick, route to Propane with the best available context
     setTimeout(() => {
       if (window.location.href === here) {
         const qs = window.location.search || "";
@@ -335,9 +330,28 @@ reject(new Error("JSONP timeout"));
           window.location.href = i >= 0 ? ref : "propane.html";
           return;
         }
-        window.location.href = "propane.html";
+        window.location.href = "propane.html" + (window.location.search || "");
       }
     }, 120);
+  });
+
+
+
+  // Back button: prefer exact referrer (keeps Propane ?from=...); otherwise use history.back(); final fallback keeps query
+  // If back fails (new tab), fall back to Propane while keeping any query we have
+    const here = window.location.href;
+    setTimeout(() => {
+      if (window.location.href === here) {
+        window.location.href = "propane.html" + (window.location.search || "");
+      }
+    }, 200);
+  });
+
+
+
+  // Back button: always return to Propane preserving query string
+  document.getElementById("back-btn").addEventListener("click", () => {
+    window.location.href = "propane.html" + (window.location.search || "");
   });
 
 
