@@ -151,12 +151,22 @@
       </div>
 
       <button id="submit" class="btn" type="button">Submit</button>
-      <a class="link" href="propane.html">Back to Propane</a>
+      <a id="back-to-propane" class="link" href="propane.html">Back to Propane</a>
       <div id="msg" class="msg"></div>
     </div>
   </div>
 
 <script>
+  
+  // Back link: keep the same ?from=... when returning to Propane
+  (function () {
+    try {
+      var qs = window.location.search || "";
+      var a = document.getElementById("back-to-propane");
+      if (a) a.setAttribute("href", "propane.html" + qs);
+    } catch (e) {}
+  })();
+
   const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxg8cQtsPbDIqPbTyo5g7dpeA1yGixOQ5TH1SfUEAvdinAS-9j4sfSjfo1HnqlIfvAO/exec";
 
   function jsonp(url, params) {
