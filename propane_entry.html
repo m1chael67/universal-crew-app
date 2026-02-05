@@ -94,7 +94,30 @@
       color: var(--muted);
       text-align: center;
     }
-  </style>
+  
+    /* Back button (secondary) */
+    #back-btn{
+      appearance:none;
+      border:none;
+      background:transparent;
+      color:#444;
+      font-size:14px;
+      font-weight:600;
+      padding:6px 10px;
+      border-radius:10px;
+      cursor:pointer;
+      opacity:0.85;
+      transition:background 120ms ease, opacity 120ms ease, transform 80ms ease;
+    }
+    #back-btn:hover{
+      background:#f0f0f0;
+      opacity:1;
+    }
+    #back-btn:active{
+      transform:scale(0.98);
+    }
+
+</style>
 </head>
 <body>
   <div class="wrap">
@@ -105,8 +128,7 @@
         <select id="action">
           <option value="Filled">Filled</option>
           <option value="Checked">Checked</option>
-          <option value="Used">Used</option>
-        </select>
+          </select>
       </div>
 
       <div class="row">
@@ -129,7 +151,7 @@
       </div>
 
       <button id="submit" class="btn" type="button">Submit</button>
-      <button id="back-btn" class="link" type="button">Back to Propane</button>
+      <a class="link" href="propane.html">Back to Propane</a>
       <div id="msg" class="msg"></div>
     </div>
   </div>
@@ -285,25 +307,11 @@
       });
       msg.textContent = "Saved. Returning…";
       setTimeout(() => {
-        if (window.history.length > 1) {
-          window.history.back();
-        } else {
-          window.location.href = "propane.html" + (window.location.search || "");
-        }
+        window.location.href = "propane.html";
       }, 450);
     } catch (e) {
       console.error(e);
       msg.textContent = "Submit failed. Try again.";
-    }
-  });
-
-
-  // Back button: return to previous page (keeps ?from= on Propane)
-  document.getElementById("back-btn").addEventListener("click", () => {
-    if (window.history.length > 1) {
-      window.history.back();
-    } else {
-      window.location.href = "propane.html" + (window.location.search || "");
     }
   });
 
