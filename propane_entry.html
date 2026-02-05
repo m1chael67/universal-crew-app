@@ -185,11 +185,10 @@
       };
 
       document.head.appendChild(script);
-      setTimeout(() => {
-        if (!done) {
-          delete window[cb];
-          script.remove();
-          reject(new Error("JSONP timeout"));
+      setTimeout(function () {
+  window.history.back();
+}, 450);
+reject(new Error("JSONP timeout"));
         }
       }, 15000);
     });
@@ -314,6 +313,33 @@
       msg.textContent = "Submit failed. Try again.";
     }
   });
+
+
+  // Back button: go back to previous page (keeps Propane ?from=...); fallback to Propane preserving query or referrer
+  document.getElementById("back-btn").addEventListener("click", () => {
+    const here = window.location.href;
+    window.history.back();
+
+    // Fallback: if we're still here after a tick, route to Propane with the best available context
+    setTimeout(() => {
+      if (window.location.href === here) {
+        const qs = window.location.search || "";
+        if (qs) {
+          window.location.href = "propane.html" + qs;
+          return;
+        }
+        // Try to keep query from referrer (Propane page)
+        const ref = document.referrer || "";
+        if (ref.includes("propane.html")) {
+          const i = ref.indexOf("?");
+          window.location.href = i >= 0 ? ref : "propane.html";
+          return;
+        }
+        window.location.href = "propane.html";
+      }
+    }, 120);
+  });
+
 
   loadBottles();
 </script>
