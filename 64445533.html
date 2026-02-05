@@ -46,38 +46,86 @@
       cursor: not-allowed;
     }
 
-:root { --safe-top: env(safe-area-inset-top, 0px); }
-body { padding-top: calc(var(--safe-top) + 8px); }
-.hamburger-btn { top: calc(var(--safe-top) + 10px); }
-
-
-    /* Safe-area: prevent top cut-off on iPhone */
-    body{
-      padding-top: calc(env(safe-area-inset-top, 0px) + 8px);
+    /* Hamburger + Drawer (matched to Propane) */
+    .hamburger-btn{
+      position: fixed;
+      top: calc(env(safe-area-inset-top, 0px) + 10px);
+      left: 10px;
+      z-index: 1100;
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      border: 1px solid #d8d8d8;
+      background: #f2f2f2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
     }
-
-
-    /* Match Logout + Refresh sizes */
-    #logout-btn, #refresh-btn{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      gap:8px;
-      height:48px;
-      line-height:48px;
-      padding-left:16px;
-      padding-right:16px;
-      border-radius:16px;
-      box-shadow: 0 8px 22px rgba(0,0,0,0.18);
-      vertical-align: middle;
-      margin-top: 0 !important;
+    .hamburger-lines{
+      width: 18px;
+      height: 14px;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
     }
-    #refresh-btn{ min-width:54px; position:relative; line-height: normal; }
-    #refresh-btn svg{ pointer-events:none; }
+    .hamburger-lines span{
+      display:block;
+      height:2px;
+      background:#111;
+      border-radius:2px;
+    }
+    .drawer{
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 260px;
+      background: #fff;
+      border-right: 1px solid #e6e6e6;
+      z-index: 1200;
+      transform: translateX(-100%);
+      transition: transform 220ms ease;
+      padding: 14px 12px;
+      overflow-y: auto;
+    }
+    .drawer.open{ transform: translateX(0); }
+    .drawer h3 {
+      margin: 10px 6px 12px;
+      font-size: 14px;
+      color:#333;
+      letter-spacing: .3px;
+      text-transform: uppercase;
+    }
+    .drawer a {
+      display:block;
+      padding: 12px 12px;
+      border-radius: 12px;
+      text-decoration: none;
+      color:#111;
+      font-weight: 650;
+      border: 1px solid #efefef;
+      background: #fafafa;
+      margin: 8px 6px;
+    }
+    .drawer-overlay{
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.22);
+      z-index: 1150;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 220ms ease;
+    }
+    .drawer-overlay.open{
+      opacity: 1;
+      pointer-events: auto;
+    }
 
 </style>
 </head>
 <body>
+
   <!-- Hamburger + Drawer -->
   <button id="hamburger-btn" class="hamburger-btn" type="button" aria-label="Open menu">
     <div class="hamburger-lines" aria-hidden="true">
@@ -95,9 +143,9 @@ body { padding-top: calc(var(--safe-top) + 8px); }
     Hours this period: <span id="hour-counter">0</span>
   </div>
   <div class="container" style="margin-top: 2.5rem;">
-    <div style="text-align:right;margin-bottom:8px;">
-      <button id="logout-btn" type="button" style="font-size:12px;padding:4px 8px;cursor:pointer;">Log Out</button>
-<button style="position:relative;" id="refresh-btn" class="btn primary" type="button"><svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" style="display:block" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg><span style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;">Refresh</span></button>
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-bottom:8px;align-items:center;">
+      <button id="logout-btn" type="button" class="btn primary">Log Out</button>
+<button id="refresh-btn" type="button" class="btn primary" style="position:relative;"><svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" style="display:block" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg><span style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;">Refresh</span></button>
     </div>
     <h1>Michael's Jobs</h1>
     <div class="clock-row">
@@ -625,87 +673,52 @@ function parseSheetDateTime(cell) {
 
     document.addEventListener("DOMContentLoaded", loadHoursFromSheet);
 
-
-<script>
-document.getElementById('refresh-btn')?.addEventListener('click', () => location.reload());
-
-const hb = document.getElementById('hamburger-btn');
-const dr = document.getElementById('drawer');
-const ov = document.getElementById('drawer-overlay');
-
-hb?.addEventListener('click', () => {
-  dr.classList.toggle('open');
-  ov.classList.toggle('open');
-});
-ov?.addEventListener('click', () => {
-  dr.classList.remove('open');
-  ov.classList.remove('open');
-});
 </script>
-
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/universal-crew-app/service-worker.js');
     }
 
-  
-<script>
-document.getElementById('refresh-btn')?.addEventListener('click', () => location.reload());
-
-const hb = document.getElementById('hamburger-btn');
-const dr = document.getElementById('drawer');
-const ov = document.getElementById('drawer-overlay');
-
-hb?.addEventListener('click', () => {
-  dr.classList.toggle('open');
-  ov.classList.toggle('open');
-});
-ov?.addEventListener('click', () => {
-  dr.classList.remove('open');
-  ov.classList.remove('open');
-});
-</script>
+  </script>
 
 
 <script>
-
-    // Hamburger / drawer menu
-    (function(){
-      var hamburger = document.getElementById("hamburger-btn");
-      var drawer = document.getElementById("drawer");
-      var overlay = document.getElementById("drawer-overlay");
-
-      function openMenu(){
-        drawer.classList.add("open");
-        overlay.classList.add("open");
-        drawer.setAttribute("aria-hidden", "false");
-        overlay.setAttribute("aria-hidden", "false");
-      }
-      function closeMenu(){
-        drawer.classList.remove("open");
-        overlay.classList.remove("open");
-        drawer.setAttribute("aria-hidden", "true");
-        overlay.setAttribute("aria-hidden", "true");
-      }
-      function toggleMenu(){
-        if (drawer.classList.contains("open")) closeMenu();
-        else openMenu();
-      }
-
-      if (hamburger) hamburger.addEventListener("click", toggleMenu);
-      if (overlay) overlay.addEventListener("click", closeMenu);
-      document.addEventListener("keydown", function(e){
-        if (e.key === "Escape") closeMenu();
-      });
-    })();
-
-</script>
-
-<script>
+  // Drawer (Propane-style) + Refresh
   document.addEventListener("DOMContentLoaded", function () {
+    // Refresh
     var r = document.getElementById("refresh-btn");
     if (r) r.addEventListener("click", function(){ window.location.reload(true); });
+
+    // Drawer
+    var hamburger = document.getElementById("hamburger-btn");
+    var drawer = document.getElementById("drawer");
+    var overlay = document.getElementById("drawer-overlay");
+    if (!hamburger || !drawer || !overlay) return;
+
+    function openMenu(){
+      drawer.classList.add("open");
+      overlay.classList.add("open");
+      drawer.setAttribute("aria-hidden","false");
+      overlay.setAttribute("aria-hidden","false");
+    }
+    function closeMenu(){
+      drawer.classList.remove("open");
+      overlay.classList.remove("open");
+      drawer.setAttribute("aria-hidden","true");
+      overlay.setAttribute("aria-hidden","true");
+    }
+    function toggleMenu(){
+      if (drawer.classList.contains("open")) closeMenu();
+      else openMenu();
+    }
+
+    hamburger.addEventListener("click", toggleMenu);
+    overlay.addEventListener("click", closeMenu);
+    document.addEventListener("keydown", function(e){
+      if (e.key === "Escape") closeMenu();
+    });
   });
 </script>
+
 </body>
 </html>
