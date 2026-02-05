@@ -217,20 +217,7 @@
       opacity: 1;
       pointer-events: auto;
     }
-  
-    /* Icon buttons */
-    #refresh-btn{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      gap:8px;
-      min-width:54px;
-      padding-left:16px;
-      padding-right:16px;
-    }
-    #refresh-btn svg{ pointer-events:none; }
-
-</style>
+  </style>
 </head>
 <body>
   <button id="hamburger-btn" class="hamburger-btn" type="button" aria-label="Open menu">
@@ -247,11 +234,6 @@
 
   <div class="wrap">
     <h1>Propane</h1>
-<div style="display:flex;justify-content:center;margin:6px 0 14px;">
-  <button style="position:relative;" id="refresh-btn" class="btn" type="button" class="btn" title="Refresh"><svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" style="display:block" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg><span style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;">Refresh</span></button>
-</div>
-<div style="display:flex;justify-content:center;margin:6px 0 14px;">
-</div>
 
     <div class="card" id="current-card">
       <div class="card-title">
@@ -296,7 +278,7 @@
 
     <div class="btn-row">
       <button id="add-entry" class="btn" type="button">Add Entry</button>
-</div>
+    </div>
 
     <div class="card" id="log-card">
       <div class="card-title">
@@ -325,7 +307,8 @@
             <option value="">All</option>
             <option value="Filled">Filled</option>
             <option value="Checked">Checked</option>
-            </select>
+            <option value="Used">Used</option>
+          </select>
         </div>
         <div class="filter">
           <label for="log-filled-after">Fill after</label>
@@ -543,14 +526,9 @@
       });
     }
 
-    if (actionFilter) {
-      rows = rows.filter(r => {
-        const act = (r.Action || r.action || "");
-        if (actionFilter === "Checked") return (act === "Checked");
-        return act === actionFilter;
-      });
-    }
-if (filledAfter) {
+    if (actionFilter) rows = rows.filter(r => (r.Action || r.action || "") === actionFilter);
+
+    if (filledAfter) {
       const cutoff = new Date(filledAfter + "T00:00:00");
       rows = rows.filter(r => {
         const act = (r.Action || r.action || "");
@@ -569,8 +547,8 @@ if (filledAfter) {
     } else {
       rows.forEach(r => {
         const ts = r.Timestamp || r.timestamp || "—";
-        let act = r.Action || r.action || "—";
-const type = r.Type || r.type || "—";
+        const act = r.Action || r.action || "—";
+        const type = r.Type || r.type || "—";
         const num  = r.Number ?? r.number ?? "—";
         const w    = r["Entered Weight"] ?? r.EnteredWeight ?? r.weight ?? "—";
         const pctN = toNum(r["Calculated %"] ?? r.CalculatedPct ?? r.Pct ?? r.pct);
@@ -631,16 +609,7 @@ const type = r.Type || r.type || "—";
   document.getElementById("log-filled-after").addEventListener("change", renderLog);
 
   document.getElementById("add-entry").addEventListener("click", () => {
-    window.location.href = "propane_entry.html";
-  });
-
-  document.getElementById("refresh-btn").addEventListener("click", () => {
-    window.location.reload(true);
-  });
-
-  // Entry button
-  document.getElementById("add-entry").addEventListener("click", () => {
-    window.location.href = "propane_entry.html";
+    window.location.href = "propane_entry.html" + (window.location.search || "");
   });
 
   (function(){
