@@ -167,6 +167,22 @@
     } catch (e) {}
   })();
 
+  // Back to Propane: always return with the same query string (?from=...)
+  document.addEventListener("DOMContentLoaded", () => {
+    const back = document.getElementById("back-to-propane");
+    if (!back) return;
+
+    back.addEventListener("click", (e) => {
+      e.preventDefault();
+      window.location.href = "propane.html" + (window.location.search || "");
+    });
+
+    // Also update the href for visibility (nice-to-have)
+    back.setAttribute("href", "propane.html" + (window.location.search || ""));
+  });
+
+
+
   const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxg8cQtsPbDIqPbTyo5g7dpeA1yGixOQ5TH1SfUEAvdinAS-9j4sfSjfo1HnqlIfvAO/exec";
 
   function jsonp(url, params) {
