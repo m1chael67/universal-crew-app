@@ -64,29 +64,19 @@
   </div>
 
   <script>
-    // Pay period helper: 14-day Saturday–Friday periods (PeriodKey = END Friday) anchored at 2025-11-14
+    // Pay period helper: 14-day Saturday–Friday periods anchored at 2025-11-01
     function getPayPeriodInfo(date) {
-      // Use local date (midnight) to avoid timezone/UTC shifting
       var d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-      var anchorEnd = new Date(2025, 10, 14); // 2025-11-14 (Fri) is an END Friday anchor
+      var anchor = new Date(2025, 10, 14); // 2025-11-14 (Fri, pay period anchor)
       var msPerDay = 24 * 60 * 60 * 1000;
-
-      // daysDiff relative to anchor END Friday
-      var daysDiff = Math.floor((d - anchorEnd) / msPerDay);
-
-      // Map any day in a pay period to that period's END Friday (biweekly)
-      var periodIndex = Math.floor((daysDiff + 13) / 14);
-
-      var end   = new Date(anchorEnd.getTime() + periodIndex * 14 * msPerDay);      // END Friday
-      var start = new Date(end.getTime() - 13 * msPerDay);                          // START Saturday
-
-      var label = (start.getMonth() + 1) + "/" + start.getDate() + " - " +
-                  (end.getMonth() + 1) + "/" + end.getDate();
-
-      var key = "pp-" + end.getFullYear() + "-" + (end.getMonth() + 1) + "-" + end.getDate();
+      var daysDiff = Math.floor((d - anchor) / msPerDay);
+      var periodIndex = Math.floor(daysDiff / 14);
+      var start = new Date(anchor.getTime() + periodIndex * 14 * msPerDay);
+      var end   = new Date(start.getTime() + 13 * msPerDay);
+      var label = (start.getMonth()+1) + "/" + start.getDate() + " - " + (end.getMonth()+1) + "/" + end.getDate();
+      var key   = "pp-" + start.getFullYear() + "-" + (start.getMonth()+1) + "-" + start.getDate();
       return { start: start, end: end, label: label, key: key };
     }
-
 
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwDMoZjhy2IHA0PFEqSwd79cOteIBX-QhIVjLh8pXHnzm6frGjoO1FkS9_xrdIQh8M/exec";
 
