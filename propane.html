@@ -228,7 +228,7 @@
 
   <div id="drawer" class="drawer" aria-hidden="true">
     <h3>Menu</h3>
-    <a href="index.html">Home</a>
+    <a id="home-link" href="index.html">Home</a>
   </div>
   <div id="drawer-overlay" class="drawer-overlay" aria-hidden="true"></div>
 
@@ -307,6 +307,7 @@
             <option value="">All</option>
             <option value="Filled">Filled</option>
             <option value="Checked">Checked</option>
+            <option value="Used">Used</option>
           </select>
         </div>
         <div class="filter">
@@ -608,7 +609,7 @@
   document.getElementById("log-filled-after").addEventListener("change", renderLog);
 
   document.getElementById("add-entry").addEventListener("click", () => {
-    window.location.href = "propane_entry.html" + (window.location.search || "");
+    window.location.href = "propane_entry.html" + window.location.search;
   });
 
   (function(){
@@ -636,6 +637,20 @@
     if (hamburger) hamburger.addEventListener("click", toggleMenu);
     if (overlay) overlay.addEventListener("click", closeMenu);
     document.addEventListener("keydown", function(e){ if(e.key==="Escape") closeMenu(); });
+  })();
+
+
+  // Home link (Option 2): go back to the employee page that opened Propane; otherwise go to index.html
+  (function () {
+    try {
+      var params = new URLSearchParams(window.location.search);
+      var from = params.get("from");
+      // safety: only allow simple filenames like 12345.html
+      if (from && /^[A-Za-z0-9_-]+\.html$/.test(from)) {
+        var home = document.getElementById("home-link");
+        if (home) home.setAttribute("href", from);
+      }
+    } catch (e) {}
   })();
 
   loadAll();

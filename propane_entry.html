@@ -105,6 +105,7 @@
         <select id="action">
           <option value="Filled">Filled</option>
           <option value="Checked">Checked</option>
+          <option value="Used">Used</option>
         </select>
       </div>
 
@@ -128,7 +129,7 @@
       </div>
 
       <button id="submit" class="btn" type="button">Submit</button>
-      <button id="back-btn" class="link" type="button" onclick="window.location.href='propane.html' + (window.location.search || '')">Back to Propane</button>
+      <a class="link" href="javascript:void(0)" id="backBtn">Back to Propane</a>
       <div id="msg" class="msg"></div>
     </div>
   </div>
@@ -284,7 +285,7 @@
       });
       msg.textContent = "Saved. Returning…";
       setTimeout(() => {
-        window.location.href = "propane.html" + (window.location.search || "");
+        window.location.href = "propane.html";
       }, 450);
     } catch (e) {
       console.error(e);
@@ -293,6 +294,13 @@
   });
 
   loadBottles();
+
+  // Back button: force browser back (ignore query parsing)
+  (function(){
+    var b = document.getElementById("backBtn");
+    if (b) b.addEventListener("click", function(){ history.back(); });
+  })();
+
 </script>
 </body>
 </html>
