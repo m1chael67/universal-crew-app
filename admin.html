@@ -409,7 +409,8 @@
       var year  = parseInt(m[1], 10);
       var month = parseInt(m[2], 10) - 1;
       var day   = parseInt(m[3], 10);
-      var d = new Date(year, month, day);
+      // Construct LOCAL date at noon to avoid UTC/DST shifts
+      var d = new Date(year, month, day, 12, 0, 0);
       if (isNaN(d.getTime())) return null;
       return d;
     }
