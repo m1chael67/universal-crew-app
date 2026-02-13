@@ -387,18 +387,40 @@
 
     // --- Pay period logic (unchanged) ---
     function getPayPeriodInfo(date) {
-      var d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-      var anchor = new Date(2025, 10, 1); // 2025-11-01 (month is 0-based)
+      // Pay periods are 14 days, starting on Saturday 2025-11-01.
+      // Use UTC day math + local-noon dates to avoid DST/UTC off-by-one errors.
       var msPerDay = 24 * 60 * 60 * 1000;
-      var daysDiff = Math.floor((d - anchor) / msPerDay);
-      var periodIndex = Math.floor(daysDiff / 14);
-      var start = new Date(anchor.getTime() + periodIndex * 14 * msPerDay);
-      var end = new Date(start.getTime() + 13 * msPerDay);
+
+      function utcDayNumber(dt) {
+        return Math.floor(Date.UTC(dt.getFullYear(), dt.getMonth(), dt.getDate()) / msPerDay);
+      }
+
+      // Normalize input to a real Date
+      var inDate = (date instanceof Date) ? date : new Date(date);
+      if (isNaN(inDate.getTime())) inDate = new Date();
+
+      var anchor = new Date(2025, 10, 1, 12, 0, 0); // Sat 2025-11-01 (local noon)
+      var dayDiff = utcDayNumber(inDate) - utcDayNumber(anchor);
+      var periodIndex = Math.floor(dayDiff / 14);
+
+      // Compute UTC dates for start/end, then re-materialize as LOCAL noon
+      var startUTC = Date.UTC(anchor.getFullYear(), anchor.getMonth(), anchor.getDate()) + periodIndex * 14 * msPerDay;
+      var endUTC   = startUTC + 13 * msPerDay;
+
+      var sUTC = new Date(startUTC);
+      var eUTC = new Date(endUTC);
+
+      var start = new Date(sUTC.getUTCFullYear(), sUTC.getUTCMonth(), sUTC.getUTCDate(), 12, 0, 0);
+      var end   = new Date(eUTC.getUTCFullYear(), eUTC.getUTCMonth(), eUTC.getUTCDate(), 12, 0, 0);
+
       var label = (start.getMonth() + 1) + "/" + start.getDate() +
                   " - " + (end.getMonth() + 1) + "/" + end.getDate();
+
+      // PeriodKey represents the END date (Friday)
       var key   = "pp-" + end.getFullYear() + "-" +
                   (end.getMonth() + 1) + "-" + end.getDate();
-return { start: start, end: end, label: label, key: key };
+
+      return { start: start, end: end, label: label, key: key };
     }
 
     function parsePeriodKey(periodKey) {
@@ -409,8 +431,7 @@ return { start: start, end: end, label: label, key: key };
       var year  = parseInt(m[1], 10);
       var month = parseInt(m[2], 10) - 1;
       var day   = parseInt(m[3], 10);
-      // Construct LOCAL date at noon to avoid UTC/DST shifts
-      var d = new Date(year, month, day, 12, 0, 0);
+      var d = new Date(year, month, day);
       if (isNaN(d.getTime())) return null;
       return d;
     }
@@ -422,7 +443,7 @@ return { start: start, end: end, label: label, key: key };
         start = parsePeriodKey(s.substring(s.indexOf("pp-")));
       }
       if (!start) return "";
-// PeriodKey represents the END date (Friday). Display range as start=end-13 days.
+// PeriodKey represents the END date (Friday). Compute the displayed range as start=end-13 days.
       var end = start;
       start = new Date(end.getTime() - 13 * 24 * 60 * 60 * 1000);
 function fmt(d) {
@@ -441,7 +462,9 @@ function fmt(d) {
       var lastEl = document.getElementById("last-body");
       var olderEl = document.getElementById("older-body");
 
-      var now = new Date();
+      
+      var bodyEls = [currentEl, lastEl, olderEl].filter(Boolean);
+var now = new Date();
       var pp = getPayPeriodInfo(now);
       var currentPeriodKey = pp.key;
       if (statusEl) statusEl.textContent = "Loading hours...";
@@ -636,11 +659,10 @@ function fmt(d) {
 
           // Highlight cells in current period row
           var currentEl = document.getElementById("current-body");
-          var lastEl = document.getElementById("last-body");
-          var olderEl = document.getElementById("older-body");
-          var bodyEls = [currentEl, lastEl, olderEl].filter(Boolean);
+      var lastEl = document.getElementById("last-body");
+      var olderEl = document.getElementById("older-body");
           if (!bodyEls.length) return clocked;
-bodyEls.forEach(function(tbody) {
+          bodyEls.forEach(function(tbody) {
             var rowsDom = tbody.querySelectorAll("tr");
             rowsDom.forEach(function(tr) {
             var td0 = tr.querySelector("td:first-child");
