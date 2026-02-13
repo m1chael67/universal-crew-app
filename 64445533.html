@@ -156,17 +156,36 @@
   </div>
 
   <script>
+
     // Pay period helper: 14-day Saturday–Friday periods anchored at 2025-11-01
+    // PeriodKey is the END Friday date: pp-YYYY-M-D
     function getPayPeriodInfo(date) {
-      var d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-      var anchor = new Date(2025, 10, 14); // 2025-11-14 (Fri, pay period anchor)
       var msPerDay = 24 * 60 * 60 * 1000;
-      var daysDiff = Math.floor((d - anchor) / msPerDay);
+
+      // Use UTC day math to avoid DST / timezone drift
+      function utcDay(y, m, d) { return Date.UTC(y, m, d); }
+
+      // Anchor: Saturday 2025-11-01
+      var anchorUtc = utcDay(2025, 10, 1);
+
+      // "Today" as a UTC day
+      var dUtc = utcDay(date.getFullYear(), date.getMonth(), date.getDate());
+
+      var daysDiff = Math.floor((dUtc - anchorUtc) / msPerDay);
       var periodIndex = Math.floor(daysDiff / 14);
-      var start = new Date(anchor.getTime() + periodIndex * 14 * msPerDay);
-      var end   = new Date(start.getTime() + 13 * msPerDay);
-      var label = (start.getMonth()+1) + "/" + start.getDate() + " - " + (end.getMonth()+1) + "/" + end.getDate();
-      var key   = "pp-" + start.getFullYear() + "-" + (start.getMonth()+1) + "-" + start.getDate();
+
+      var startUtc = anchorUtc + periodIndex * 14 * msPerDay;   // Saturday
+      var endUtc   = startUtc + 13 * msPerDay;                  // Friday
+
+      // Display dates (local) at noon to stay stable
+      var start = new Date(startUtc); start.setHours(12,0,0,0);
+      var end   = new Date(endUtc);   end.setHours(12,0,0,0);
+
+      var label = (start.getMonth()+1) + "/" + start.getDate() + " - " +
+                  (end.getMonth()+1) + "/" + end.getDate();
+
+      var key   = "pp-" + end.getFullYear() + "-" + (end.getMonth()+1) + "-" + end.getDate();
+
       return { start: start, end: end, label: label, key: key };
     }
 
