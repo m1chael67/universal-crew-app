@@ -35,8 +35,7 @@
       justify-content:center;
       padding:28px 14px 40px;
       position:relative;
-      overflow-x:hidden;
-    }
+          }
     .hamburger{
       position:fixed;
       left:16px;
@@ -79,8 +78,13 @@
       display:block;
       padding:10px 6px;
       font-size:18px;
-      color:#1a73e8;
-      text-decoration:underline;
+      color:#111;
+      text-decoration:none;
+      background:#f3f3f3;
+      border-radius:14px;
+      padding:14px 12px;
+      margin:10px 0;
+      font-weight:700;
     }
     .overlay{
       position:fixed;inset:0;
@@ -100,6 +104,7 @@
       font-size:64px;
       letter-spacing:-1px;
     }
+    .ver{font-size:12px;color:#888;margin:-10px 0 12px 0;}
     .top-right{
       position:fixed;
       right:16px;
@@ -189,9 +194,10 @@
       border-spacing:0;
       margin-top:12px;
       overflow:hidden;
-      border-radius:20px;
-      border:1px solid var(--line);
     }
+
+    .tableBox{overflow:hidden;border-radius:20px;border:1px solid var(--line);}
+    .tableBox table{border:0;border-radius:0;}
     thead th{
       background:#fafafa;
       text-align:left;
@@ -221,7 +227,9 @@
       padding:10px 14px;
       border-radius:999px;
       font-weight:800;
-      min-width:150px;
+      min-width:0;
+      max-width:100%;
+      box-sizing:border-box;
       border:2px solid transparent;
       white-space:nowrap;
     }
@@ -268,19 +276,35 @@
     @media (max-width: 520px){
       .panel{ width:100%; }
       .card{ width:100%; box-sizing:border-box; }
+      .tableBox{ width:100%; overflow:hidden; }
       table{ table-layout:fixed; width:100%; }
 
-      /* Column sizing: # / Tent / Grade / Availability (Notes hidden) */
-      th:nth-child(1), td:nth-child(1){ width:52px; }
-      th:nth-child(3), td:nth-child(3){ width:54px; }
-      th:nth-child(4), td:nth-child(4){ width:132px; }
-      th:nth-child(5), td:nth-child(5){ display:none; }
+      /* Column sizing using classes (reliable even if column order changes) */
+      th.col-num, td.col-num{ width:56px; }
+      th.col-grade, td.col-grade{ width:56px; }
+      th.col-avail, td.col-avail{ width:140px; }
+      th.col-notes, td.col-notes{ display:none; }
 
-      th:nth-child(2), td:nth-child(2){
+      td.col-tent, th.col-tent{
         overflow:hidden;
         text-overflow:ellipsis;
         white-space:nowrap;
       }
+
+      td.col-avail{ padding-left:6px; padding-right:6px; overflow:hidden; }
+      .pill{
+        display:block;
+        width:100%;
+        max-width:100%;
+        min-width:0;
+        padding:8px 8px;
+        white-space:nowrap;
+        overflow:hidden;
+        text-overflow:ellipsis;
+        box-sizing:border-box;
+      }
+    }
+
 
       td:nth-child(4){ padding-left:6px; padding-right:6px; }
       .pill{
@@ -311,6 +335,7 @@
   <div class="wrap">
     <div class="panel">
       <h1>Tents</h1>
+      <div class="ver">v2026-03-04_233104</div>
 
       <div class="card">
         <div class="filters">
@@ -668,14 +693,14 @@
     }
 
     const html = `
-      <table>
+      <div class="tableBox"><table>
         <thead>
           <tr>
-            <th style="width:90px">#</th>
-            <th>Tent</th>
-            <th style="width:110px">Grade</th>
-            <th style="width:190px">Availability</th>
-            <th>Notes</th>
+            <th class="col-num">#</th>
+            <th class="col-tent">Tent</th>
+            <th class="col-grade">Grade</th>
+            <th class="col-avail">Availability</th>
+            <th class="col-notes">Notes</th>
           </tr>
         </thead>
         <tbody>
@@ -712,17 +737,17 @@
 
             return `
               <tr class="clickable" data-key="${key}">
-                <td class="num">${toStr(r.Number)}</td>
-                <td>${toStr(r.Tent)}</td>
-                <td><b>${toStr(r.Grade) || "<span class='small'>—</span>"}</b></td>
-                <td>${pill}</td>
-                <td>${toStr(r.Notes) || "<span class='small'>—</span>"}</td>
+                <td class="num col-num">${toStr(r.Number)}</td>
+                <td class="col-tent">${toStr(r.Tent)}</td>
+                <td class="col-grade"><b>${toStr(r.Grade) || "<span class='small'>—</span>"}</b></td>
+                <td class="col-avail">${pill}</td>
+                <td class="col-notes">${toStr(r.Notes) || "<span class='small'>—</span>"}</td>
               </tr>
               ${details}
             `;
           }).join("")}
         </tbody>
-      </table>
+      </table></div>
     `;
     wrap.innerHTML = html;
 
