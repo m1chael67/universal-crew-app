@@ -1,318 +1,189 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tent Form</title>
-  <style>
-    :root{
-      --bg:#f3f3f3;
-      --card:#fff;
-      --text:#111;
-      --muted:#666;
-      --border:#e6e6e6;
-      --shadow:0 10px 26px rgba(0,0,0,.10);
-      --pill-shadow:0 8px 22px rgba(0,0,0,.18);
-      --radius:18px;
-    }
-    *{box-sizing:border-box}
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);}
-    .wrap{max-width:720px;margin:0 auto;padding:18px 14px 28px;}
-    h1{margin:8px 0 14px;font-size:34px;text-align:center;}
-    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 14px;}
-    .row{display:grid;grid-template-columns:120px 1fr;gap:10px;align-items:center;padding:10px 4px;border-top:1px solid var(--border);}
-    .row:first-of-type{border-top:none;}
-    .label{font-size:12px;color:var(--muted);font-weight:750;letter-spacing:.2px;text-transform:uppercase;}
-    select,input{width:100%;font-size:18px;padding:10px 12px;border-radius:14px;border:1px solid var(--border);outline:none;background:#fff;color:var(--text);}
-    .btn{background:#111;color:#fff;border:none;border-radius:16px;padding:12px 20px;font-size:18px;font-weight:650;box-shadow:var(--pill-shadow);cursor:pointer;width:100%;margin-top:14px;}
-    .btn:active{transform:scale(.99);}
-    .link-btn{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      width: 160px;
-      margin:12px auto 0;
-      padding:10px 12px;
-      border-radius:14px;
-      border:1px solid var(--border);
-      background:#fafafa;
-      color:#111;
-      font-weight:650;
-      text-decoration:none;
-    }
-    .msg{margin-top:10px;font-size:14px;color:var(--muted);text-align:center;}
-    .hidden{display:none;}
-  </style>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Tent Entry</title>
+<style>
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:#f3f3f3;color:#111;}
+  .wrap{max-width:720px;margin:0 auto;padding:18px 16px 40px;}
+  h1{margin:10px 0 16px;font-size:40px;text-align:center;}
+  .card{background:#fff;border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.08);padding:16px;}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px;}
+  label{font-weight:800;color:#444;min-width:92px;}
+  select,input{padding:12px 12px;border-radius:12px;border:1px solid #ddd;background:#fff;min-width:200px;}
+  input[type="text"]{flex:1;min-width:220px;}
+  .btn{border:0;background:#111;color:#fff;border-radius:18px;padding:14px 18px;font-weight:900;cursor:pointer;box-shadow:0 10px 25px rgba(0,0,0,.12);}
+  .btn.secondary{background:#fff;color:#111;border:1px solid #ddd;box-shadow:none;padding:10px 14px;border-radius:14px;}
+  .muted{color:#666;}
+  .err{color:#b00020;font-weight:800;}
+  .ok{color:#1b5e20;font-weight:800;}
+</style>
 </head>
 <body>
   <div class="wrap">
     <h1>Tent Form</h1>
     <div class="card">
+      <button class="btn secondary" id="backBtn">← Back</button>
+      <p class="muted" style="margin:10px 0 16px;">Update a tent’s status. “On job” requires a job name.</p>
+
       <div class="row">
-        <div class="label">Action</div>
+        <label for="action">Action</label>
         <select id="action">
-          <option value="On Job">On Job</option>
-          <option value="Return">Return</option>
-          <option value="Washed">Washed</option>
-          <option value="Needs Wash">Needs Wash</option>
-        </select>
-      </div>
-
-      <div class="row hidden" id="job-row">
-        <div class="label">Job</div>
-        <input id="job" type="text" placeholder="Which job is it on?" />
-      </div>
-
-      <div class="row">
-        <div class="label">Tent</div>
-        <select id="tent">
-          <option value="">Loading…</option>
+          <option value="on job">On job</option>
+          <option value="return">Return</option>
+          <option value="washed">Washed</option>
+          <option value="needs wash">Needs wash</option>
         </select>
       </div>
 
       <div class="row">
-        <div class="label">Number</div>
-        <select id="number" disabled>
-          <option value="">Select tent first</option>
-        </select>
+        <label for="tent">Tent</label>
+        <select id="tent"></select>
       </div>
 
-      <button id="submit" class="btn" type="button">Submit</button>
+      <div class="row">
+        <label for="number">Number</label>
+        <select id="number"></select>
+      </div>
 
-      <a id="back" class="link-btn" href="#" role="button">Back</a>
-      <div id="msg" class="msg"></div>
+      <div class="row" id="jobRow" style="display:none;">
+        <label for="job">Job</label>
+        <input id="job" type="text" placeholder="e.g., Smith wedding, 123 Main St" />
+      </div>
+
+      <div class="row">
+        <button class="btn" id="submitBtn">Submit</button>
+      </div>
+
+      <div id="msg" class="muted"></div>
     </div>
   </div>
 
 <script>
-  // TODO: paste your Apps Script web app URL here after you deploy it.
-  const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxbvlbGKMCZJVKi8yFo7c_hLfOMIH-UhHkkcfX2zOevEl0OVUOtN03wxHz9p6TdWU5v/exec";
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx1IkMYqD08TuQOyJB3NLM8ezcmDGoQfJdEnzwe6FFkm9nz0TqjpJrq3Nwzgh1OcoOS/exec";
 
-  
-    function jsonp(url, params = {}) {
-      return new Promise((resolve, reject) => {
-        const cb = "cb_" + Math.random().toString(36).slice(2);
-        const qs = new URLSearchParams(params);
-        // Support both common callback parameter names
-        qs.set("callback", cb);
-        qs.set("cb", cb);
+document.getElementById("backBtn").addEventListener("click", ()=>history.back());
 
-        const script = document.createElement("script");
-        script.src = url + (url.includes("?") ? "&" : "?") + qs.toString();
+function jsonp(url, params, timeoutMs=8000){
+  return new Promise((resolve, reject)=>{
+    const cbName = "__cb_" + Math.random().toString(36).slice(2);
+    const u = new URL(url);
+    Object.entries(params||{}).forEach(([k,v])=>u.searchParams.set(k, v));
+    u.searchParams.set("callback", cbName);
 
-        const timeout = setTimeout(() => {
-          cleanup();
-          reject(new Error("JSONP timeout"));
-        }, 12000);
+    let done = false;
+    const t = setTimeout(()=>{
+      if(done) return;
+      done = true;
+      cleanup();
+      reject(new Error("Web app did not respond (timeout)."));
+    }, timeoutMs);
 
-        function cleanup() {
-          clearTimeout(timeout);
-          try { delete window[cb]; } catch(e) {}
-          if (script.parentNode) script.parentNode.removeChild(script);
-        }
-
-    async function fetchWithFallback(actionNames, baseParams = {}) {
-      let lastErr = null;
-      for (const action of actionNames) {
-        try {
-          const data = await jsonp(WEBAPP_URL, { ...baseParams, action });
-          // Normalize common response shapes
-          if (Array.isArray(data)) return { ok: true, tents: data, raw: data };
-          if (data && Array.isArray(data.tents)) return { ok: true, tents: data.tents, raw: data };
-          if (data && data.data && Array.isArray(data.data.tents)) return { ok: true, tents: data.data.tents, raw: data };
-          if (data && Array.isArray(data.rows)) return { ok: true, tents: data.rows, raw: data };
-          if (data && data.ok === false) { lastErr = new Error(data.error || "Web app returned ok:false"); continue; }
-          // If action returned something else, keep trying
-          lastErr = new Error("Unexpected response shape");
-        } catch (e) {
-          lastErr = e;
-        }
-      }
-      throw lastErr || new Error("Could not load data");
+    function cleanup(){
+      clearTimeout(t);
+      delete window[cbName];
+      script.remove();
     }
-    
 
-        window[cb] = (data) => {
-          cleanup();
-          resolve(data);
-        };
-
-        script.onerror = () => {
-          cleanup();
-          reject(new Error("JSONP load error"));
-        };
-
-        document.body.appendChild(script);
-      });
-    }
-    
-      };
-
-      script.onerror = () => {
-        if (!done) {
-          delete window[cb];
-          script.remove();
-          reject(new Error("JSONP request failed"));
-        }
-      };
-
-      document.head.appendChild(script);
-
-      setTimeout(() => {
-        if (!done) {
-          delete window[cb];
-          script.remove();
-          reject(new Error("JSONP timeout"));
-        }
-      }, 15000);
-    });
-  }
-
-  let tents = [];
-  let tentsByName = new Map();
-
-  function normalizeTentRow(r){
-    return {
-      Number: r.Number ?? r.number ?? r.Num ?? r.num ?? "",
-      Tent: r.Tent ?? r.tent ?? "",
-      Grade: r.Grade ?? r.grade ?? "",
-      Notes: r.Notes ?? r.notes ?? ""
+    window[cbName] = (data)=>{
+      if(done) return;
+      done = true;
+      cleanup();
+      resolve(data);
     };
-  }
 
-  function buildMaps(){
-    tentsByName = new Map();
-    tents.forEach(t=>{
-      const name = (t.Tent||"").toString();
-      const num = t.Number;
-      if(!name || num===undefined || num===null || num==="") return;
-      if(!tentsByName.has(name)) tentsByName.set(name, []);
-      tentsByName.get(name).push({ num });
-    });
-    for(const [k,arr] of tentsByName.entries()){
-      arr.sort((a,b)=>{
-        const an=Number(a.num), bn=Number(b.num);
-        if(Number.isFinite(an) && Number.isFinite(bn)) return an-bn;
-        return String(a.num).localeCompare(String(b.num));
-      });
-    }
-  }
-
-  function fillTentSelect(){
-    const sel = document.getElementById("tent");
-    sel.innerHTML = "";
-    const first = document.createElement("option");
-    first.value = "";
-    first.textContent = "Select tent…";
-    sel.appendChild(first);
-
-    Array.from(tentsByName.keys()).sort((a,b)=>a.localeCompare(b)).forEach(name=>{
-      const o=document.createElement("option");
-      o.value=name;
-      o.textContent=name;
-      sel.appendChild(o);
-    });
-  }
-
-  function fillNumberSelect(tentName){
-    const sel=document.getElementById("number");
-    sel.innerHTML="";
-    if(!tentName || !tentsByName.has(tentName)){
-      sel.disabled=true;
-      const o=document.createElement("option");
-      o.value="";
-      o.textContent="Select tent first";
-      sel.appendChild(o);
-      return;
-    }
-    sel.disabled=false;
-    const o0=document.createElement("option");
-    o0.value="";
-    o0.textContent="Select number…";
-    sel.appendChild(o0);
-    tentsByName.get(tentName).forEach(x=>{
-      const o=document.createElement("option");
-      o.value=String(x.num);
-      o.textContent=String(x.num);
-      sel.appendChild(o);
-    });
-  }
-
-  function setMsg(text, isError){
-    const el=document.getElementById("msg");
-    el.textContent=text||"";
-    el.style.color = isError ? "#b42318" : "#167a3b";
-  }
-
-  function updateJobVisibility(){
-    const act = document.getElementById("action").value;
-    const row = document.getElementById("job-row");
-    if (act === "On Job"){
-      row.classList.remove("hidden");
-    }else{
-      row.classList.add("hidden");
-      document.getElementById("job").value = "";
-    }
-  }
-
-  document.getElementById("action").addEventListener("change", updateJobVisibility);
-
-  document.getElementById("tent").addEventListener("change", (e)=>{
-    fillNumberSelect(e.target.value);
+    const script = document.createElement("script");
+    script.src = u.toString();
+    script.onerror = ()=>{
+      if(done) return;
+      done = true;
+      cleanup();
+      reject(new Error("Failed to load web app script."));
+    };
+    document.head.appendChild(script);
   });
+}
 
-  document.getElementById("submit").addEventListener("click", async ()=>{
-    setMsg("", false);
-    const action = document.getElementById("action").value;
-    const tent = document.getElementById("tent").value;
-    const number = document.getElementById("number").value;
-    const job = document.getElementById("job").value.trim();
+const elAction = document.getElementById("action");
+const elTent = document.getElementById("tent");
+const elNumber = document.getElementById("number");
+const jobRow = document.getElementById("jobRow");
+const elJob = document.getElementById("job");
+const msg = document.getElementById("msg");
 
-    if (!tent || !number){
-      setMsg("Please select a tent and number.", true);
-      return;
-    }
-    if (action === "On Job" && !job){
-      setMsg("Please enter the job name.", true);
+let catalog = [];
+
+function setOptions(selectEl, values){
+  selectEl.innerHTML="";
+  (values||[]).forEach(v=>{
+    const o=document.createElement("option");
+    o.value=v; o.textContent=v;
+    selectEl.appendChild(o);
+  });
+}
+
+function syncNumbers(){
+  const t = elTent.value;
+  const nums = catalog.filter(x=>x.tent===t).map(x=>String(x.number));
+  setOptions(elNumber, nums);
+}
+
+elAction.addEventListener("change", ()=>{
+  jobRow.style.display = (elAction.value === "on job") ? "flex" : "none";
+});
+
+elTent.addEventListener("change", syncNumbers);
+
+async function boot(){
+  try{
+    msg.textContent = "Loading…";
+    const meta = await jsonp(WEB_APP_URL, { action:"meta" });
+    if(!meta || meta.ok !== true) throw new Error(meta && meta.error ? meta.error : "Meta load failed");
+    catalog = meta.catalog || [];
+    const tentTypes = meta.tentTypes || [];
+    if(!tentTypes.length) throw new Error("No tents found in the Tents sheet.");
+    setOptions(elTent, tentTypes);
+    syncNumbers();
+    msg.textContent = "";
+  } catch(e){
+    console.error(e);
+    msg.innerHTML = `<span class="err">${e.message}</span>`;
+  }
+}
+
+document.getElementById("submitBtn").addEventListener("click", async ()=>{
+  try{
+    msg.textContent = "";
+    const action = elAction.value;
+    const tent = elTent.value;
+    const number = elNumber.value;
+    const job = (action === "on job") ? (elJob.value || "").trim() : "";
+
+    if(action === "on job" && !job){
+      msg.innerHTML = '<span class="err">Job is required for "On job".</span>';
       return;
     }
 
-    try{
-      await jsonp(WEBAPP_URL, { action: "submit", actionType: action, tent: tent, number: number, job: job });
-      setMsg("Saved.", false);
-      // small delay so the main page can pick it up if you go back immediately
-      setTimeout(()=>{ history.back(); }, 400);
-    }catch(e){
-      console.error(e);
-      setMsg("Save failed. Check Apps Script deployment + permissions.", true);
-    }
-  });
+    msg.textContent = "Submitting…";
+    const res = await jsonp(WEB_APP_URL, {
+      action: "submit",
+      entryAction: action,
+      tent: tent,
+      number: number,
+      job: job
+    });
 
-  // Back button: force browser to go back one page.
-  document.getElementById("back").addEventListener("click", (e)=>{
-    e.preventDefault();
-    history.back();
-  });
-
-  async function init(){
-    try{
-      const t = await jsonp(WEBAPP_URL, { action: "tents" });
-      tents = (t && (t.tents || t.data || t)) || [];
-      if(!Array.isArray(tents)) tents = [];
-      tents = tents.map(normalizeTentRow);
-
-      buildMaps();
-      fillTentSelect();
-      fillNumberSelect("");
-      updateJobVisibility();
-    }catch(e){
-      console.error(e);
-      document.getElementById("tent").innerHTML = '<option value="">Could not load tents yet</option>';
-      setMsg("Could not load tents yet (Apps Script response not in expected JSONP format).", true);
-    }
+    if(!res || res.ok !== true) throw new Error(res && res.error ? res.error : "Submit failed");
+    msg.innerHTML = '<span class="ok">Saved.</span>';
+    setTimeout(()=>history.back(), 400);
+  } catch(e){
+    console.error(e);
+    msg.innerHTML = `<span class="err">${e.message}</span>`;
   }
+});
 
-  init();
+boot();
 </script>
 </body>
 </html>
