@@ -335,8 +335,6 @@
   <div class="wrap">
     <div class="panel">
       <h1>Tents</h1>
-      <div class="ver">v2026-03-04_233104</div>
-
       <div class="card">
         <div class="filters">
           <label> Tent
@@ -392,12 +390,37 @@
     overlay.classList.remove("show");
   });
 
+  // remember who opened this page (so Home can return correctly)
+  (function rememberReturnTarget(){
+    const qsEmp = Q.emp || Q.employee || "";
+    // If the employee is present in the query, remember it
+    if (qsEmp){
+      try{ sessionStorage.setItem("tent_return_to", qsEmp); }catch(_){}
+      return;
+    }
+    // Otherwise, try to infer from referrer (employee page -> tents)
+    const ref = document.referrer || "";
+    // Only accept same-site *.html referrers that are not this tent page
+    const m = ref.match(/\/([^\/]+\.html)(\?.*)?$/);
+    if (m){
+      const file = m[1];
+      if (file && file.toLowerCase() !== "tent.html" && file.toLowerCase() !== "tent_entry.html"){
+        try{ sessionStorage.setItem("tent_return_to", file); }catch(_){}
+      }
+    }
+  })();
+
   document.getElementById("menuHome").addEventListener("click", (e)=>{
     e.preventDefault();
-    // your employee pages use file name in query (emp=64445533.html etc)
-    // fallback to index.html if not present
-    const emp = Q.emp || Q.employee || "";
-    const target = emp ? emp : "index.html";
+    // Priority:
+    // 1) explicit employee in query
+    // 2) stored return target from when the page was opened
+    // 3) index.html
+    let target = (Q.emp || Q.employee || "");
+    if (!target){
+      try{ target = sessionStorage.getItem("tent_return_to") || ""; }catch(_){ target = ""; }
+    }
+    if (!target) target = "index.html";
     location.href = withQuery(target);
   });
   document.getElementById("menuPropane").addEventListener("click", (e)=>{
