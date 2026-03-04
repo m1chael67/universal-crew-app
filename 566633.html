@@ -114,6 +114,7 @@
   <div id="menuOverlay" class="menu-overlay" aria-hidden="true"></div>
   <nav id="sideMenu" class="side-menu" aria-label="Menu">
     <h2>Menu</h2>
+    <a id="tentsLink" href="tent.html?from=566633.html">Tents</a>
     <a id="propaneLink" href="propane.html?from=566633.html">Propane</a>
   </nav>
 
@@ -157,7 +158,7 @@
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwDMoZjhy2IHA0PFEqSwd79cOteIBX-QhIVjLh8pXHnzm6frGjoO1FkS9_xrdIQh8M/exec";
 
     const TIME_LOG_SHEET_ID = "1gm39kMipfpLKS2n8g9F4SYG9Do36M_5Lc6GOs-c6jCM";
-    const EMPLOYEE_NAME = "Joe";
+    const EMPLOYEE_NAME = "William";
 function parseSheetDateTime(cell) {
   if (!cell) return null;
   var value = null;
@@ -242,7 +243,7 @@ function parseSheetDateTime(cell) {
       return dow + " - " + mmStr + "/" + ddStr + "/" + yyyyStr;
     }
 
-    const FILTER_EMPLOYEE = "Joe";
+    const FILTER_EMPLOYEE = "William";
     const currentEmployee = "Joe";
 
     // Clock in / out + send to Apps Script + email
@@ -324,6 +325,25 @@ function parseSheetDateTime(cell) {
       callback({ state: "out", lastClockIn: null, error: true });
     }
   }
+
+function waitForClockState(expectedState, triesLeft) {
+    triesLeft = (typeof triesLeft === "number") ? triesLeft : 10; // ~10s max
+    fetchClockStateFromSheet(function(info) {
+      if (!info.error && info.state === expectedState) {
+        refreshClockStatus();
+        if (typeof loadHoursFromSheet === "function") loadHoursFromSheet();
+        return;
+      }
+      if (triesLeft <= 0) {
+        // Fall back to a normal refresh (whatever the sheet says now)
+        refreshClockStatus();
+        if (typeof loadHoursFromSheet === "function") loadHoursFromSheet();
+        return;
+      }
+      setTimeout(function() { waitForClockState(expectedState, triesLeft - 1); }, 1000);
+    });
+  }
+
 
   function refreshClockStatus() {
     if (clockStatusEl) clockStatusEl.textContent = "Checking status...";
@@ -407,7 +427,7 @@ function parseSheetDateTime(cell) {
 
       sendClockEvent(eventType, 0);
 
-      setTimeout(function() { location.reload(); }, 3000);
+      setTimeout(function() { waitForClockState(doClockOut ? "out" : "in"); }, 600);
     });
   });
 
