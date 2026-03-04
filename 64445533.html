@@ -333,6 +333,25 @@ function parseSheetDateTime(cell) {
     }
   }
 
+function waitForClockState(expectedState, triesLeft) {
+    triesLeft = (typeof triesLeft === "number") ? triesLeft : 10; // ~10s max
+    fetchClockStateFromSheet(function(info) {
+      if (!info.error && info.state === expectedState) {
+        refreshClockStatus();
+        if (typeof loadHoursFromSheet === "function") loadHoursFromSheet();
+        return;
+      }
+      if (triesLeft <= 0) {
+        // Fall back to a normal refresh (whatever the sheet says now)
+        refreshClockStatus();
+        if (typeof loadHoursFromSheet === "function") loadHoursFromSheet();
+        return;
+      }
+      setTimeout(function() { waitForClockState(expectedState, triesLeft - 1); }, 1000);
+    });
+  }
+
+
   function refreshClockStatus() {
     if (clockStatusEl) clockStatusEl.textContent = "Checking status...";
     toggleBtn.disabled = true;
@@ -415,7 +434,7 @@ function parseSheetDateTime(cell) {
 
       sendClockEvent(eventType, 0);
 
-      setTimeout(function() { location.reload(); }, 3000);
+      setTimeout(function() { waitForClockState(doClockOut ? "out" : "in"); }, 600);
     });
   });
 
