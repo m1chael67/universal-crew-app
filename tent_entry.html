@@ -10,9 +10,9 @@
       --card:#ffffff;
       --text:#111;
       --muted:#666;
-      --shadow:0 10px 24px rgba(0,0,0,.08);
-      --radius:18px;
-      --pill-radius:999px;
+      --shadow:0 6px 14px rgba(0,0,0,.08);
+      --radius:12px;
+      --pill-radius:12px;
       --btn:#0f0f10;
       --btnText:#fff;
       --bad:#b00020;
@@ -44,7 +44,7 @@
       align-items:center;
       gap:10px;
       padding:10px 18px;
-      border-radius:18px;
+      border-radius:var(--radius);
       border:1px solid var(--line);
       background:#f7f7f7;
       cursor:pointer;
@@ -70,7 +70,7 @@
     }
     select,input{
       width:100%;
-      padding:12px 14px;
+      padding:10px 12px;
       border-radius:14px;
       border:1px solid var(--line);
       font-size:18px;
@@ -100,7 +100,7 @@
   
     @media (max-width: 480px){
       h1{ font-size:44px; margin:6px 0 14px; }
-      .card{ border-radius:16px; padding:16px 14px 18px; box-shadow:0 8px 18px rgba(0,0,0,.08); }
+      .card{ border-radius:12px; padding:16px 14px 18px; box-shadow:0 8px 18px rgba(0,0,0,.08); }
       .back{ font-size:16px; padding:10px 14px; border-radius:14px; }
       .hint{ font-size:15px; line-height:1.25; }
       .grid{ grid-template-columns: 1fr; gap:12px; }
