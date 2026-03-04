@@ -249,9 +249,8 @@
   
     @media (max-width: 480px){
       .wrap{ padding:18px 10px 28px; }
-     
-      .num{ font-size:18px; width:56px; }
-    }h1{ font-size:44px; margin-bottom:14px; }
+
+      h1{ font-size:44px; margin-bottom:14px; }
       .card{ border-radius:16px; padding:16px 14px 18px; box-shadow:0 8px 18px rgba(0,0,0,.08); }
       .filters{ gap:8px 10px; }
       .filters label{ font-size:16px; gap:8px; }
@@ -260,38 +259,41 @@
       #toFormBtn{ width:100%; }
       .formLink{ margin:10px 0 14px; }
       table{ font-size:14px; }
-      th,td{ padding:10px 8px; }
-      .pill{ font-size:14px; padding:8px 12px; }
+      th,td{ padding:10px 8px; box-sizing:border-box; }
+      .num{ font-size:18px; width:56px; }
+      .pill{ font-size:14px; padding:8px 10px; min-width:0; max-width:100%; box-sizing:border-box; }
     }
 
-    /* --- Mobile fit: prevent right-side clipping & header overlap --- */
+    /* Mobile fit: prevent right-side clipping on iPhone */
     @media (max-width: 520px){
-      table{ table-layout: fixed; }
-      th, td{ padding: 12px 10px; }
-      td{ font-size: 17px; }
-      /* Column sizing */
-      th:nth-child(1), td:nth-child(1){ width: 56px; }
-      th:nth-child(3), td:nth-child(3){ width: 56px; }
-      th:nth-child(4), td:nth-child(4){ width: 140px; }
-      /* Hide Notes on small screens to guarantee fit */
+      .panel{ width:100%; }
+      .card{ width:100%; box-sizing:border-box; }
+      table{ table-layout:fixed; width:100%; }
+
+      /* Column sizing: # / Tent / Grade / Availability (Notes hidden) */
+      th:nth-child(1), td:nth-child(1){ width:52px; }
+      th:nth-child(3), td:nth-child(3){ width:54px; }
+      th:nth-child(4), td:nth-child(4){ width:132px; }
       th:nth-child(5), td:nth-child(5){ display:none; }
-      /* Prevent Tent text from pushing layout */
+
       th:nth-child(2), td:nth-child(2){
         overflow:hidden;
         text-overflow:ellipsis;
         white-space:nowrap;
       }
-      /* Availability pill must shrink inside its cell */
+
+      td:nth-child(4){ padding-left:6px; padding-right:6px; }
       .pill{
-        min-width: 0;
-        width: 100%;
-        box-sizing: border-box;
-        padding: 8px 10px;
-        font-size: 16px;
+        display:block;
+        width:100%;
+        min-width:0;
+        padding:8px 8px;
+        white-space:nowrap;
+        overflow:hidden;
+        text-overflow:ellipsis;
       }
     }
-
-  </style>
+</style>
 </head>
 <body>
   <div class="hamburger" id="hamburgerBtn" aria-label="Menu"><span>≡</span></div>
