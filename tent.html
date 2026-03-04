@@ -10,8 +10,8 @@
       --card:#ffffff;
       --text:#111;
       --muted:#666;
-      --shadow:0 14px 40px rgba(0,0,0,.10);
-      --radius:26px;
+      --shadow:0 10px 24px rgba(0,0,0,.08);
+      --radius:18px;
       --pill-radius:999px;
       --btn:#0f0f10;
       --btnText:#fff;
@@ -111,11 +111,11 @@
       border:none;
       background:var(--btn);
       color:var(--btnText);
-      padding:14px 22px;
+      padding:12px 18px;
       border-radius:var(--pill-radius);
       font-weight:700;
-      font-size:18px;
-      box-shadow:0 14px 24px rgba(0,0,0,.18);
+      font-size:16px;
+      box-shadow:0 10px 18px rgba(0,0,0,.14);
       cursor:pointer;
     }
     .card{
@@ -152,15 +152,7 @@
       background:#fff;
       outline:none;
     }
-    .filters .filterBtn{
-      margin-left:auto;
-      padding:12px 18px;
-      font-size:16px;
-      border-radius:999px;
-      font-weight:800;
-      box-shadow:0 10px 18px rgba(0,0,0,.15);
-    }
-    .formLink{
+.formLink{
       margin:6px 0 10px;
     }
     .formLink .btn{
@@ -246,7 +238,22 @@
     .detailBox .v{font-size:18px;font-weight:800;margin-top:6px}
     .detailBox > div{min-width:180px}
     .small{font-size:14px;color:#999}
-  </style>
+  
+    @media (max-width: 480px){
+      .wrap{ padding:18px 10px 28px; }
+      h1{ font-size:44px; margin-bottom:14px; }
+      .card{ border-radius:16px; padding:16px 14px 18px; box-shadow:0 8px 18px rgba(0,0,0,.08); }
+      .filters{ gap:8px 10px; }
+      .filters label{ font-size:16px; gap:8px; }
+      select{ min-width:140px; font-size:15px; padding:9px 10px; border-radius:12px; }
+      .btn{ font-size:15px; padding:11px 16px; box-shadow:0 8px 14px rgba(0,0,0,.12); }
+      #toFormBtn{ width:100%; }
+      .formLink{ margin:10px 0 14px; }
+      table{ font-size:14px; }
+      th,td{ padding:10px 8px; }
+      .pill{ font-size:14px; padding:8px 12px; }
+    }
+</style>
 </head>
 <body>
   <div class="hamburger" id="hamburgerBtn" aria-label="Menu"><span>≡</span></div>
@@ -276,8 +283,7 @@
           <label> Action
             <select id="filter-avail"></select>
           </label>
-          <button class="btn filterBtn" id="applyFilterBtn">Filter</button>
-        </div>
+</div>
 
         <div class="formLink">
           <button class="btn" id="toFormBtn">Tent Form</button>
@@ -338,7 +344,6 @@
     location.href = withQuery("tent_entry.html");
   });
   document.getElementById("refreshBtn").addEventListener("click", ()=> loadAll(true));
-  document.getElementById("applyFilterBtn").addEventListener("click", ()=> render());
 ["filter-tent","filter-grade","filter-avail"].forEach(id=>{
   const el = document.getElementById(id);
   if (el) el.addEventListener("change", ()=> render());
