@@ -51,10 +51,10 @@
       <div class="row">
         <div class="label">Action</div>
         <select id="action">
-          <option value="on job">On Job</option>
-          <option value="return">Return</option>
-          <option value="washed">Washed</option>
-          <option value="needs wash">Needs Wash</option>
+          <option value="On Job">On Job</option>
+          <option value="Return">Return</option>
+          <option value="Washed">Washed</option>
+          <option value="Needs Wash">Needs Wash</option>
         </select>
       </div>
 
@@ -86,7 +86,7 @@
 
 <script>
   // TODO: paste your Apps Script web app URL here after you deploy it.
-  const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzL0bey_Kp9TAKVRbOq3O-U4kw1eaZJWrFsaiL03NHMUIdFgzC1Kw-0ZAY3YzvjA0xb/exec";
+  const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxbvlbGKMCZJVKi8yFo7c_hLfOMIH-UhHkkcfX2zOevEl0OVUOtN03wxHz9p6TdWU5v/exec";
 
   function jsonp(url, params) {
     return new Promise((resolve, reject) => {
@@ -123,28 +123,6 @@
         }
       }, 15000);
     });
-  }
-
-  // Accept several common response shapes from Apps Script.
-  function pickArray(resp, keys){
-    if (Array.isArray(resp)) return resp;
-    if (!resp || typeof resp !== 'object') return [];
-    for (const k of keys){
-      const v = resp[k];
-      if (Array.isArray(v)) return v;
-      if (v && typeof v === 'object'){
-        for (const kk of keys){
-          if (Array.isArray(v[kk])) return v[kk];
-        }
-        if (Array.isArray(v.data)) return v.data;
-        if (Array.isArray(v.rows)) return v.rows;
-        if (Array.isArray(v.items)) return v.items;
-      }
-    }
-    if (Array.isArray(resp.data)) return resp.data;
-    if (Array.isArray(resp.rows)) return resp.rows;
-    if (Array.isArray(resp.items)) return resp.items;
-    return [];
   }
 
   let tents = [];
@@ -276,7 +254,8 @@
   async function init(){
     try{
       const t = await jsonp(WEBAPP_URL, { action: "tents" });
-      tents = pickArray(t, ["tents","items","rows","data"]);
+      tents = (t && (t.tents || t.data || t)) || [];
+      if(!Array.isArray(tents)) tents = [];
       tents = tents.map(normalizeTentRow);
 
       buildMaps();

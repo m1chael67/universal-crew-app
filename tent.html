@@ -196,29 +196,18 @@
         <div>
           <label for="filter-grade">Grade</label>
           <select id="filter-grade">
-          <option value="">Any</option>
-          <option value="A+">A+</option>
-          <option value="A">A</option>
-          <option value="A-">A-</option>
-          <option value="B+">B+</option>
-          <option value="B">B</option>
-          <option value="B-">B-</option>
-          <option value="C+">C+</option>
-          <option value="C">C</option>
-          <option value="C-">C-</option>
-          <option value="D+">D+</option>
-          <option value="D">D</option>
-        </select>
+            <option value="">All</option>
+          </select>
         </div>
         <div>
-          <label for="filter-action">Action</label>
-          <select id="filter-action">
-          <option value="">Any</option>
-          <option value="on_job">On Job</option>
-          <option value="return">Return</option>
-          <option value="washed">Washed</option>
-          <option value="needs_wash">Needs Wash</option>
-        </select>
+          <label for="filter-avail">Action</label>
+          <select id="filter-avail">
+            <option value="">All</option>
+            <option value="on job">On Job</option>
+            <option value="return">Return</option>
+            <option value="washed">Washed</option>
+            <option value="needs wash">Needs Wash</option>
+          </select>
         </div>
       </div>
 
@@ -245,7 +234,7 @@
 
 <script>
   // TODO: paste your Apps Script web app URL here after you deploy it.
-  const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzL0bey_Kp9TAKVRbOq3O-U4kw1eaZJWrFsaiL03NHMUIdFgzC1Kw-0ZAY3YzvjA0xb/exec";
+  const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxbvlbGKMCZJVKi8yFo7c_hLfOMIH-UhHkkcfX2zOevEl0OVUOtN03wxHz9p6TdWU5v/exec";
 
   function jsonp(url, params) {
     return new Promise((resolve, reject) => {
@@ -284,49 +273,7 @@
     });
   }
 
-  // Accept several common response shapes from Apps Script.
-  function pickArray(resp, keys){
-    if (Array.isArray(resp)) return resp;
-    if (!resp || typeof resp !== 'object') return [];
-    for (const k of keys){
-      const v = resp[k];
-      if (Array.isArray(v)) return v;
-      if (v && typeof v === 'object'){
-        // one extra nesting level: {data:{tents:[...]}} / {data:{log:[...]}}
-        for (const kk of keys){
-          if (Array.isArray(v[kk])) return v[kk];
-        }
-        if (Array.isArray(v.data)) return v.data;
-        if (Array.isArray(v.rows)) return v.rows;
-        if (Array.isArray(v.items)) return v.items;
-      }
-    }
-    if (Array.isArray(resp.data)) return resp.data;
-    if (Array.isArray(resp.rows)) return resp.rows;
-    if (Array.isArray(resp.items)) return resp.items;
-    return [];
-  }
-
   function toStr(v){ return (v===null||v===undefined) ? "" : String(v); }
-
-function normalizeAction(a) {
-  const s = toStr(a).toLowerCase().replace(/\s+/g, '_');
-  if (s === "on_job" || s === "onjob") return "on_job";
-  if (s === "return" || s === "returned") return "return";
-  if (s === "washed" || s === "wash") return "washed";
-  if (s === "needs_wash" || s === "needswash") return "needs_wash";
-  return s;
-}
-
-function actionLabel(a) {
-  const n = normalizeAction(a);
-  if (n === "on_job") return "On Job";
-  if (n === "needs_wash") return "Needs Wash";
-  if (n === "washed") return "Washed";
-  if (n === "return") return "Return";
-  return a || "";
-}
-
   function fmtDate(d){
     if(!d) return "—";
     const dt = (d instanceof Date) ? d : new Date(d);
@@ -402,20 +349,22 @@ function actionLabel(a) {
     currentRows = tents.map(t => {
       const key = toStr(t.Tent) + "||" + toStr(t.Number);
       const st = latest.get(key);
-      let availability = st ? (st.Availability || "") : "";
+      let availability = "";
       let reason = "";
       let action = st ? (st.Action || "") : "";
       let job = st ? (st.Job || "") : "";
 
-      if (!availability){
-        // default if never logged yet
+      const actLower = toStr(action).toLowerCase();
+      if (st){
+        availability = (actLower === "on job" || actLower === "needs wash") ? "Unavailable" : "Available";
+      } else {
         availability = "Available";
       }
 
+
       if (availability === "Unavailable"){
-        const act = toStr(action).toLowerCase();
-        if (act === "needs wash") reason = "Needs wash";
-        else if (act === "on job") reason = job ? ("On job: " + job) : "On job";
+        if (actLower === "needs wash") reason = "Needs wash";
+        else if (actLower === "on job") reason = job ? ("On job: " + job) : "On job";
         else reason = action || "Unavailable";
       } else {
         reason = "";
@@ -426,6 +375,8 @@ function actionLabel(a) {
 
       return {
         ...t,
+        Action: action,
+        Job: job,
         Availability: availability,
         Reason: reason,
         _lastJob: lj ? lj.ts : null,
@@ -444,7 +395,7 @@ function actionLabel(a) {
 
     function fill(sel, vals){
       const cur = sel.value;
-      sel.innerHTML = '<option value="">Any</option>';
+      sel.innerHTML = '<option value="">All</option>';
       Array.from(vals).sort((a,b)=>a.localeCompare(b)).forEach(v=>{
         const o=document.createElement("option");
         o.value=v; o.textContent=v;
@@ -462,12 +413,12 @@ function actionLabel(a) {
   function render(){
     const tentF = document.getElementById("filter-tent").value;
     const gradeF = document.getElementById("filter-grade").value;
-    const actionF = document.getElementById("filter-action").value;
+    const availF = document.getElementById("filter-avail").value;
 
     const rows = currentRows.filter(r=>{
       if (tentF && toStr(r.Tent) !== tentF) return false;
       if (gradeF && toStr(r.Grade) !== gradeF) return false;
-      if (actionF && normalizeAction(r.Action) !== actionF) return false;
+      if (availF && toStr(r.Action).toLowerCase() !== availF.toLowerCase()) return false;
       return true;
     });
 
@@ -475,7 +426,7 @@ function actionLabel(a) {
     tbody.innerHTML = "";
 
     if (!rows.length){
-      tbody.innerHTML = '<tr><td colspan="5" class="small">No tents found. If this is unexpected, make sure your WEBAPP_URL is correct and your Apps Script is deployed.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5" class="small">No tents match your filters.</td></tr>';
       document.getElementById("summary").textContent = "0 shown";
       return;
     }
@@ -535,11 +486,13 @@ function actionLabel(a) {
   async function loadAll(){
     try{
       const t = await jsonp(WEBAPP_URL, { action: "tents" });
-      tents = pickArray(t, ["tents","items","rows","data"]);
+      tents = (t && (t.tents || t.data || t)) || [];
+      if (!Array.isArray(tents)) tents = [];
       tents = tents.map(normalizeTentRow);
 
       const l = await jsonp(WEBAPP_URL, { action: "log" });
-      logRows = pickArray(l, ["log","logs","entries","items","rows","data"]);
+      logRows = (l && (l.log || l.data || l)) || [];
+      if (!Array.isArray(logRows)) logRows = [];
       logRows = logRows.map(normalizeLogRow);
 
       computeCurrent();
@@ -555,7 +508,7 @@ function actionLabel(a) {
 
   document.getElementById("filter-tent").addEventListener("change", render);
   document.getElementById("filter-grade").addEventListener("change", render);
-  document.getElementById("filter-action").addEventListener("change", render);
+  document.getElementById("filter-avail").addEventListener("change", render);
 
   document.getElementById("open-entry").addEventListener("click", ()=>{
     window.location.href = "tent_entry.html" + window.location.search;
