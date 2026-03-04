@@ -196,7 +196,7 @@
         <div>
           <label for="filter-grade">Grade</label>
           <select id="filter-grade">
-          <option value="all">All</option>
+          <option value="">Any</option>
           <option value="A+">A+</option>
           <option value="A">A</option>
           <option value="A-">A-</option>
@@ -213,7 +213,7 @@
         <div>
           <label for="filter-action">Action</label>
           <select id="filter-action">
-          <option value="all">All</option>
+          <option value="">Any</option>
           <option value="on_job">On Job</option>
           <option value="return">Return</option>
           <option value="washed">Washed</option>
@@ -282,6 +282,29 @@
         }
       }, 15000);
     });
+  }
+
+  // Accept several common response shapes from Apps Script.
+  function pickArray(resp, keys){
+    if (Array.isArray(resp)) return resp;
+    if (!resp || typeof resp !== 'object') return [];
+    for (const k of keys){
+      const v = resp[k];
+      if (Array.isArray(v)) return v;
+      if (v && typeof v === 'object'){
+        // one extra nesting level: {data:{tents:[...]}} / {data:{log:[...]}}
+        for (const kk of keys){
+          if (Array.isArray(v[kk])) return v[kk];
+        }
+        if (Array.isArray(v.data)) return v.data;
+        if (Array.isArray(v.rows)) return v.rows;
+        if (Array.isArray(v.items)) return v.items;
+      }
+    }
+    if (Array.isArray(resp.data)) return resp.data;
+    if (Array.isArray(resp.rows)) return resp.rows;
+    if (Array.isArray(resp.items)) return resp.items;
+    return [];
   }
 
   function toStr(v){ return (v===null||v===undefined) ? "" : String(v); }
@@ -421,7 +444,7 @@ function actionLabel(a) {
 
     function fill(sel, vals){
       const cur = sel.value;
-      sel.innerHTML = '<option value="">All</option>';
+      sel.innerHTML = '<option value="">Any</option>';
       Array.from(vals).sort((a,b)=>a.localeCompare(b)).forEach(v=>{
         const o=document.createElement("option");
         o.value=v; o.textContent=v;
@@ -442,9 +465,9 @@ function actionLabel(a) {
     const actionF = document.getElementById("filter-action").value;
 
     const rows = currentRows.filter(r=>{
-      if (tentF && tentF !== "all" && toStr(r.Tent) !== tentF) return false;
-      if (gradeF && gradeF !== "all" && toStr(r.Grade) !== gradeF) return false;
-      if (actionF && actionF !== "all" && toStr(r.Action) !== actionF) return false;
+      if (tentF && toStr(r.Tent) !== tentF) return false;
+      if (gradeF && toStr(r.Grade) !== gradeF) return false;
+      if (actionF && normalizeAction(r.Action) !== actionF) return false;
       return true;
     });
 
@@ -512,13 +535,11 @@ function actionLabel(a) {
   async function loadAll(){
     try{
       const t = await jsonp(WEBAPP_URL, { action: "tents" });
-      tents = (t && (t.tents || t.data || t)) || [];
-      if (!Array.isArray(tents)) tents = [];
+      tents = pickArray(t, ["tents","items","rows","data"]);
       tents = tents.map(normalizeTentRow);
 
       const l = await jsonp(WEBAPP_URL, { action: "log" });
-      logRows = (l && (l.log || l.data || l)) || [];
-      if (!Array.isArray(logRows)) logRows = [];
+      logRows = pickArray(l, ["log","logs","entries","items","rows","data"]);
       logRows = logRows.map(normalizeLogRow);
 
       computeCurrent();
