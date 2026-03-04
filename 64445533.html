@@ -45,75 +45,57 @@
       opacity: 0.6;
       cursor: not-allowed;
     }
-
-    /* Slide-out hamburger menu */
-    .menu-btn{
-      position:fixed; top:12px; left:12px;
-      width:44px; height:44px;
-      border-radius:12px;
-      border:1px solid #d9d9d9;
-      background:#fff;
-      display:flex; align-items:center; justify-content:center;
-      z-index:1002;
-      box-shadow:0 1px 8px rgba(0,0,0,0.08);
-    }
-    .menu-btn:active{ transform:scale(0.98); }
-    .menu-icon{ width:18px; height:12px; position:relative; }
-    .menu-icon span{
-      position:absolute; left:0; right:0;
-      height:2px; background:#111; border-radius:2px;
-    }
-    .menu-icon span:nth-child(1){ top:0; }
-    .menu-icon span:nth-child(2){ top:5px; }
-    .menu-icon span:nth-child(3){ top:10px; }
-
-    .menu-overlay{
-      position:fixed; inset:0;
-      background:rgba(0,0,0,0.18);
-      opacity:0; pointer-events:none;
-      transition:opacity .2s ease;
-      z-index:1001;
-    }
-    .side-menu{
-      position:fixed; top:0; left:0;
-      height:100%; width:260px;
-      background:#fff;
-      transform:translateX(-105%);
-      transition:transform .25s ease;
-      z-index:1003;
-      padding:72px 16px 16px;
-      box-shadow:2px 0 16px rgba(0,0,0,0.18);
-    }
-    body.menu-open .menu-overlay{ opacity:1; pointer-events:auto; }
-    body.menu-open .side-menu{ transform:translateX(0); }
-
-    .side-menu h2{
-      margin:0 0 14px 0;
-      font-size:22px;
-    }
-    .side-menu a{
-      display:block;
-      padding:12px 10px;
-      border-radius:12px;
-      text-decoration:none;
-      color:#111;
-      font-weight:600;
-    }
-    .side-menu a:hover{ background:#f1f1f1; }
-
 </style>
 </head>
 <body>
-  <button id="menuBtn" class="menu-btn" type="button" aria-label="Menu">
-    <div class="menu-icon" aria-hidden="true">
-      <span></span><span></span><span></span>
-    </div>
+  <!-- Hamburger + Slide Menu -->
+  <button id="menu-toggle" aria-label="Menu" style="
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    z-index: 2000;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    border: 1px solid #d8d8d8;
+    background: #fafafa;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+  ">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M4 7h16M4 12h16M4 17h16" stroke="#111" stroke-width="2" stroke-linecap="round"/>
+    </svg>
   </button>
-  <div id="menuOverlay" class="menu-overlay" aria-hidden="true"></div>
-  <nav id="sideMenu" class="side-menu" aria-label="Menu">
-    <h2>Menu</h2>
-    <a id="propaneLink" href="propane.html?from=64445533.html">Propane</a>
-  </nav>
+
+  <div id="menu-overlay" style="
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.18);
+    z-index: 1999;
+    display: none;
+  "></div>
+
+  <aside id="side-menu" style="
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 260px;
+    background: #fff;
+    z-index: 2001;
+    transform: translateX(-280px);
+    transition: transform 220ms ease;
+    box-shadow: 12px 0 28px rgba(0,0,0,0.12);
+    padding: 18px;
+  ">
+    <div style="font-weight:800;font-size:22px;margin-bottom:14px;">Menu</div>
+    <a id="menu-home" href="index.html" style="display:block;padding:10px 0;color:#0b57d0;text-decoration:underline;">Home</a>
+    <a id="menu-tents" href="tent.html" style="display:block;padding:10px 0;color:#0b57d0;text-decoration:underline;">Tents</a>
+    <a id="menu-propane" href="propane.html" style="display:block;padding:10px 0;color:#0b57d0;text-decoration:underline;">Propane</a>
+  </aside>
 
   <div class="top-bar" style="position: fixed; top: 0; right: 0; padding: 0.5rem; font-size: 12px; background: white; z-index: 1000;">
     Hours this period: <span id="hour-counter">0</span>
@@ -133,37 +115,22 @@
   <script>
     // Pay period helper: 14-day Saturday–Friday periods anchored at 2025-11-01
     function getPayPeriodInfo(date) {
-      // 14-day pay periods: Saturday -> Friday, anchored at Sat 2025-11-01.
-      // PeriodKey represents the END Friday: "pp-YYYY-M-D"
-      var d = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0); // local noon avoids DST/UTC drift
-      var anchorStart = new Date(2025, 10, 1, 12, 0, 0); // 2025-11-01 (Sat)
+      var d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      var anchor = new Date(2025, 10, 14); // 2025-11-14 (Fri, pay period anchor)
       var msPerDay = 24 * 60 * 60 * 1000;
-
-      var daysDiff = Math.floor((d.getTime() - anchorStart.getTime()) / msPerDay);
+      var daysDiff = Math.floor((d - anchor) / msPerDay);
       var periodIndex = Math.floor(daysDiff / 14);
-
-      var start = new Date(anchorStart.getTime() + periodIndex * 14 * msPerDay);
+      var start = new Date(anchor.getTime() + periodIndex * 14 * msPerDay);
       var end   = new Date(start.getTime() + 13 * msPerDay);
-
-      var key = "pp-" + end.getFullYear() + "-" + (end.getMonth() + 1) + "-" + end.getDate();
-      var label = (start.getMonth() + 1) + "/" + start.getDate() + "/" + start.getFullYear() +
-                  " - " + (end.getMonth() + 1) + "/" + end.getDate() + "/" + end.getFullYear();
-
-      return { start: start, end: end, key: key, label: label };
+      var label = (start.getMonth()+1) + "/" + start.getDate() + " - " + (end.getMonth()+1) + "/" + end.getDate();
+      var key   = "pp-" + start.getFullYear() + "-" + (start.getMonth()+1) + "-" + start.getDate();
+      return { start: start, end: end, label: label, key: key };
     }
 
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwDMoZjhy2IHA0PFEqSwd79cOteIBX-QhIVjLh8pXHnzm6frGjoO1FkS9_xrdIQh8M/exec";
 
     const TIME_LOG_SHEET_ID = "1gm39kMipfpLKS2n8g9F4SYG9Do36M_5Lc6GOs-c6jCM";
     const EMPLOYEE_NAME = "Michael";
-function parseGvizResponse(textResp) {
-      // Google Visualization responses wrap JSON; parse robustly across browsers.
-      var start = textResp.indexOf("{");
-      var end = textResp.lastIndexOf("}");
-      if (start === -1 || end === -1 || end <= start) throw new Error("Invalid gviz response");
-      return JSON.parse(textResp.substring(start, end + 1));
-    }
-
 function parseSheetDateTime(cell) {
   if (!cell) return null;
   var value = null;
@@ -357,6 +324,26 @@ function parseSheetDateTime(cell) {
     });
   }
 
+
+  // After sending a clock event, the sheet can take a few seconds to reflect the change.
+  // This polls until we see the expected state (prevents needing a second click).
+  function waitForClockState(expectedState, triesLeft) {
+    triesLeft = (typeof triesLeft === "number") ? triesLeft : 10; // ~10s max
+    fetchClockStateFromSheet(function(info) {
+      if (!info.error && info.state === expectedState) {
+        refreshClockStatus();
+        if (typeof loadHoursFromSheet === "function") loadHoursFromSheet();
+        return;
+      }
+      if (triesLeft <= 0) {
+        // Fall back to a normal refresh (whatever the sheet says now)
+        refreshClockStatus();
+        if (typeof loadHoursFromSheet === "function") loadHoursFromSheet();
+        return;
+      }
+      setTimeout(function() { waitForClockState(expectedState, triesLeft - 1); }, 1000);
+    });
+  }
   function sendClockEvent(eventType, hoursDelta) {
     try {
       var nowTs = new Date();
@@ -414,7 +401,7 @@ function parseSheetDateTime(cell) {
 
       sendClockEvent(eventType, 0);
 
-      setTimeout(function() { location.reload(); }, 3000);
+      setTimeout(function() { waitForClockState(doClockOut ? "out" : "in"); }, 600);
     });
   });
 
@@ -641,7 +628,7 @@ function parseSheetDateTime(cell) {
         fetch(url)
           .then(function(res) { return res.text(); })
           .then(function(textResp) {
-            var json = parseGvizResponse(textResp);
+            var json = JSON.parse(textResp.substring(47).slice(0, -2));
             var rows = json.table.rows || [];
             var counterEl = document.getElementById("hour-counter");
             if (!counterEl) return;
@@ -663,24 +650,7 @@ function parseSheetDateTime(cell) {
 
     document.addEventListener("DOMContentLoaded", loadHoursFromSheet);
 
-
-    // Hamburger menu wiring
-    (function(){
-      var btn = document.getElementById("menuBtn");
-      var overlay = document.getElementById("menuOverlay");
-      function closeMenu(){ document.body.classList.remove("menu-open"); }
-      function openMenu(){ document.body.classList.add("menu-open"); }
-      if (btn) btn.addEventListener("click", function(){
-        if (document.body.classList.contains("menu-open")) closeMenu(); else openMenu();
-      });
-      if (overlay) overlay.addEventListener("click", closeMenu);
-      // Close on ESC
-      document.addEventListener("keydown", function(e){
-        if (e.key === "Escape") closeMenu();
-      });
-    })();
-
-  </script>
+</script>
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/universal-crew-app/service-worker.js');
@@ -688,5 +658,50 @@ function parseSheetDateTime(cell) {
 
   </script>
 
+<script>
+
+  // Menu wiring (keeps track of who opened this page)
+  (function() {
+    var btn = document.getElementById("menu-toggle");
+    var overlay = document.getElementById("menu-overlay");
+    var menu = document.getElementById("side-menu");
+    if (!btn || !overlay || !menu) return;
+
+    function openMenu() {
+      overlay.style.display = "block";
+      menu.style.transform = "translateX(0)";
+    }
+    function closeMenu() {
+      overlay.style.display = "none";
+      menu.style.transform = "translateX(-280px)";
+    }
+    btn.addEventListener("click", function() {
+      if (overlay.style.display === "block") closeMenu(); else openMenu();
+    });
+    overlay.addEventListener("click", closeMenu);
+
+    var params = new URLSearchParams(window.location.search);
+    var from = params.get("from");
+    // If we don't have a from=, use this page name as the sender.
+    if (!from) {
+      var parts = window.location.pathname.split("/");
+      from = parts[parts.length - 1] || "index.html";
+    }
+
+    var home = document.getElementById("menu-home");
+    var tents = document.getElementById("menu-tents");
+    var propane = document.getElementById("menu-propane");
+
+    // Home: if someone somehow opens an employee page directly, go to index.
+    // Otherwise go back to the employee page that opened Propane/Tents pages.
+    if (home) {
+      home.href = (params.get("from") ? (from) : "index.html");
+    }
+
+    if (tents) tents.href = "tent.html?from=" + encodeURIComponent(from);
+    if (propane) propane.href = "propane.html?from=" + encodeURIComponent(from);
+  })();
+
+</script>
 </body>
 </html>
