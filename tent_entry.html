@@ -88,21 +88,64 @@
   // TODO: paste your Apps Script web app URL here after you deploy it.
   const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxbvlbGKMCZJVKi8yFo7c_hLfOMIH-UhHkkcfX2zOevEl0OVUOtN03wxHz9p6TdWU5v/exec";
 
-  function jsonp(url, params) {
-    return new Promise((resolve, reject) => {
-      const cb = "cb_" + Math.random().toString(36).slice(2);
-      const script = document.createElement("script");
-      const qs = new URLSearchParams(params || {});
-      qs.set("callback", cb);
-      script.src = url + (url.includes("?") ? "&" : "?") + qs.toString();
-      let done = false;
+  
+    function jsonp(url, params = {}) {
+      return new Promise((resolve, reject) => {
+        const cb = "cb_" + Math.random().toString(36).slice(2);
+        const qs = new URLSearchParams(params);
+        // Support both common callback parameter names
+        qs.set("callback", cb);
+        qs.set("cb", cb);
 
-      window[cb] = (data) => {
-        done = true;
-        try { resolve(data); } finally {
-          delete window[cb];
-          script.remove();
+        const script = document.createElement("script");
+        script.src = url + (url.includes("?") ? "&" : "?") + qs.toString();
+
+        const timeout = setTimeout(() => {
+          cleanup();
+          reject(new Error("JSONP timeout"));
+        }, 12000);
+
+        function cleanup() {
+          clearTimeout(timeout);
+          try { delete window[cb]; } catch(e) {}
+          if (script.parentNode) script.parentNode.removeChild(script);
         }
+
+    async function fetchWithFallback(actionNames, baseParams = {}) {
+      let lastErr = null;
+      for (const action of actionNames) {
+        try {
+          const data = await jsonp(WEBAPP_URL, { ...baseParams, action });
+          // Normalize common response shapes
+          if (Array.isArray(data)) return { ok: true, tents: data, raw: data };
+          if (data && Array.isArray(data.tents)) return { ok: true, tents: data.tents, raw: data };
+          if (data && data.data && Array.isArray(data.data.tents)) return { ok: true, tents: data.data.tents, raw: data };
+          if (data && Array.isArray(data.rows)) return { ok: true, tents: data.rows, raw: data };
+          if (data && data.ok === false) { lastErr = new Error(data.error || "Web app returned ok:false"); continue; }
+          // If action returned something else, keep trying
+          lastErr = new Error("Unexpected response shape");
+        } catch (e) {
+          lastErr = e;
+        }
+      }
+      throw lastErr || new Error("Could not load data");
+    }
+    
+
+        window[cb] = (data) => {
+          cleanup();
+          resolve(data);
+        };
+
+        script.onerror = () => {
+          cleanup();
+          reject(new Error("JSONP load error"));
+        };
+
+        document.body.appendChild(script);
+      });
+    }
+    
       };
 
       script.onerror = () => {
