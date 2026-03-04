@@ -339,6 +339,10 @@
   });
   document.getElementById("refreshBtn").addEventListener("click", ()=> loadAll(true));
   document.getElementById("applyFilterBtn").addEventListener("click", ()=> render());
+["filter-tent","filter-grade","filter-avail"].forEach(id=>{
+  const el = document.getElementById(id);
+  if (el) el.addEventListener("change", ()=> render());
+});
 
   // JSONP helper
   function jsonp(url, params, timeoutMs=12000){
@@ -567,7 +571,7 @@
     // if sheet has something outside the list, add it at end
     gradesPresent.forEach(g=>{ if (g && !grades.includes(g)) grades.push(g); });
 
-    const actions = ["On job","Return","Washed","Needs Wash"];
+    const actions = ["Available","On job","Needs Wash"];
 
     fillSelect(document.getElementById("filter-tent"), tents, true);
     fillSelect(document.getElementById("filter-grade"), grades, true);
@@ -583,7 +587,7 @@
     if (fg && toStr(r.Grade).trim() !== fg) return false;
 
     if (fa){
-      // filter by latest status action (derived from Availability + Reason)
+      // filter by derived current state
       const reason = toStr(r.Reason).toLowerCase();
       const avail = toStr(r.Availability).toLowerCase();
 
@@ -591,8 +595,7 @@
         if (reason !== "needs wash") return false;
       } else if (fa.toLowerCase() === "on job"){
         if (!reason.startsWith("on job")) return false;
-      } else if (fa.toLowerCase() === "return" || fa.toLowerCase() === "washed"){
-        // those actions mean available now
+      } else if (fa.toLowerCase() === "available"){
         if (avail !== "available") return false;
       }
     }
