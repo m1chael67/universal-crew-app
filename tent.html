@@ -342,6 +342,17 @@
       .detailBox > div{ min-width:0; flex:1 1 140px; }
     }
 
+
+.noteDot{
+  display:inline-block;
+  width:8px;
+  height:8px;
+  margin-left:6px;
+  border-radius:50%;
+  background:#f59e0b;
+  vertical-align:middle;
+}
+
 </style>
 
 </head>
@@ -797,7 +808,10 @@
 
             return `
               <tr class="clickable" data-key="${key}">
-                <td class="num col-num">${toStr(r.Number)}</td>
+                <td class="num col-num">
+  ${toStr(r.Number)}
+  ${r.Notes ? '<span class="noteDot"></span>' : ''}
+</td>
                 <td class="col-tent">${toStr(r.Tent)}</td>
                 <td class="col-grade"><b>${toStr(r.Grade) || "<span class='small'>—</span>"}</b></td>
                 <td class="col-avail">${pill}</td>
