@@ -282,7 +282,7 @@
       /* Column sizing using classes (reliable even if column order changes) */
       th.col-num, td.col-num{ width:56px; }
       th.col-grade, td.col-grade{ width:56px; }
-      th.col-avail, td.col-avail{ width:150px; }
+      th.col-avail, td.col-avail{ width:140px; }
       th.col-notes, td.col-notes{ display:none; }
 
       td.col-tent, th.col-tent{
@@ -304,7 +304,46 @@
         box-sizing:border-box;
       }
     }
+
+
+      
+
+    /* Stability: lock table columns so expanding rows cannot reflow widths on iPhone */
+    table{ table-layout:fixed; }
+    col.col-num{ width:68px; }
+    col.col-grade{ width:70px; }
+    col.col-avail{ width:170px; }
+    /* Tent column gets the remaining space */
+    col.col-tent{ width:auto; }
+    col.col-notes{ width:auto; }
+
+    /* Make pills truly centered */
+    .pill{ text-align:center; justify-content:center; }
+
+    @media (max-width: 520px){
+      col.col-num{ width:56px; }
+      col.col-tent{ width:80px; }   /* enough for 20x20/20x30 */
+      col.col-grade{ width:56px; }
+      col.col-avail{ width:140px; }
+      col.col-notes{ width:0; }
+
+      /* On mobile, keep pill centered AND contained */
+      .pill{
+        display:flex;
+        width:100%;
+        align-items:center;
+        justify-content:center;
+        overflow:hidden;
+        text-overflow:ellipsis;
+        white-space:nowrap;
+      }
+
+      /* Expanded detail cards must not force width */
+      .detailBox > div{ min-width:0; flex:1 1 140px; }
+    }
+
 </style>
+
 </head>
 <body>
   <div class="hamburger" id="hamburgerBtn" aria-label="Menu"><span>≡</span></div>
@@ -704,6 +743,13 @@
 
     const html = `
       <div class="tableBox"><table>
+        <colgroup>
+          <col class="col-num">
+          <col class="col-tent">
+          <col class="col-grade">
+          <col class="col-avail">
+          <col class="col-notes">
+        </colgroup>
         <thead>
           <tr>
             <th class="col-num">#</th>
