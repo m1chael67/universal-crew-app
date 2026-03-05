@@ -214,14 +214,14 @@
       font-size:18px;
     }
     tbody tr:last-child td{border-bottom:none}
-    tbody tr.clickable{cursor:pointer}
+    tbody tr.clickable{cursor:pointer; transition:background .12s ease; -webkit-tap-highlight-color: rgba(0,0,0,0);}
+    tbody tr.clickable:hover{background:#f4f4f4;}
+    tbody tr.clickable:active{background:#ececec;}
+    tbody tr.clickable.open{background:#f1f1f1;}
     .num{
       font-weight:900;
       font-size:20px;
-      display:flex;
-      align-items:center;
-      gap:4px;
-      white-space:nowrap;
+      width:68px;
     }
     .pill{
       display:inline-flex;
@@ -284,7 +284,6 @@
 
       /* Column sizing using classes (reliable even if column order changes) */
       th.col-num, td.col-num{ width:56px; }
-      td.col-num{ padding-right:10px; }
       th.col-grade, td.col-grade{ width:56px; }
       th.col-avail, td.col-avail{ width:140px; }
       th.col-notes, td.col-notes{ display:none; }
@@ -347,13 +346,22 @@
     }
 
 
+
+.numWrap{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  white-space:nowrap;
+}
+
 .noteDot{
-  display:block;
+  display:inline-block;
   width:8px;
   height:8px;
+  margin-left:6px;
   border-radius:50%;
   background:#f59e0b;
-  flex:0 0 auto;
+  vertical-align:middle;
 }
 
 </style>
@@ -810,7 +818,7 @@
             ` : "";
 
             return `
-              <tr class="clickable" data-key="${key}">
+              <tr class="clickable${isOpen ? " open" : ""}" data-key="${key}">
                 <td class="num col-num">
   ${toStr(r.Number)}
   ${r.Notes ? '<span class="noteDot"></span>' : ''}
