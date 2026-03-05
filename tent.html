@@ -10,8 +10,8 @@
       --card:#ffffff;
       --text:#111;
       --muted:#666;
-      --shadow:0 10px 24px rgba(0,0,0,.08);
-      --radius:18px;
+      --shadow:0 14px 40px rgba(0,0,0,.10);
+      --radius:26px;
       --pill-radius:999px;
       --btn:#0f0f10;
       --btnText:#fff;
@@ -35,7 +35,8 @@
       justify-content:center;
       padding:28px 14px 40px;
       position:relative;
-          }
+      overflow-x:hidden;
+    }
     .hamburger{
       position:fixed;
       left:16px;
@@ -78,13 +79,8 @@
       display:block;
       padding:10px 6px;
       font-size:18px;
-      color:#111;
-      text-decoration:none;
-      background:#f3f3f3;
-      border-radius:14px;
-      padding:14px 12px;
-      margin:10px 0;
-      font-weight:700;
+      color:#1a73e8;
+      text-decoration:underline;
     }
     .overlay{
       position:fixed;inset:0;
@@ -104,7 +100,6 @@
       font-size:64px;
       letter-spacing:-1px;
     }
-    .ver{font-size:12px;color:#888;margin:-10px 0 12px 0;}
     .top-right{
       position:fixed;
       right:16px;
@@ -116,20 +111,12 @@
       border:none;
       background:var(--btn);
       color:var(--btnText);
-      padding:12px 18px;
+      padding:14px 22px;
       border-radius:var(--pill-radius);
       font-weight:700;
-      font-size:16px;
-      box-shadow:0 10px 18px rgba(0,0,0,.14);
+      font-size:18px;
+      box-shadow:0 14px 24px rgba(0,0,0,.18);
       cursor:pointer;
-    }
-
-    /* Make only the Tent Form button less obnoxious (leave Refresh alone) */
-    #toFormBtn{
-      padding:10px 14px;
-      font-size:15px;
-      border-radius:16px;
-      box-shadow:0 8px 14px rgba(0,0,0,.12);
     }
     .card{
       background:var(--card);
@@ -165,7 +152,15 @@
       background:#fff;
       outline:none;
     }
-.formLink{
+    .filters .filterBtn{
+      margin-left:auto;
+      padding:12px 18px;
+      font-size:16px;
+      border-radius:999px;
+      font-weight:800;
+      box-shadow:0 10px 18px rgba(0,0,0,.15);
+    }
+    .formLink{
       margin:6px 0 10px;
     }
     .formLink .btn{
@@ -190,14 +185,14 @@
 
     table{
       width:100%;
+      table-layout:fixed;
       border-collapse:separate;
       border-spacing:0;
       margin-top:12px;
       overflow:hidden;
+      border-radius:20px;
+      border:1px solid var(--line);
     }
-
-    .tableBox{overflow:hidden;border-radius:20px;border:1px solid var(--line);}
-    .tableBox table{border:0;border-radius:0;}
     thead th{
       background:#fafafa;
       text-align:left;
@@ -206,19 +201,23 @@
       color:#333;
       padding:12px 12px;
       border-bottom:1px solid var(--line);
+    
+      box-sizing:border-box;
     }
     tbody td{
       padding:14px 12px;
       border-bottom:1px solid var(--line);
       vertical-align:middle;
       font-size:18px;
+    
+      box-sizing:border-box;
     }
     tbody tr:last-child td{border-bottom:none}
     tbody tr.clickable{cursor:pointer}
     .num{
       font-weight:900;
-      font-size:20px;
-      width:68px;
+      font-size:28px;
+      width:90px;
     }
     .pill{
       display:inline-flex;
@@ -227,11 +226,14 @@
       padding:10px 14px;
       border-radius:999px;
       font-weight:800;
-      min-width:0;
-      max-width:100%;
-      box-sizing:border-box;
+      min-width:150px;
       border:2px solid transparent;
       white-space:nowrap;
+    
+      max-width:100%;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      box-sizing:border-box;
     }
     .pill.good{color:var(--good); background:var(--goodBg); border-color:#bfe9cb}
     .pill.bad{color:var(--bad); background:var(--badBg); border-color:#ffb6c3}
@@ -255,68 +257,15 @@
     .detailBox > div{min-width:180px}
     .small{font-size:14px;color:#999}
   
-    @media (max-width: 480px){
-      .wrap{ padding:18px 10px 28px; }
-
-      h1{ font-size:44px; margin-bottom:14px; }
-      .card{ border-radius:16px; padding:16px 14px 18px; box-shadow:0 8px 18px rgba(0,0,0,.08); }
-      .filters{ gap:8px 10px; }
-      .filters label{ font-size:16px; gap:8px; }
-      select{ min-width:140px; font-size:15px; padding:9px 10px; border-radius:12px; }
-      .btn{ font-size:15px; padding:11px 16px; box-shadow:0 8px 14px rgba(0,0,0,.12); }
-      #toFormBtn{ width:100%; }
-      .formLink{ margin:10px 0 14px; }
-      table{ font-size:14px; }
-      th,td{ padding:10px 8px; box-sizing:border-box; }
-      .num{ font-size:18px; width:56px; }
-      .pill{ font-size:14px; padding:8px 10px; min-width:0; max-width:100%; box-sizing:border-box; }
-    }
-
-    /* Mobile fit: prevent right-side clipping on iPhone */
+    /* Prevent expanded detail row from forcing table wider on iPhone (which causes pill shift/ellipsis) */
     @media (max-width: 520px){
-      .panel{ width:100%; }
-      .card{ width:100%; box-sizing:border-box; }
-      .tableBox{ width:100%; overflow:hidden; }
-      table{ table-layout:fixed; width:100%; }
-
-      /* Column sizing using classes (reliable even if column order changes) */
-      th.col-num, td.col-num{ width:56px; }
-      th.col-grade, td.col-grade{ width:56px; }
-      th.col-avail, td.col-avail{ width:140px; }
-      th.col-notes, td.col-notes{ display:none; }
-
-      td.col-tent, th.col-tent{
-        overflow:hidden;
-        text-overflow:ellipsis;
-        white-space:nowrap;
-      }
-
-      td.col-avail{ padding-left:6px; padding-right:6px; overflow:hidden; }
-      .pill{
-        display:block;
-        width:100%;
-        max-width:100%;
+      .detailBox{ gap:10px; }
+      .detailBox > div{
         min-width:0;
-        padding:8px 8px;
-        white-space:nowrap;
-        overflow:hidden;
-        text-overflow:ellipsis;
-        box-sizing:border-box;
+        flex:1 1 100%;
       }
     }
 
-
-      td:nth-child(4){ padding-left:6px; padding-right:6px; }
-      .pill{
-        display:block;
-        width:100%;
-        min-width:0;
-        padding:8px 8px;
-        white-space:nowrap;
-        overflow:hidden;
-        text-overflow:ellipsis;
-      }
-    }
 </style>
 </head>
 <body>
@@ -335,6 +284,7 @@
   <div class="wrap">
     <div class="panel">
       <h1>Tents</h1>
+
       <div class="card">
         <div class="filters">
           <label> Tent
@@ -346,7 +296,8 @@
           <label> Action
             <select id="filter-avail"></select>
           </label>
-</div>
+          <button class="btn filterBtn" id="applyFilterBtn">Filter</button>
+        </div>
 
         <div class="formLink">
           <button class="btn" id="toFormBtn">Tent Form</button>
@@ -390,37 +341,12 @@
     overlay.classList.remove("show");
   });
 
-  // remember who opened this page (so Home can return correctly)
-  (function rememberReturnTarget(){
-    const qsEmp = Q.emp || Q.employee || "";
-    // If the employee is present in the query, remember it
-    if (qsEmp){
-      try{ sessionStorage.setItem("tent_return_to", qsEmp); }catch(_){}
-      return;
-    }
-    // Otherwise, try to infer from referrer (employee page -> tents)
-    const ref = document.referrer || "";
-    // Only accept same-site *.html referrers that are not this tent page
-    const m = ref.match(/\/([^\/]+\.html)(\?.*)?$/);
-    if (m){
-      const file = m[1];
-      if (file && file.toLowerCase() !== "tent.html" && file.toLowerCase() !== "tent_entry.html"){
-        try{ sessionStorage.setItem("tent_return_to", file); }catch(_){}
-      }
-    }
-  })();
-
   document.getElementById("menuHome").addEventListener("click", (e)=>{
     e.preventDefault();
-    // Priority:
-    // 1) explicit employee in query
-    // 2) stored return target from when the page was opened
-    // 3) index.html
-    let target = (Q.emp || Q.employee || "");
-    if (!target){
-      try{ target = sessionStorage.getItem("tent_return_to") || ""; }catch(_){ target = ""; }
-    }
-    if (!target) target = "index.html";
+    // your employee pages use file name in query (emp=64445533.html etc)
+    // fallback to index.html if not present
+    const emp = Q.emp || Q.employee || "";
+    const target = emp ? emp : "index.html";
     location.href = withQuery(target);
   });
   document.getElementById("menuPropane").addEventListener("click", (e)=>{
@@ -432,10 +358,7 @@
     location.href = withQuery("tent_entry.html");
   });
   document.getElementById("refreshBtn").addEventListener("click", ()=> loadAll(true));
-["filter-tent","filter-grade","filter-avail"].forEach(id=>{
-  const el = document.getElementById(id);
-  if (el) el.addEventListener("change", ()=> render());
-});
+  document.getElementById("applyFilterBtn").addEventListener("click", ()=> render());
 
   // JSONP helper
   function jsonp(url, params, timeoutMs=12000){
@@ -664,7 +587,7 @@
     // if sheet has something outside the list, add it at end
     gradesPresent.forEach(g=>{ if (g && !grades.includes(g)) grades.push(g); });
 
-    const actions = ["Available","On job","Needs Wash"];
+    const actions = ["On job","Return","Washed","Needs Wash"];
 
     fillSelect(document.getElementById("filter-tent"), tents, true);
     fillSelect(document.getElementById("filter-grade"), grades, true);
@@ -680,7 +603,7 @@
     if (fg && toStr(r.Grade).trim() !== fg) return false;
 
     if (fa){
-      // filter by derived current state
+      // filter by latest status action (derived from Availability + Reason)
       const reason = toStr(r.Reason).toLowerCase();
       const avail = toStr(r.Availability).toLowerCase();
 
@@ -688,7 +611,8 @@
         if (reason !== "needs wash") return false;
       } else if (fa.toLowerCase() === "on job"){
         if (!reason.startsWith("on job")) return false;
-      } else if (fa.toLowerCase() === "available"){
+      } else if (fa.toLowerCase() === "return" || fa.toLowerCase() === "washed"){
+        // those actions mean available now
         if (avail !== "available") return false;
       }
     }
@@ -716,14 +640,14 @@
     }
 
     const html = `
-      <div class="tableBox"><table>
+      <table>
         <thead>
           <tr>
-            <th class="col-num">#</th>
-            <th class="col-tent">Tent</th>
-            <th class="col-grade">Grade</th>
-            <th class="col-avail">Availability</th>
-            <th class="col-notes">Notes</th>
+            <th style="width:90px">#</th>
+            <th>Tent</th>
+            <th style="width:110px">Grade</th>
+            <th style="width:190px">Availability</th>
+            <th>Notes</th>
           </tr>
         </thead>
         <tbody>
@@ -760,17 +684,17 @@
 
             return `
               <tr class="clickable" data-key="${key}">
-                <td class="num col-num">${toStr(r.Number)}</td>
-                <td class="col-tent">${toStr(r.Tent)}</td>
-                <td class="col-grade"><b>${toStr(r.Grade) || "<span class='small'>—</span>"}</b></td>
-                <td class="col-avail">${pill}</td>
-                <td class="col-notes">${toStr(r.Notes) || "<span class='small'>—</span>"}</td>
+                <td class="num">${toStr(r.Number)}</td>
+                <td>${toStr(r.Tent)}</td>
+                <td><b>${toStr(r.Grade) || "<span class='small'>—</span>"}</b></td>
+                <td>${pill}</td>
+                <td>${toStr(r.Notes) || "<span class='small'>—</span>"}</td>
               </tr>
               ${details}
             `;
           }).join("")}
         </tbody>
-      </table></div>
+      </table>
     `;
     wrap.innerHTML = html;
 
