@@ -282,7 +282,7 @@
       /* Column sizing using classes (reliable even if column order changes) */
       th.col-num, td.col-num{ width:56px; }
       th.col-grade, td.col-grade{ width:56px; }
-      th.col-avail, td.col-avail{ width:140px; }
+      th.col-avail, td.col-avail{ width:150px; }
       th.col-notes, td.col-notes{ display:none; }
 
       td.col-tent, th.col-tent{
@@ -303,15 +303,8 @@
         text-overflow:ellipsis;
         box-sizing:border-box;
       }
-      /* Keep expanded detail panel from forcing table wider on iPhone */
-      .detailRow td{ overflow:hidden; }
-      .detailBox{ justify-content:flex-start; }
-      .detailBox > div{ min-width:0; flex:1 1 140px; }
-
     }
-
-
-      </style>
+</style>
 </head>
 <body>
   <div class="hamburger" id="hamburgerBtn" aria-label="Menu"><span>≡</span></div>
