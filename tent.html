@@ -218,10 +218,9 @@
     .num{
       font-weight:900;
       font-size:20px;
-      width:68px;
       display:flex;
       align-items:center;
-      gap:6px;
+      gap:4px;
       white-space:nowrap;
     }
     .pill{
@@ -285,6 +284,7 @@
 
       /* Column sizing using classes (reliable even if column order changes) */
       th.col-num, td.col-num{ width:56px; }
+      td.col-num{ padding-right:10px; }
       th.col-grade, td.col-grade{ width:56px; }
       th.col-avail, td.col-avail{ width:140px; }
       th.col-notes, td.col-notes{ display:none; }
@@ -353,6 +353,7 @@
   height:8px;
   border-radius:50%;
   background:#f59e0b;
+  flex:0 0 auto;
 }
 
 </style>
