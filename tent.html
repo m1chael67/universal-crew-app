@@ -218,7 +218,6 @@
     tbody tr.clickable:hover{background:#f4f4f4;}
     tbody tr.clickable:active{background:#ececec;}
     tbody tr.clickable.open{background:#f1f1f1;}
-    tbody tr.clickable:active{transform:scale(0.995);}
     .num{
       font-weight:900;
       font-size:20px;
@@ -820,7 +819,10 @@
 
             return `
               <tr class="clickable${isOpen ? " open" : ""}" data-key="${key}">
-                <td class="num col-num"><span class="numWrap">${toStr(r.Number)}${r.Notes ? '<span class="noteDot"></span>' : ''}</span></td>
+                <td class="num col-num">
+  ${toStr(r.Number)}
+  ${r.Notes ? '<span class="noteDot"></span>' : ''}
+</td>
                 <td class="col-tent">${toStr(r.Tent)}</td>
                 <td class="col-grade"><b>${toStr(r.Grade) || "<span class='small'>—</span>"}</b></td>
                 <td class="col-avail">${pill}</td>
