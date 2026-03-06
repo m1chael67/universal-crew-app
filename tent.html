@@ -630,20 +630,31 @@
 
   function computeCurrent(){
     // Build latest status per tent+number from log.
-    // Availability is derived from the latest Action (not the sheet's Availability column).
-    const statusMap = new Map(); // key -> {ts, action, job, repairNote}
-    logRows.forEach(r=>{
+    // Trust sheet append order (last matching row wins), with timestamp only as a helper.
+    const statusMap = new Map(); // key -> {idx, ts, action, job, repairNote}
+
+    logRows.forEach((r, idx)=>{
       const k = toKey(r);
       const ts = parseDate(r.Timestamp);
-      if (!ts) return;
+      const next = {
+        idx,
+        ts,
+        action: toStr(r.Action).trim(),
+        job: toStr(r.Job).trim(),
+        repairNote: toStr(r["Repair Notes"] || r["RepairNotes"] || r["Repair Note"] || "").trim()
+      };
+
       const cur = statusMap.get(k);
-      if (!cur || ts > cur.ts){
-        statusMap.set(k, {
-          ts,
-          action: toStr(r.Action).trim(),
-          job: toStr(r.Job).trim(),
-          repairNote: toStr(r["Repair Notes"]).trim()
-        });
+      if (!cur) {
+        statusMap.set(k, next);
+        return;
+      }
+
+      // Prefer later timestamp when both parse cleanly; otherwise trust later row index.
+      if (cur.ts && next.ts) {
+        if (next.ts >= cur.ts) statusMap.set(k, next);
+      } else if (idx >= cur.idx) {
+        statusMap.set(k, next);
       }
     });
 
@@ -676,6 +687,7 @@
       r._lastJobName = lastJobName;
       r._lastWash = lastWash;
 
+      // Base note from Tents sheet, overridden by active repair note until "Repaired".
       const baseNotes = toStr(r.Notes).trim();
       const repairNote = st ? toStr(st.repairNote).trim() : "";
       r.Notes = (actLower === "needs repair" && repairNote) ? repairNote : baseNotes;
