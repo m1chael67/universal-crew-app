@@ -237,7 +237,52 @@
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwDMoZjhy2IHA0PFEqSwd79cOteIBX-QhIVjLh8pXHnzm6frGjoO1FkS9_xrdIQh8M/exec";
 
     const TIME_LOG_SHEET_ID = "1gm39kMipfpLKS2n8g9F4SYG9Do36M_5Lc6GOs-c6jCM";
+    const JOBS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxwJF-HT8in6ax5UtR8rrt-1X41t991YFTr-h-As9LOjCogi4lV2CjT6dGVa3QWhxo/exec";
     const EMPLOYEE_NAME = "Joe";
+
+function jsonp(url, params, timeoutMs) {
+  timeoutMs = timeoutMs || 15000;
+  return new Promise(function(resolve, reject) {
+    var cbName = "cb_" + Math.random().toString(16).slice(2);
+    var u = new URL(url);
+    Object.keys(params || {}).forEach(function(k){ u.searchParams.set(k, params[k]); });
+    u.searchParams.set("callback", cbName);
+
+    var done = false;
+    var script = document.createElement("script");
+    var timer = setTimeout(function() {
+      if (done) return;
+      done = true;
+      cleanup();
+      reject(new Error("JSONP request failed."));
+    }, timeoutMs);
+
+    function cleanup() {
+      clearTimeout(timer);
+      script.remove();
+      try { delete window[cbName]; } catch(_) {}
+    }
+
+    window[cbName] = function(data) {
+      if (done) return;
+      done = true;
+      cleanup();
+      if (data && data.ok === false && data.error) reject(new Error(String(data.error)));
+      else resolve(data);
+    };
+
+    script.onerror = function() {
+      if (done) return;
+      done = true;
+      cleanup();
+      reject(new Error("JSONP request failed."));
+    };
+
+    script.src = u.toString();
+    document.body.appendChild(script);
+  });
+}
+
 function parseSheetDateTime(cell) {
   if (!cell) return null;
   var value = null;
@@ -521,12 +566,13 @@ function waitForClockState(expectedState, triesLeft) {
   });
 })();
 
+
     // Job loading with employee filter
-    function safeCellValue(c) {
-      if (!c) return "";
-      if (typeof c.f !== "undefined" && c.f !== null && c.f !== "") return c.f;
-      if (typeof c.v !== "undefined" && c.v !== null) return c.v;
-      return "";
+    function sameDay(a, b) {
+      return a && b &&
+        a.getFullYear() === b.getFullYear() &&
+        a.getMonth() === b.getMonth() &&
+        a.getDate() === b.getDate();
     }
 
     function parseUsDate(raw) {
@@ -545,19 +591,14 @@ function waitForClockState(expectedState, triesLeft) {
         if (yy < 100) yy += 2000;
         return new Date(yy, mm - 1, dd);
       }
+      var parts = s.split("-");
+      if (parts.length === 3) return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
       var t = Date.parse(s);
       if (!isNaN(t)) {
         var d = new Date(t);
         return new Date(d.getFullYear(), d.getMonth(), d.getDate());
       }
       return null;
-    }
-
-    function sameDay(a, b) {
-      return a && b &&
-        a.getFullYear() === b.getFullYear() &&
-        a.getMonth() === b.getMonth() &&
-        a.getDate() === b.getDate();
     }
 
     function formatShortDate(d) {
@@ -575,13 +616,9 @@ function waitForClockState(expectedState, triesLeft) {
     }
 
     function buildDateLabel(setupDate, strikeDate, showAsStrikeOnly) {
-      if (showAsStrikeOnly) {
-        return "Strike - " + formatLongDayDate(strikeDate);
-      }
+      if (showAsStrikeOnly) return "Strike - " + formatLongDayDate(strikeDate);
       if (setupDate && strikeDate) {
-        if (sameDay(setupDate, strikeDate)) {
-          return formatShortDate(setupDate) + " - SAME DAY STRIKE";
-        }
+        if (sameDay(setupDate, strikeDate)) return formatShortDate(setupDate) + " - SAME DAY STRIKE";
         return formatLongDayDate(setupDate) + " - " + formatLongDayDate(strikeDate);
       }
       if (setupDate) return formatLongDayDate(setupDate);
@@ -626,50 +663,37 @@ function waitForClockState(expectedState, triesLeft) {
         var block = document.createElement("div");
         block.className = "job-block";
 
-        var crewNames = [];
-        if (job.crew.michael) crewNames.push("Michael");
-        if (job.crew.tim) crewNames.push("Tim");
-        if (job.crew.joe) crewNames.push("Joe");
-        if (job.crew.jeff) crewNames.push("Jeff");
-        var crewLabel = "";
-        if (crewNames.length) {
-          crewLabel = crewNames.join(", ");
-        } else if (job.crew.all) {
-          crewLabel = "All crew";
-        }
+        var crewLabel = (job.employees || []).join(", ");
 
         var typeColor = "#333";
         if (job.Type && typeof job.Type === "string") {
           var t = job.Type.toLowerCase();
-          if (t.includes("pickup") || t.includes("pick-up") || t.includes("pick up")) {
-            typeColor = "#1e88e5";
-          } else if (t.includes("setup") || t.includes("set-up") || t.includes("set up")) {
-            typeColor = "#43a047";
-          } else if (t.includes("strike")) {
-            typeColor = "#e53935";
-          }
+          if (t.includes("pickup") || t.includes("pick-up") || t.includes("pick up")) typeColor = "#1e88e5";
+          else if (t.includes("setup") || t.includes("set-up") || t.includes("set up")) typeColor = "#43a047";
+          else if (t.includes("strike")) typeColor = "#e53935";
+          else if (t.includes("delivery")) typeColor = "#7c3aed";
         }
 
         block.style.borderLeft = "4px solid " + typeColor;
 
         var isToday = job.ActiveDate && sameDay(job.ActiveDate, today);
 
-        var inventoryHtml = job.inventory.map(function(i) {
-          var qtyPart = i.Quantity ? " × " + i.Quantity : "";
-          var notePart = i.Note ? '<span class="inventory-note">' + i.Note + '</span>' : "";
-          return '<li class="inventory-row"><span class="inventory-main">' + (i.Item || '') + qtyPart + '</span>' + notePart + '</li>';
+        var inventoryHtml = (job.inventory || []).map(function(i) {
+          var qtyPart = i.quantity ? " × <strong>" + i.quantity + "</strong>" : "";
+          return '<li class="inventory-row">• <span class="inventory-main">' + (i.inventory || '') + qtyPart + '</span></li>';
         }).join("");
 
         block.innerHTML = ''
           + '<div class="job-block-header">'
-          +   '<h2>' + job.Name + '</h2>'
+          +   '<h2>' + (job.Name || '') + '</h2>'
           +   '<span class="job-date-badge' + (isToday ? ' today' : '') + '">' + job.DateLabel + '</span>'
           + '</div>'
           + '<p><strong>Type:</strong> ' + (job.Type || '') + '</p>'
           + '<p><strong>Address:</strong> <span class="job-address" style="text-decoration:underline;cursor:pointer;">'
           +    (job.Address || '') + '</span></p>'
-          + '<p><strong>Phone:</strong> <a href="tel:' + (job.Phone || '') + '">' + (job.Phone || '') + '</a></p>'
+          + ((job.Phone && String(job.Phone).trim()) ? ('<p><strong>Phone:</strong> <a href="tel:' + job.Phone + '">' + job.Phone + '</a></p>') : '')
           + (crewLabel ? '<p><strong>Crew:</strong> ' + crewLabel + '</p>' : '')
+          + ((job.Notes && job.Notes !== "—") ? ('<p><strong>Notes:</strong> ' + job.Notes + '</p>') : '')
           + '<div class="job-inventory"><h3>Inventory</h3>'
           + '<ul>' + inventoryHtml + '</ul></div>';
 
@@ -686,71 +710,24 @@ function waitForClockState(expectedState, triesLeft) {
         toggle.addEventListener("change", renderJobsTodayOnly);
       }
 
-      var sheetId = "1EXRZrzTEGMCG2ceIKg7ZkAZHPOMZojz7n00hAs2a5FA";
-      var sheetUrl = "https://docs.google.com/spreadsheets/d/" + sheetId + "/gviz/tq?tqx=out:json";
+      var today = new Date();
+      today = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
-      fetch(sheetUrl)
-        .then(function(res) { return res.text(); })
-        .then(function(text) {
-          var json = JSON.parse(text.substring(47).slice(0, -2));
-          var rows = json.table.rows || [];
-          var cols = (json.table.cols || []).map(function(col, idx) {
-            return (col.label || col.id || ("col" + idx)).trim();
+      jsonp(JOBS_WEBAPP_URL, { action: "listJobs" }, 20000)
+        .then(function(res) {
+          var jobs = (res.jobs || []).filter(function(job) {
+            var emps = (job.employees || []).map(function(x){ return String(x || "").trim().toLowerCase(); });
+            return emps.indexOf(String(FILTER_EMPLOYEE || "").toLowerCase()) !== -1;
           });
 
-          var today = new Date();
-          today = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-
-          var jobsByKey = {};
-
-          rows.forEach(function(r) {
-            var row = {};
-            cols.forEach(function(label, idx) {
-              row[label] = safeCellValue(r.c[idx]);
-            });
-
-            var name = row["Name"] || "";
-            var address = row["Address"] || "";
-            var phone = row["Phone"] || "";
-            var setupRaw = row["Date"] || "";
-            var strikeRaw = row["Strike"] || "";
-            var item = row["Inventory"] || row["Item"] || "";
-            var quantity = row["Quantity"] || "";
-            var type = row["Type"] || "";
-            var note = row["Notes"] || "";
-            var allCol = row["All"] || "";
-            var michaelCol = row["Michael"] || "";
-            var timCol = row["Tim"] || "";
-            var joeCol = row["Joe"] || "";
-            var jeffCol = row["Jeff"] || "";
-
-            if (!name) return;
-
-            var setupDate = parseUsDate(setupRaw);
-            var strikeDate = parseUsDate(strikeRaw);
-
-            if (!setupDate && !strikeDate) return;
-
-            var hasAll = allCol && String(allCol).trim() !== "";
-            var show = false;
-            if (!FILTER_EMPLOYEE) {
-              show = true;
-            } else {
-              var fname = FILTER_EMPLOYEE;
-              var hasEmployee = false;
-              if (fname === "Michael" && michaelCol && String(michaelCol).trim() !== "") hasEmployee = true;
-              if (fname === "Tim" && timCol && String(timCol).trim() !== "") hasEmployee = true;
-              if (fname === "Joe" && joeCol && String(joeCol).trim() !== "") hasEmployee = true;
-              if (fname === "Jeff" && jeffCol && String(jeffCol).trim() !== "") hasEmployee = true;
-              if (hasAll || hasEmployee) show = true;
-            }
-            if (!show) return;
-
-            if (strikeDate && strikeDate < today) return;
-            if (!strikeDate && setupDate && setupDate < today) return;
-
+          var jobsArray = jobs.map(function(job) {
+            var setupDate = parseUsDate(job.startDate || "");
+            var strikeDate = parseUsDate(job.strikeDate || "");
             var showAsStrikeOnly = false;
             var activeDate = setupDate || strikeDate;
+
+            if (strikeDate && strikeDate < today) return null;
+            if (!strikeDate && setupDate && setupDate < today) return null;
 
             if (setupDate && setupDate < today && strikeDate && strikeDate >= today) {
               showAsStrikeOnly = true;
@@ -761,39 +738,21 @@ function waitForClockState(expectedState, triesLeft) {
               activeDate = strikeDate;
             }
 
-            var key = name + "|" + (setupDate ? setupDate.getTime() : "") + "|" + (strikeDate ? strikeDate.getTime() : "");
+            return {
+              Name: job.jobName || "",
+              SetupDate: setupDate,
+              StrikeDate: strikeDate,
+              ActiveDate: activeDate,
+              DateLabel: buildDateLabel(setupDate, strikeDate, showAsStrikeOnly),
+              Type: showAsStrikeOnly ? "Strike" : (job.type || ""),
+              Address: job.address || "",
+              Phone: job.phone || "",
+              Notes: job.notes || "",
+              employees: job.employees || [],
+              inventory: job.inventory || []
+            };
+          }).filter(Boolean);
 
-            if (!jobsByKey[key]) {
-              jobsByKey[key] = {
-                Name: name,
-                SetupDate: setupDate,
-                StrikeDate: strikeDate,
-                ActiveDate: activeDate,
-                showAsStrikeOnly: showAsStrikeOnly,
-                DateLabel: buildDateLabel(setupDate, strikeDate, showAsStrikeOnly),
-                Type: showAsStrikeOnly ? "Strike" : type,
-                Address: address,
-                Phone: phone,
-                crew: {},
-                inventory: []
-              };
-            }
-
-            var job = jobsByKey[key];
-            if (hasAll) job.crew.all = true;
-            if (michaelCol && String(michaelCol).trim() !== "") job.crew.michael = true;
-            if (timCol && String(timCol).trim() !== "") job.crew.tim = true;
-            if (joeCol && String(joeCol).trim() !== "") job.crew.joe = true;
-            if (jeffCol && String(jeffCol).trim() !== "") job.crew.jeff = true;
-
-            job.inventory.push({
-              Item: item,
-              Quantity: quantity,
-              Note: note
-            });
-          });
-
-          var jobsArray = Object.values(jobsByKey);
           jobsArray.sort(function(a, b) {
             var da = a.ActiveDate ? a.ActiveDate.getTime() : 0;
             var db = b.ActiveDate ? b.ActiveDate.getTime() : 0;
