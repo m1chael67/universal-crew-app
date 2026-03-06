@@ -161,6 +161,28 @@
       display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;border:1px solid #ddd;
       background:#fafafa;font-size:12px;font-weight:700;white-space:nowrap;
     }
+    .job-chip.state-upcoming{
+      background:#eef5ff;
+      border-color:#bcd4ff;
+      color:#175cd3;
+    }
+    .job-chip.state-today{
+      background:#fff4da;
+      border-color:#f7cf73;
+      color:#9a6700;
+      box-shadow:0 0 0 3px rgba(247,207,115,0.18), 0 0 14px rgba(247,207,115,0.35);
+    }
+    .job-chip.state-strike-today{
+      background:#fff1f0;
+      border-color:#f5b5ae;
+      color:#b42318;
+      box-shadow:0 0 0 3px rgba(180,35,24,0.10), 0 0 14px rgba(180,35,24,0.18);
+    }
+    .job-chip.state-completed{
+      background:#f1f3f5;
+      border-color:#d0d5dd;
+      color:#344054;
+    }
     .job-meta{display:grid;gap:8px;margin-bottom:10px}
     .job-meta-row{font-size:14px;color:#222}
     .job-meta-row strong{color:#111}
@@ -614,6 +636,34 @@
       return el ? el.value : "upcoming";
     }
 
+    function isBeforeToday(d){
+      return d && d.getTime() < getTodayStart().getTime();
+    }
+
+    function isToday(d){
+      const t = getTodayStart();
+      return !!d && d.getFullYear() === t.getFullYear() && d.getMonth() === t.getMonth() && d.getDate() === t.getDate();
+    }
+
+    function getJobState(job){
+      const today = getTodayStart();
+      const start = toLocalDate(job.startDate);
+      const strike = toLocalDate(job.strikeDate);
+
+      if (strike && strike.getTime() < today.getTime()) return "completed";
+      if (strike && isToday(strike)) return "strike-today";
+      if (start && isToday(start)) return "today";
+      return "upcoming";
+    }
+
+    function getJobStateLabel(job){
+      const state = getJobState(job);
+      if (state === "completed") return "Completed";
+      if (state === "strike-today") return "Strike Today";
+      if (state === "today") return "Today";
+      return "Upcoming";
+    }
+
     async function loadEmployees(){
       const res = await jsonp(JOBS_WEBAPP_URL, { action: "getEmployees" });
       state.employees = res.employees || [];
@@ -672,7 +722,7 @@
           <div class="job-card" data-job-id="${job.jobId}">
             <div class="job-card-header">
               <h2>${job.jobName || "Untitled Job"}</h2>
-              <span class="job-chip">${job.type || "—"}</span>
+              <span class="job-chip state-${getJobState(job)}">${getJobStateLabel(job)}</span>
             </div>
             <div class="job-meta">
               <div class="job-meta-row"><strong>Dates:</strong> ${formatJobDate(job.startDate, job.strikeDate)}</div>
