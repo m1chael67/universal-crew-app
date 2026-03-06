@@ -203,7 +203,9 @@
     <div class="jobs-toolbar">
       <label class="toggle-chip"><input type="checkbox" id="today-only-toggle"> Today Only</label>
     </div>
-    <div id="current-date-chip" class="today-chip"></div>
+    <div style="text-align:center;margin-top:6px;">
+      <a href="admin.html" class="btn primary" style="font-size:13px;padding:6px 14px;text-decoration:none;display:inline-block;">Admin</a>
+    </div>
     <div class="clock-row">
       <button id="clock-toggle-btn" type="button" class="btn primary" disabled>Loading…</button>
       <span id="clock-status" style="font-size:12px;color:#555;"></span>
@@ -236,7 +238,7 @@
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwDMoZjhy2IHA0PFEqSwd79cOteIBX-QhIVjLh8pXHnzm6frGjoO1FkS9_xrdIQh8M/exec";
 
     const TIME_LOG_SHEET_ID = "1gm39kMipfpLKS2n8g9F4SYG9Do36M_5Lc6GOs-c6jCM";
-    const JOBS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxwJF-HT8in6ax5UtR8rrt-1X41t991YFTr-h-As9LOjCogi4lV2CjT6dGVa3QWhxo/exec";
+    const JOBS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxryknrt9pwA_lvmxbSs3Ww1KjIA3kbKkZwhGAD65dYhF_XF--bc8k0NvNiGFpSRuk/exec";
     const EMPLOYEE_NAME = "Michael";
 function parseGvizResponse(textResp) {
       // Google Visualization responses wrap JSON; parse robustly across browsers.
@@ -245,7 +247,6 @@ function parseGvizResponse(textResp) {
       if (start === -1 || end === -1 || end <= start) throw new Error("Invalid gviz response");
       return JSON.parse(textResp.substring(start, end + 1));
     }
-
 
 function jsonp(url, params, timeoutMs) {
   timeoutMs = timeoutMs || 15000;
@@ -574,17 +575,27 @@ function waitForClockState(expectedState, triesLeft) {
   });
 })();
 
-
     // Job loading with employee filter
+    function sameDay(a, b) {
+      return a && b &&
+        a.getFullYear() === b.getFullYear() &&
+        a.getMonth() === b.getMonth() &&
+        a.getDate() === b.getDate();
+    }
+
     function parseUsDate(raw) {
       if (!raw) return null;
       if (raw instanceof Date) return new Date(raw.getFullYear(), raw.getMonth(), raw.getDate());
+      if (typeof raw === "string" && raw.indexOf("Date(") === 0) {
+        var m = raw.match(/Date\((\d+),(\d+),(\d+)\)/);
+        if (m) return new Date(parseInt(m[1],10), parseInt(m[2],10), parseInt(m[3],10));
+      }
       var s = String(raw).trim();
-      var m1 = s.match(/^Date\((\d+),(\d+),(\d+)\)$/);
-      if (m1) return new Date(parseInt(m1[1],10), parseInt(m1[2],10), parseInt(m1[3],10));
       var m2 = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
       if (m2) {
-        var mm = parseInt(m2[1],10), dd = parseInt(m2[2],10), yy = parseInt(m2[3],10);
+        var mm = parseInt(m2[1], 10);
+        var dd = parseInt(m2[2], 10);
+        var yy = parseInt(m2[3], 10);
         if (yy < 100) yy += 2000;
         return new Date(yy, mm - 1, dd);
       }
@@ -596,13 +607,6 @@ function waitForClockState(expectedState, triesLeft) {
         return new Date(d.getFullYear(), d.getMonth(), d.getDate());
       }
       return null;
-    }
-
-    function sameDay(a, b) {
-      return a && b &&
-        a.getFullYear() === b.getFullYear() &&
-        a.getMonth() === b.getMonth() &&
-        a.getDate() === b.getDate();
     }
 
     function formatShortDate(d) {
@@ -672,13 +676,14 @@ function waitForClockState(expectedState, triesLeft) {
         var typeColor = "#333";
         if (job.Type && typeof job.Type === "string") {
           var t = job.Type.toLowerCase();
-          if (t.includes("pickup")) typeColor = "#1e88e5";
-          else if (t.includes("setup")) typeColor = "#43a047";
+          if (t.includes("pickup") || t.includes("pick-up") || t.includes("pick up")) typeColor = "#1e88e5";
+          else if (t.includes("setup") || t.includes("set-up") || t.includes("set up")) typeColor = "#43a047";
           else if (t.includes("strike")) typeColor = "#e53935";
           else if (t.includes("delivery")) typeColor = "#7c3aed";
         }
 
         block.style.borderLeft = "4px solid " + typeColor;
+
         var isToday = job.ActiveDate && sameDay(job.ActiveDate, today);
 
         var inventoryHtml = (job.inventory || []).map(function(i) {
@@ -692,7 +697,8 @@ function waitForClockState(expectedState, triesLeft) {
           +   '<span class="job-date-badge' + (isToday ? ' today' : '') + '">' + job.DateLabel + '</span>'
           + '</div>'
           + '<p><strong>Type:</strong> ' + (job.Type || '') + '</p>'
-          + ((job.Address && String(job.Address).trim()) ? ('<p><strong>Address:</strong> <span class="job-address" style="text-decoration:underline;cursor:pointer;">' + job.Address + '</span></p>') : '')
+          + '<p><strong>Address:</strong> <span class="job-address" style="text-decoration:underline;cursor:pointer;">'
+          +    (job.Address || '') + '</span></p>'
           + ((job.Phone && String(job.Phone).trim()) ? ('<p><strong>Phone:</strong> <a href="tel:' + job.Phone + '">' + job.Phone + '</a></p>') : '')
           + (crewLabel ? '<p><strong>Crew:</strong> ' + crewLabel + '</p>' : '')
           + ((job.Notes && job.Notes !== "—") ? ('<p><strong>Notes:</strong> ' + job.Notes + '</p>') : '')
@@ -752,7 +758,7 @@ function waitForClockState(expectedState, triesLeft) {
               Address: job.address || "",
               Phone: job.phone || "",
               Notes: job.notes || "",
-              employees: Array.isArray(job.employees) ? job.employees : String(job.employees || "").split(",").map(function(x){return String(x||"").trim();}).filter(Boolean),
+              employees: job.employees || [],
               inventory: job.inventory || []
             };
           }).filter(Boolean);

@@ -158,7 +158,7 @@
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwDMoZjhy2IHA0PFEqSwd79cOteIBX-QhIVjLh8pXHnzm6frGjoO1FkS9_xrdIQh8M/exec";
 
     const TIME_LOG_SHEET_ID = "1gm39kMipfpLKS2n8g9F4SYG9Do36M_5Lc6GOs-c6jCM";
-    const JOBS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwNF2_ONYCYHpxL6g38W4USrsGN6oSdk3sjibl11Gn0F4NYAgztas1AZzcK00Tpias/exec";
+    const JOBS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxryknrt9pwA_lvmxbSs3Ww1KjIA3kbKkZwhGAD65dYhF_XF--bc8k0NvNiGFpSRuk/exec";
     const EMPLOYEE_NAME = "Tim";
 
 function jsonp(url, params, timeoutMs) {
@@ -610,7 +610,8 @@ function waitForClockState(expectedState, triesLeft) {
           +   '<span class="job-date-badge' + (isToday ? ' today' : '') + '">' + job.DateLabel + '</span>'
           + '</div>'
           + '<p><strong>Type:</strong> ' + (job.Type || '') + '</p>'
-          + ((job.Address && String(job.Address).trim()) ? ('<p><strong>Address:</strong> <span class="job-address" style="text-decoration:underline;cursor:pointer;">' + job.Address + '</span></p>') : '')
+          + '<p><strong>Address:</strong> <span class="job-address" style="text-decoration:underline;cursor:pointer;">'
+          +    (job.Address || '') + '</span></p>'
           + ((job.Phone && String(job.Phone).trim()) ? ('<p><strong>Phone:</strong> <a href="tel:' + job.Phone + '">' + job.Phone + '</a></p>') : '')
           + (crewLabel ? '<p><strong>Crew:</strong> ' + crewLabel + '</p>' : '')
           + ((job.Notes && job.Notes !== "—") ? ('<p><strong>Notes:</strong> ' + job.Notes + '</p>') : '')
@@ -670,7 +671,7 @@ function waitForClockState(expectedState, triesLeft) {
               Address: job.address || "",
               Phone: job.phone || "",
               Notes: job.notes || "",
-              employees: Array.isArray(job.employees) ? job.employees : String(job.employees || "").split(",").map(function(x){return String(x||"").trim();}).filter(Boolean),
+              employees: job.employees || [],
               inventory: job.inventory || []
             };
           }).filter(Boolean);
