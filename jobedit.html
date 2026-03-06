@@ -119,6 +119,7 @@
     .sheet-body{padding:16px 18px 24px;overflow:auto}
     .form-grid{display:grid;gap:14px}
     .row{display:grid;gap:8px}
+    .hidden{display:none !important;}
     .row label{font-weight:700;font-size:14px}
     input[type="text"],input[type="date"],input[type="number"],select,textarea{
       width:100%;padding:12px 14px;border:1px solid #ddd;border-radius:14px;font-size:15px;
@@ -161,7 +162,7 @@
     <div class="page-top">
       <div class="title-wrap">
         <h1>Edit Jobs</h1>
-        <p class="sub">Create, edit, and delete jobs. This page shows all active jobs regardless of employee assignment.</p>
+        
       </div>
       <div class="top-actions">
         <a href="admin.html" class="btn small">← Back to Admin</a>
@@ -208,11 +209,6 @@
           </div>
         </div>
 
-        <div class="row">
-          <label for="jobNotes">Notes</label>
-          <textarea id="jobNotes" rows="1" placeholder="Enter notes"></textarea>
-        </div>
-
         <div class="two-col">
           <div class="row">
             <label for="startDate">Start Date</label>
@@ -222,6 +218,11 @@
             <label for="strikeDate">Strike Date</label>
             <input id="strikeDate" type="date" />
           </div>
+        </div>
+
+        <div class="row" id="phoneRow">
+          <label for="jobPhone">Phone</label>
+          <input id="jobPhone" type="text" inputmode="tel" placeholder="Enter phone number" />
         </div>
 
         <div class="row">
@@ -234,6 +235,11 @@
           <label>Inventory</label>
           <div id="inventoryWrap"></div>
           <button type="button" class="btn small" id="addInventoryBtn">+ Add Inventory Row</button>
+        </div>
+
+        <div class="row">
+          <label for="jobNotes">Notes</label>
+          <textarea id="jobNotes" rows="1" placeholder="Enter notes"></textarea>
         </div>
 
         <div class="sheet-actions">
@@ -252,7 +258,7 @@
   </aside>
 
   <script>
-    const JOBS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwNF2_ONYCYHpxL6g38W4USrsGN6oSdk3sjibl11Gn0F4NYAgztas1AZzcK00Tpias/exec";
+    const JOBS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxwJF-HT8in6ax5UtR8rrt-1X41t991YFTr-h-As9LOjCogi4lV2CjT6dGVa3QWhxo/exec";
 
     const state = { employees: [], jobs: [], editingJob: null };
 
@@ -320,17 +326,22 @@
     }
 
     function toTitleCaseWords(s){
-      return String(s || "").toLowerCase().replace(/\b([a-z])/g, function(m){ return m.toUpperCase(); });
+      return String(s || "")
+        .toLowerCase()
+        .replace(/(^|\s|[-/()])([a-z])/g, function(_, p1, p2){ return p1 + p2.toUpperCase(); })
+        .trim();
     }
 
     function syncTypeVisibility(){
-      var type = (document.getElementById("jobType").value || "").toLowerCase();
+      var type = (document.getElementById("jobType").value || "").toLowerCase().trim();
       var row = document.getElementById("addressRow");
       if (!row) return;
-      row.style.display = (type === "pickup") ? "none" : "";
       if (type === "pickup") {
+        row.style.display = "none";
         document.getElementById("jobAddress").value = "";
         autoGrow(document.getElementById("jobAddress"));
+      } else {
+        row.style.display = "grid";
       }
     }
 
@@ -377,6 +388,7 @@
       const txt = card.querySelector(".inv-text");
       autoGrow(txt);
       txt.addEventListener("input", ()=>autoGrow(txt));
+      txt.addEventListener("blur", ()=>{ txt.value = toTitleCaseWords(txt.value); autoGrow(txt); });
 
       card.querySelector(".delete-item-btn").addEventListener("click", ()=>{
         card.remove();
@@ -410,6 +422,7 @@
       document.getElementById("startDate").value = job ? (job.startDate || "") : "";
       document.getElementById("strikeDate").value = job ? (job.strikeDate || "") : "";
       document.getElementById("jobAddress").value = job ? (job.address || "") : "";
+      document.getElementById("jobPhone").value = job ? (job.phone || "") : "";
       document.getElementById("jobNotes").value = job ? (job.notes || "") : "";
 
       ["jobName","jobAddress","jobNotes"].forEach(id=>{
@@ -439,12 +452,13 @@
       const strikeDate = document.getElementById("strikeDate").value;
       const address = document.getElementById("jobAddress").value.trim();
       const notes = document.getElementById("jobNotes").value.trim();
+      const phone = document.getElementById("jobPhone").value.trim();
       const employees = Array.from(document.querySelectorAll('#employeeToggles input[type="checkbox"]:checked')).map(el=>el.value);
       const inventory = Array.from(document.querySelectorAll('#inventoryWrap .inv-card')).map(card=>({
         inventory: toTitleCaseWords(card.querySelector(".inv-text").value.trim()),
         quantity: card.querySelector(".inv-qty").value.trim()
       })).filter(x=>x.inventory || x.quantity);
-      return { jobName, type, startDate, strikeDate, address, notes, employees, inventory };
+      return { jobName, type, startDate, strikeDate, address, notes, phone, employees, inventory };
     }
 
     function validateForm(payload){
@@ -489,8 +503,7 @@
             </div>
             <div class="job-meta">
               <div class="job-meta-row"><strong>Dates:</strong> ${formatJobDate(job.startDate, job.strikeDate)}</div>
-              <div class="job-meta-row"><strong>Address:</strong> ${job.address || "—"}</div>
-              <div class="job-meta-row"><strong>Employees:</strong> ${employees}</div>\n              <div class="job-meta-row"><strong>Notes:</strong> ${job.notes || "—"}</div>\n              <div class="job-meta-row"><strong>Job ID:</strong> ${job.jobId || "—"}</div>
+              <div class="job-meta-row"><strong>Address:</strong> ${job.address || "—"}</div>\n              <div class="job-meta-row"><strong>Phone:</strong> ${job.phone || "—"}</div>\n              <div class="job-meta-row"><strong>Employees:</strong> ${employees}</div>\n              <div class="job-meta-row"><strong>Notes:</strong> ${job.notes || "—"}</div>\n              <div class="job-meta-row"><strong>Job ID:</strong> ${job.jobId || "—"}</div>
             </div>
             <ul class="inventory-list">${invHtml}</ul>
           </div>
@@ -566,6 +579,7 @@
     (async function init(){
       try{
         await loadEmployees();
+        syncTypeVisibility();
         await loadJobs();
       }catch(e){
         setStatus(String(e.message || e));
