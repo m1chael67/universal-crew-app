@@ -101,12 +101,32 @@
     }
     .side-menu a:hover{ background:#f1f1f1; }
 
-
     .today-chip{
-      display:inline-flex;
+      display:block;
+      text-align:center;
+      margin:10px auto 20px auto;
+      padding:10px 18px;
+      border-radius:999px;
+      background:#fff;
+      border:1px solid #e2e2e2;
+      box-shadow:0 6px 16px rgba(0,0,0,0.08);
+      font-size:18px;
+      font-weight:800;
+      color:#111;
+      width:fit-content;
+    }
+    .jobs-toolbar{
+      display:flex;
       align-items:center;
       justify-content:center;
+      gap:10px;
       margin:0 auto 14px auto;
+      flex-wrap:wrap;
+    }
+    .toggle-chip{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
       padding:8px 14px;
       border-radius:999px;
       background:#fff;
@@ -115,6 +135,13 @@
       font-size:14px;
       font-weight:700;
       color:#222;
+      user-select:none;
+    }
+    .toggle-chip input{
+      accent-color:#111;
+      width:16px;
+      height:16px;
+      margin:0;
     }
     .job-date-badge{
       display:inline-block;
@@ -148,6 +175,7 @@
       white-space:nowrap;
     }
 
+
 </style>
 </head>
 <body>
@@ -171,6 +199,10 @@
       <button id="logout-btn" type="button" style="font-size:12px;padding:4px 8px;cursor:pointer;">Log Out</button>
     </div>
     <h1>Michael's Jobs</h1>
+    <div id="current-date-chip" class="today-chip"></div>
+    <div class="jobs-toolbar">
+      <label class="toggle-chip"><input type="checkbox" id="today-only-toggle"> Today Only</label>
+    </div>
     <div id="current-date-chip" class="today-chip"></div>
     <div class="clock-row">
       <button id="clock-toggle-btn" type="button" class="btn primary" disabled>Loading…</button>
@@ -572,8 +604,95 @@ function waitForClockState(expectedState, triesLeft) {
       el.textContent = formatHeaderDate(new Date(now.getFullYear(), now.getMonth(), now.getDate()));
     }
 
+    function isTodayOnlyEnabled() {
+      var toggle = document.getElementById("today-only-toggle");
+      return !!(toggle && toggle.checked);
+    }
+
+    function renderJobsTodayOnly() {
+      var list = document.getElementById("job-list");
+      if (!list || !window.__jobsCache) return;
+
+      var today = new Date();
+      today = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      var jobsArray = window.__jobsCache.slice();
+
+      if (isTodayOnlyEnabled()) {
+        jobsArray = jobsArray.filter(function(job) {
+          return job.ActiveDate && sameDay(job.ActiveDate, today);
+        });
+      }
+
+      list.innerHTML = "";
+
+      if (!jobsArray.length) {
+        list.textContent = isTodayOnlyEnabled() ? "No jobs for today." : "No jobs scheduled.";
+        return;
+      }
+
+      jobsArray.forEach(function(job) {
+        var block = document.createElement("div");
+        block.className = "job-block";
+
+        var crewNames = [];
+        if (job.crew.michael) crewNames.push("Michael");
+        if (job.crew.tim) crewNames.push("Tim");
+        if (job.crew.joe) crewNames.push("Joe");
+        if (job.crew.jeff) crewNames.push("Jeff");
+        var crewLabel = "";
+        if (crewNames.length) {
+          crewLabel = crewNames.join(", ");
+        } else if (job.crew.all) {
+          crewLabel = "All crew";
+        }
+
+        var typeColor = "#333";
+        if (job.Type && typeof job.Type === "string") {
+          var t = job.Type.toLowerCase();
+          if (t.includes("pickup") || t.includes("pick-up") || t.includes("pick up")) {
+            typeColor = "#1e88e5";
+          } else if (t.includes("setup") || t.includes("set-up") || t.includes("set up")) {
+            typeColor = "#43a047";
+          } else if (t.includes("strike")) {
+            typeColor = "#e53935";
+          }
+        }
+
+        block.style.borderLeft = "4px solid " + typeColor;
+
+        var isToday = job.ActiveDate && sameDay(job.ActiveDate, today);
+
+        var inventoryHtml = job.inventory.map(function(i) {
+          var qtyPart = i.Quantity ? " × " + i.Quantity : "";
+          var notePart = i.Note ? '<span class="inventory-note">' + i.Note + '</span>' : "";
+          return '<li class="inventory-row"><span class="inventory-main">' + (i.Item || '') + qtyPart + '</span>' + notePart + '</li>';
+        }).join("");
+
+        block.innerHTML = ''
+          + '<div class="job-block-header">'
+          +   '<h2>' + job.Name + '</h2>'
+          +   '<span class="job-date-badge' + (isToday ? ' today' : '') + '">' + job.DateLabel + '</span>'
+          + '</div>'
+          + '<p><strong>Type:</strong> ' + (job.Type || '') + '</p>'
+          + '<p><strong>Address:</strong> <span class="job-address" style="text-decoration:underline;cursor:pointer;">'
+          +    (job.Address || '') + '</span></p>'
+          + '<p><strong>Phone:</strong> <a href="tel:' + (job.Phone || '') + '">' + (job.Phone || '') + '</a></p>'
+          + (crewLabel ? '<p><strong>Crew:</strong> ' + crewLabel + '</p>' : '')
+          + '<div class="job-inventory"><h3>Inventory</h3>'
+          + '<ul>' + inventoryHtml + '</ul></div>';
+
+        list.appendChild(block);
+      });
+    }
+
     (function loadJobs() {
       renderCurrentDateChip();
+
+      var toggle = document.getElementById("today-only-toggle");
+      if (toggle && !toggle.dataset.bound) {
+        toggle.dataset.bound = "1";
+        toggle.addEventListener("change", renderJobsTodayOnly);
+      }
 
       var sheetId = "1EXRZrzTEGMCG2ceIKg7ZkAZHPOMZojz7n00hAs2a5FA";
       var sheetUrl = "https://docs.google.com/spreadsheets/d/" + sheetId + "/gviz/tq?tqx=out:json";
@@ -682,9 +801,6 @@ function waitForClockState(expectedState, triesLeft) {
             });
           });
 
-          var list = document.getElementById("job-list");
-          list.innerHTML = "";
-
           var jobsArray = Object.values(jobsByKey);
           jobsArray.sort(function(a, b) {
             var da = a.ActiveDate ? a.ActiveDate.getTime() : 0;
@@ -692,78 +808,26 @@ function waitForClockState(expectedState, triesLeft) {
             return da - db;
           });
 
-          if (!jobsArray.length) {
-            list.textContent = "No jobs scheduled.";
-            return;
-          }
+          window.__jobsCache = jobsArray;
+          renderJobsTodayOnly();
 
-          jobsArray.forEach(function(job) {
-            var block = document.createElement("div");
-            block.className = "job-block";
-
-            var crewNames = [];
-            if (job.crew.michael) crewNames.push("Michael");
-            if (job.crew.tim) crewNames.push("Tim");
-            if (job.crew.joe) crewNames.push("Joe");
-            if (job.crew.jeff) crewNames.push("Jeff");
-            var crewLabel = "";
-            if (crewNames.length) {
-              crewLabel = crewNames.join(", ");
-            } else if (job.crew.all) {
-              crewLabel = "All crew";
-            }
-
-            var typeColor = "#333";
-            if (job.Type && typeof job.Type === "string") {
-              var t = job.Type.toLowerCase();
-              if (t.includes("pickup") || t.includes("pick-up") || t.includes("pick up")) {
-                typeColor = "#1e88e5";
-              } else if (t.includes("setup") || t.includes("set-up") || t.includes("set up")) {
-                typeColor = "#43a047";
-              } else if (t.includes("strike")) {
-                typeColor = "#e53935";
+          var list = document.getElementById("job-list");
+          if (!list.dataset.boundAddressClick) {
+            list.dataset.boundAddressClick = "1";
+            list.addEventListener("click", function(ev) {
+              var target = ev.target;
+              if (target.classList.contains("job-address")) {
+                var addr = target.textContent || "";
+                if (!addr) return;
+                navigator.clipboard.writeText(addr).then(function() {
+                  target.style.backgroundColor = "#fffa9c";
+                  setTimeout(function() { target.style.backgroundColor = ""; }, 400);
+                }).catch(function(err) {
+                  console.error("Copy failed", err);
+                });
               }
-            }
-
-            block.style.borderLeft = "4px solid " + typeColor;
-
-            var isToday = job.ActiveDate && sameDay(job.ActiveDate, today);
-
-            var inventoryHtml = job.inventory.map(function(i) {
-              var qtyPart = i.Quantity ? " × " + i.Quantity : "";
-              var notePart = i.Note ? '<span class="inventory-note">' + i.Note + '</span>' : "";
-              return '<li class="inventory-row"><span class="inventory-main">' + (i.Item || '') + qtyPart + '</span>' + notePart + '</li>';
-            }).join("");
-
-            block.innerHTML = ''
-              + '<div class="job-block-header">'
-              +   '<h2>' + job.Name + '</h2>'
-              +   '<span class="job-date-badge' + (isToday ? ' today' : '') + '">' + job.DateLabel + '</span>'
-              + '</div>'
-              + '<p><strong>Type:</strong> ' + (job.Type || '') + '</p>'
-              + '<p><strong>Address:</strong> <span class="job-address" style="text-decoration:underline;cursor:pointer;">'
-              +    (job.Address || '') + '</span></p>'
-              + '<p><strong>Phone:</strong> <a href="tel:' + (job.Phone || '') + '">' + (job.Phone || '') + '</a></p>'
-              + (crewLabel ? '<p><strong>Crew:</strong> ' + crewLabel + '</p>' : '')
-              + '<div class="job-inventory"><h3>Inventory</h3>'
-              + '<ul>' + inventoryHtml + '</ul></div>';
-
-            list.appendChild(block);
-          });
-
-          list.addEventListener("click", function(ev) {
-            var target = ev.target;
-            if (target.classList.contains("job-address")) {
-              var addr = target.textContent || "";
-              if (!addr) return;
-              navigator.clipboard.writeText(addr).then(function() {
-                target.style.backgroundColor = "#fffa9c";
-                setTimeout(function() { target.style.backgroundColor = ""; }, 400);
-              }).catch(function(err) {
-                console.error("Copy failed", err);
-              });
-            }
-          });
+            });
+          }
         })
         .catch(function(err) {
           console.error(err);
