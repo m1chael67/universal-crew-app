@@ -161,7 +161,7 @@
     <div class="page-top">
       <div class="title-wrap">
         <h1>Edit Jobs</h1>
-        <p class="sub">Create, edit, and delete jobs from Sheet2. This page shows all active jobs regardless of employee assignment.</p>
+        <p class="sub">Create, edit, and delete jobs. This page shows all active jobs regardless of employee assignment.</p>
       </div>
       <div class="top-actions">
         <a href="admin.html" class="btn small">← Back to Admin</a>
@@ -182,7 +182,7 @@
     <div class="sheet-head">
       <div>
         <h2 id="sheetTitle">New Job</h2>
-        <p id="sheetSub">Create a job snapshot in Sheet2.</p>
+        <p id="sheetSub"></p>
       </div>
       <button class="btn small" id="closeSheetBtn">Close</button>
     </div>
@@ -202,10 +202,15 @@
               <option value="Delivery">Delivery</option>
             </select>
           </div>
-          <div class="row">
+          <div class="row" id="addressRow">
             <label for="jobAddress">Address</label>
             <textarea id="jobAddress" rows="1" placeholder="Enter the address"></textarea>
           </div>
+        </div>
+
+        <div class="row">
+          <label for="jobNotes">Notes</label>
+          <textarea id="jobNotes" rows="1" placeholder="Enter notes"></textarea>
         </div>
 
         <div class="two-col">
@@ -247,7 +252,7 @@
   </aside>
 
   <script>
-    const JOBS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyeFkAcO_W-nFGHmPPiiWnZrc2b4DtZCrL1nv9J1C7ysoBXOrTgBi5zzovtg8rQ9WM/exec";
+    const JOBS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwNF2_ONYCYHpxL6g38W4USrsGN6oSdk3sjibl11Gn0F4NYAgztas1AZzcK00Tpias/exec";
 
     const state = { employees: [], jobs: [], editingJob: null };
 
@@ -312,6 +317,21 @@
         script.src = u.toString();
         document.body.appendChild(script);
       });
+    }
+
+    function toTitleCaseWords(s){
+      return String(s || "").toLowerCase().replace(/\b([a-z])/g, function(m){ return m.toUpperCase(); });
+    }
+
+    function syncTypeVisibility(){
+      var type = (document.getElementById("jobType").value || "").toLowerCase();
+      var row = document.getElementById("addressRow");
+      if (!row) return;
+      row.style.display = (type === "pickup") ? "none" : "";
+      if (type === "pickup") {
+        document.getElementById("jobAddress").value = "";
+        autoGrow(document.getElementById("jobAddress"));
+      }
     }
 
     function formatDatePretty(yyyyMmDd){
@@ -381,7 +401,7 @@
       document.getElementById("sheet").classList.add("open");
       document.getElementById("overlay").classList.add("show");
       document.getElementById("sheetTitle").textContent = job ? "Edit Job" : "New Job";
-      document.getElementById("sheetSub").textContent = job ? ("Editing " + (job.jobName || "job")) : "Create a job snapshot in Sheet2.";
+      document.getElementById("sheetSub").textContent = job ? ("Editing " + (job.jobName || "job")) : "";
       document.getElementById("deleteJobBtn").style.display = job ? "" : "none";
       setFormMsg("", false);
 
@@ -390,13 +410,15 @@
       document.getElementById("startDate").value = job ? (job.startDate || "") : "";
       document.getElementById("strikeDate").value = job ? (job.strikeDate || "") : "";
       document.getElementById("jobAddress").value = job ? (job.address || "") : "";
+      document.getElementById("jobNotes").value = job ? (job.notes || "") : "";
 
-      ["jobName","jobAddress"].forEach(id=>{
+      ["jobName","jobAddress","jobNotes"].forEach(id=>{
         const el = document.getElementById(id);
         autoGrow(el);
       });
 
       renderEmployeeToggles(job ? (job.employees || []) : []);
+      syncTypeVisibility();
 
       const invWrap = document.getElementById("inventoryWrap");
       invWrap.innerHTML = "";
@@ -416,17 +438,18 @@
       const startDate = document.getElementById("startDate").value;
       const strikeDate = document.getElementById("strikeDate").value;
       const address = document.getElementById("jobAddress").value.trim();
+      const notes = document.getElementById("jobNotes").value.trim();
       const employees = Array.from(document.querySelectorAll('#employeeToggles input[type="checkbox"]:checked')).map(el=>el.value);
       const inventory = Array.from(document.querySelectorAll('#inventoryWrap .inv-card')).map(card=>({
-        inventory: card.querySelector(".inv-text").value.trim(),
+        inventory: toTitleCaseWords(card.querySelector(".inv-text").value.trim()),
         quantity: card.querySelector(".inv-qty").value.trim()
       })).filter(x=>x.inventory || x.quantity);
-      return { jobName, type, startDate, strikeDate, address, employees, inventory };
+      return { jobName, type, startDate, strikeDate, address, notes, employees, inventory };
     }
 
     function validateForm(payload){
       if (!payload.jobName) return "Job Name is required.";
-      if (!payload.address) return "Address is required.";
+      if (payload.type !== "Pickup" && !payload.address) return "Address is required.";
       if (!payload.startDate) return "Start Date is required.";
       if (!payload.inventory.length) return "Add at least one inventory row.";
       return "";
@@ -467,8 +490,7 @@
             <div class="job-meta">
               <div class="job-meta-row"><strong>Dates:</strong> ${formatJobDate(job.startDate, job.strikeDate)}</div>
               <div class="job-meta-row"><strong>Address:</strong> ${job.address || "—"}</div>
-              <div class="job-meta-row"><strong>Employees:</strong> ${employees}</div>
-              <div class="job-meta-row"><strong>Job ID:</strong> ${job.jobId || "—"}</div>
+              <div class="job-meta-row"><strong>Employees:</strong> ${employees}</div>\n              <div class="job-meta-row"><strong>Notes:</strong> ${job.notes || "—"}</div>\n              <div class="job-meta-row"><strong>Job ID:</strong> ${job.jobId || "—"}</div>
             </div>
             <ul class="inventory-list">${invHtml}</ul>
           </div>
@@ -538,7 +560,8 @@
     document.getElementById("addInventoryBtn").addEventListener("click", ()=>ensureInventoryRow());
     document.getElementById("jobForm").addEventListener("submit", saveJob);
     document.getElementById("deleteJobBtn").addEventListener("click", deleteJob);
-    ["jobName","jobAddress"].forEach(id=>document.getElementById(id).addEventListener("input", e=>autoGrow(e.target)));
+    ["jobName","jobAddress","jobNotes"].forEach(id=>document.getElementById(id).addEventListener("input", e=>autoGrow(e.target)));
+    document.getElementById("jobType").addEventListener("change", syncTypeVisibility);
 
     (async function init(){
       try{
