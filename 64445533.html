@@ -687,8 +687,8 @@ function waitForClockState(expectedState, triesLeft) {
         var isToday = job.ActiveDate && sameDay(job.ActiveDate, today);
 
         var inventoryHtml = (job.inventory || []).map(function(i) {
-          var qtyPart = i.quantity ? " × " + i.quantity : "";
-          return '<li class="inventory-row"><span class="inventory-main">' + (i.inventory || '') + qtyPart + '</span></li>';
+          var qtyPart = i.quantity ? " × <strong>" + i.quantity : "</strong>";
+          return '<li class="inventory-row">•<span class="inventory-main">' + (i.inventory || '') + qtyPart + '</span></li>';
         }).join("");
 
         block.innerHTML = ''
