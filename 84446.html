@@ -158,7 +158,7 @@
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwDMoZjhy2IHA0PFEqSwd79cOteIBX-QhIVjLh8pXHnzm6frGjoO1FkS9_xrdIQh8M/exec";
 
     const TIME_LOG_SHEET_ID = "1gm39kMipfpLKS2n8g9F4SYG9Do36M_5Lc6GOs-c6jCM";
-    const JOBS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxwJF-HT8in6ax5UtR8rrt-1X41t991YFTr-h-As9LOjCogi4lV2CjT6dGVa3QWhxo/exec";
+    const JOBS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwNF2_ONYCYHpxL6g38W4USrsGN6oSdk3sjibl11Gn0F4NYAgztas1AZzcK00Tpias/exec";
     const EMPLOYEE_NAME = "Tim";
 
 function jsonp(url, params, timeoutMs) {
@@ -489,15 +489,26 @@ function waitForClockState(expectedState, triesLeft) {
 
 
     // Job loading with employee filter
+    function sameDay(a, b) {
+      return a && b &&
+        a.getFullYear() === b.getFullYear() &&
+        a.getMonth() === b.getMonth() &&
+        a.getDate() === b.getDate();
+    }
+
     function parseUsDate(raw) {
       if (!raw) return null;
       if (raw instanceof Date) return new Date(raw.getFullYear(), raw.getMonth(), raw.getDate());
+      if (typeof raw === "string" && raw.indexOf("Date(") === 0) {
+        var m = raw.match(/Date\((\d+),(\d+),(\d+)\)/);
+        if (m) return new Date(parseInt(m[1],10), parseInt(m[2],10), parseInt(m[3],10));
+      }
       var s = String(raw).trim();
-      var m1 = s.match(/^Date\((\d+),(\d+),(\d+)\)$/);
-      if (m1) return new Date(parseInt(m1[1],10), parseInt(m1[2],10), parseInt(m1[3],10));
       var m2 = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
       if (m2) {
-        var mm = parseInt(m2[1],10), dd = parseInt(m2[2],10), yy = parseInt(m2[3],10);
+        var mm = parseInt(m2[1], 10);
+        var dd = parseInt(m2[2], 10);
+        var yy = parseInt(m2[3], 10);
         if (yy < 100) yy += 2000;
         return new Date(yy, mm - 1, dd);
       }
@@ -509,13 +520,6 @@ function waitForClockState(expectedState, triesLeft) {
         return new Date(d.getFullYear(), d.getMonth(), d.getDate());
       }
       return null;
-    }
-
-    function sameDay(a, b) {
-      return a && b &&
-        a.getFullYear() === b.getFullYear() &&
-        a.getMonth() === b.getMonth() &&
-        a.getDate() === b.getDate();
     }
 
     function formatShortDate(d) {
@@ -585,13 +589,14 @@ function waitForClockState(expectedState, triesLeft) {
         var typeColor = "#333";
         if (job.Type && typeof job.Type === "string") {
           var t = job.Type.toLowerCase();
-          if (t.includes("pickup")) typeColor = "#1e88e5";
-          else if (t.includes("setup")) typeColor = "#43a047";
+          if (t.includes("pickup") || t.includes("pick-up") || t.includes("pick up")) typeColor = "#1e88e5";
+          else if (t.includes("setup") || t.includes("set-up") || t.includes("set up")) typeColor = "#43a047";
           else if (t.includes("strike")) typeColor = "#e53935";
           else if (t.includes("delivery")) typeColor = "#7c3aed";
         }
 
         block.style.borderLeft = "4px solid " + typeColor;
+
         var isToday = job.ActiveDate && sameDay(job.ActiveDate, today);
 
         var inventoryHtml = (job.inventory || []).map(function(i) {
