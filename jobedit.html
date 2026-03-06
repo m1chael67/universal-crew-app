@@ -36,14 +36,15 @@
     }
     .page-top{
       display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
       gap:12px;
-      flex-wrap:wrap;
       margin-bottom:18px;
+      text-align:center;
     }
-    .title-wrap{min-width:0}
-    h1{margin:0;font-size:44px;letter-spacing:-1px}
+    .title-wrap{min-width:0;width:100%}
+    h1{margin:0;font-size:44px;letter-spacing:-1px;text-align:center}
     .sub{margin:8px 0 0;color:var(--muted);font-size:14px}
     .btn{
       appearance:none;
@@ -138,6 +139,15 @@
     .count-pill{
       display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;
       background:#fafafa;border:1px solid var(--line);font-size:13px;color:#333;font-weight:700;
+    }
+    .filter-select{
+      padding:10px 14px;
+      border:1px solid #d8d8d8;
+      border-radius:14px;
+      background:#fafafa;
+      font-size:14px;
+      font-weight:700;
+      color:#111;
     }
     .jobs-grid{display:grid;grid-template-columns:repeat(auto-fill, minmax(320px, 1fr));gap:14px}
     .job-card{
@@ -243,6 +253,11 @@
 
     <div class="toolbar">
       <div class="count-pill">Active jobs: <span id="jobCount">0</span></div>
+      <select id="jobFilter" class="filter-select">
+        <option value="upcoming" selected>Upcoming Jobs</option>
+        <option value="past">Past Jobs</option>
+        <option value="all">All Jobs</option>
+      </select>
       <div class="muted" id="statusLine">Loading jobs…</div>
     </div>
 
@@ -571,6 +586,34 @@
       return "";
     }
 
+
+    function getTodayStart(){
+      const d = new Date();
+      return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    }
+
+    function toLocalDate(yyyyMmDd){
+      if (!yyyyMmDd) return null;
+      const parts = String(yyyyMmDd).split("-");
+      if (parts.length !== 3) return null;
+      return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+    }
+
+    function getRelevantJobDate(job){
+      const today = getTodayStart();
+      const start = toLocalDate(job.startDate);
+      const strike = toLocalDate(job.strikeDate);
+
+      if (start && start >= today) return start;
+      if (strike && strike >= today) return strike;
+      return strike || start || null;
+    }
+
+    function getJobFilterValue(){
+      const el = document.getElementById("jobFilter");
+      return el ? el.value : "upcoming";
+    }
+
     async function loadEmployees(){
       const res = await jsonp(JOBS_WEBAPP_URL, { action: "getEmployees" });
       state.employees = res.employees || [];
@@ -587,10 +630,38 @@
 
     function renderJobs(){
       const grid = document.getElementById("jobsGrid");
-      const jobs = state.jobs || [];
+      const allJobs = state.jobs || [];
+      const today = getTodayStart();
+      const filter = getJobFilterValue();
+
+      let jobs = allJobs.filter(job=>{
+        const start = toLocalDate(job.startDate);
+        const strike = toLocalDate(job.strikeDate);
+        const latest = strike || start;
+
+        if (filter === "upcoming") {
+          return !latest || latest >= today;
+        }
+        if (filter === "past") {
+          return !!latest && latest < today;
+        }
+        return true;
+      });
+
+      jobs.sort((a, b)=>{
+        const da = getRelevantJobDate(a);
+        const db = getRelevantJobDate(b);
+        const ta = da ? da.getTime() : 0;
+        const tb = db ? db.getTime() : 0;
+
+        if (filter === "past") return tb - ta;
+        return ta - tb;
+      });
+
       document.getElementById("jobCount").textContent = String(jobs.length);
+
       if (!jobs.length){
-        grid.innerHTML = `<div class="empty">No active jobs yet. Tap the + button to create one.</div>`;
+        grid.innerHTML = `<div class="empty">${filter === "past" ? "No past jobs." : (filter === "upcoming" ? "No upcoming jobs." : "No jobs yet.")}</div>`;
         return;
       }
 
@@ -605,7 +676,11 @@
             </div>
             <div class="job-meta">
               <div class="job-meta-row"><strong>Dates:</strong> ${formatJobDate(job.startDate, job.strikeDate)}</div>
-              <div class="job-meta-row"><strong>Address:</strong> ${job.address || "—"}</div>\n              <div class="job-meta-row"><strong>Phone:</strong> ${job.phone || "—"}</div>\n              <div class="job-meta-row"><strong>Employees:</strong> ${employees}</div>\n              <div class="job-meta-row"><strong>Notes:</strong> ${job.notes || "—"}</div>\n              <div class="job-meta-row"><strong>Job ID:</strong> ${job.jobId || "—"}</div>
+              <div class="job-meta-row"><strong>Address:</strong> ${job.address || "—"}</div>
+              <div class="job-meta-row"><strong>Phone:</strong> ${job.phone || "—"}</div>
+              <div class="job-meta-row"><strong>Employees:</strong> ${employees}</div>
+              <div class="job-meta-row"><strong>Notes:</strong> ${job.notes || "—"}</div>
+              <div class="job-meta-row"><strong>Job ID:</strong> ${job.jobId || "—"}</div>
             </div>
             <ul class="inventory-list">${invHtml}</ul>
           </div>
@@ -614,7 +689,7 @@
 
       grid.querySelectorAll(".job-card").forEach(card=>{
         card.addEventListener("click", ()=>{
-          const job = jobs.find(j=>j.jobId === card.dataset.jobId);
+          const job = allJobs.find(j=>j.jobId === card.dataset.jobId);
           if (job) openSheet(job);
         });
       });
@@ -699,6 +774,7 @@
 
     document.getElementById("newJobBtn").addEventListener("click", ()=>openSheet(null));
     document.getElementById("refreshBtn").addEventListener("click", loadJobs);
+    document.getElementById("jobFilter").addEventListener("change", renderJobs);
     document.getElementById("closeSheetBtn").addEventListener("click", closeSheet);
     document.getElementById("cancelBtn").addEventListener("click", closeSheet);
     document.getElementById("overlay").addEventListener("click", closeSheet);
