@@ -137,7 +137,7 @@ select,input{
     <button class="back" id="backBtn">← Back</button>
 
     <div class="hint">
-      Update a tent’s status. “On job” requires a job name.
+      Update a tent’s status. “On job” requires a job name. “Needs Repair” requires a repair note.
     </div>
 
     <div class="row">
@@ -147,12 +147,19 @@ select,input{
         <option>Return</option>
         <option>Washed</option>
         <option>Needs Wash</option>
+        <option>Needs Repair</option>
+        <option>Repaired</option>
       </select>
     </div>
 
     <div class="row" id="jobRow" style="display:none;">
       <label for="jobInput">Job</label>
       <input id="jobInput" placeholder="Which job is it on?" />
+    </div>
+
+    <div class="row" id="repairRow" style="display:none;">
+      <label for="repairInput">Repair Note</label>
+      <input id="repairInput" placeholder="What needs repair?" />
     </div>
 
     <div class="row">
@@ -170,7 +177,7 @@ select,input{
   </div>
 
   <script>
-  const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwDX7JJyJbKbfLc9uT1HUSbdVH2PufqWX4z8yaFdWVgGLMJO2FK2DR5T7cCoQrf3wJZ/exec";
+  const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwycWxJs_ugnuFXNrb8yYl0J0wjBkFeC6DArZPOEA0ZXyJed-EY-aAmEBc6wiCIO3lG/exec";
 
   function getQuery(){
     const out = {};
@@ -238,6 +245,8 @@ select,input{
   const actionSel = document.getElementById("actionSel");
   const jobRow = document.getElementById("jobRow");
   const jobInput = document.getElementById("jobInput");
+  const repairRow = document.getElementById("repairRow");
+  const repairInput = document.getElementById("repairInput");
   const tentSel = document.getElementById("tentSel");
   const numSel = document.getElementById("numSel");
   const submitBtn = document.getElementById("submitBtn");
@@ -247,6 +256,7 @@ select,input{
   function updateJobVisibility(){
     const a = toStr(actionSel.value).toLowerCase();
     jobRow.style.display = (a === "on job") ? "grid" : "none";
+    repairRow.style.display = (a === "needs repair") ? "grid" : "none";
   }
 
   function fillTents(){
@@ -320,18 +330,20 @@ select,input{
       const tent = toStr(tentSel.value).trim();
       const number = toStr(numSel.value).trim();
       const job = toStr(jobInput.value).trim();
+      const repairNote = toStr(repairInput.value).trim();
 
       if (!action) return setMsg("Pick an action.", true);
       if (!tent) return setMsg("Pick a tent.", true);
       if (!number) return setMsg("Pick a number.", true);
       if (action.toLowerCase()==="on job" && !job) return setMsg("On job requires a job name.", true);
+      if (action.toLowerCase()==="needs repair" && !repairNote) return setMsg("Needs Repair requires a repair note.", true);
 
       // Prevent spamming: disable until request finishes
       submitBtn.disabled = true;
       submitBtn.classList.add("disabled");
 
       try{
-        await jsonp(WEBAPP_URL, { action: "submit", actionType: action, tent: tent, number: number, job: job });
+        await jsonp(WEBAPP_URL, { action: "submit", actionType: action, tent: tent, number: number, job: job, repairNote: repairNote });
         setMsg("Saved.", false);
 
         // Tell the main page to refresh even if the browser uses back/forward cache

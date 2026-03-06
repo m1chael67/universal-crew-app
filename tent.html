@@ -410,7 +410,7 @@
 
   <script>
   // IMPORTANT: keep this as your /exec URL
-  const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwDX7JJyJbKbfLc9uT1HUSbdVH2PufqWX4z8yaFdWVgGLMJO2FK2DR5T7cCoQrf3wJZ/exec";
+  const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwycWxJs_ugnuFXNrb8yYl0J0wjBkFeC6DArZPOEA0ZXyJed-EY-aAmEBc6wiCIO3lG/exec";
 
   // query passthrough (employee page -> tents -> propane -> back)
   function getQuery(){
@@ -631,7 +631,7 @@
   function computeCurrent(){
     // Build latest status per tent+number from log.
     // Availability is derived from the latest Action (not the sheet's Availability column).
-    const statusMap = new Map(); // key -> {ts, action, job}
+    const statusMap = new Map(); // key -> {ts, action, job, repairNote}
     logRows.forEach(r=>{
       const k = toKey(r);
       const ts = parseDate(r.Timestamp);
@@ -641,7 +641,8 @@
         statusMap.set(k, {
           ts,
           action: toStr(r.Action).trim(),
-          job: toStr(r.Job).trim()
+          job: toStr(r.Job).trim(),
+          repairNote: toStr(r["Repair Notes"]).trim()
         });
       }
     });
@@ -654,30 +655,30 @@
       const act = st ? toStr(st.action).trim() : "";
       const actLower = act.toLowerCase();
 
-      // Availability rules
       let availability = "Available";
-      if (actLower === "needs wash" || actLower === "on job"){
+      if (actLower === "needs wash" || actLower === "on job" || actLower === "needs repair"){
         availability = "Unavailable";
-      } else if (actLower === "return" || actLower === "washed"){
+      } else if (actLower === "return" || actLower === "washed" || actLower === "repaired") {
         availability = "Available";
       }
 
-      // Reason/job string shown in details
       let reason = "";
-      if (actLower === "needs wash") reason = "Needs wash";
-      if (actLower === "on job") reason = st && st.job ? ("On job: " + st.job) : "On job";
+      if (actLower === "needs wash") reason = "Needs Wash";
+      if (actLower === "on job") reason = st && st.job ? ("On Job: " + st.job) : "On Job";
+      if (actLower === "needs repair") reason = "Needs Repair";
+      if (actLower === "repaired") reason = "Repaired";
 
       r.Availability = availability;
       r.Reason = reason;
 
-      // History fields
       const { lastJob, lastJobName, lastWash } = lastJobWashFor(k);
       r._lastJob = lastJob;
       r._lastJobName = lastJobName;
       r._lastWash = lastWash;
 
-      // Normalize Notes (from Tents sheet)
-      r.Notes = toStr(r.Notes).trim();
+      const baseNotes = toStr(r.Notes).trim();
+      const repairNote = st ? toStr(st.repairNote).trim() : "";
+      r.Notes = (actLower === "needs repair" && repairNote) ? repairNote : baseNotes;
 
       return r;
     });
@@ -712,7 +713,7 @@
     // if sheet has something outside the list, add it at end
     gradesPresent.forEach(g=>{ if (g && !grades.includes(g)) grades.push(g); });
 
-    const actions = ["Available","On job","Needs Wash"];
+    const actions = ["Available","On job","Needs Wash","Needs Repair","Repaired"];
 
     fillSelect(document.getElementById("filter-tent"), tents, true);
     fillSelect(document.getElementById("filter-grade"), grades, true);
@@ -738,6 +739,10 @@
         if (!reason.startsWith("on job")) return false;
       } else if (fa.toLowerCase() === "available"){
         if (avail !== "available") return false;
+      } else if (fa.toLowerCase() === "needs repair"){
+        if (reason !== "needs repair") return false;
+      } else if (fa.toLowerCase() === "repaired"){
+        if (reason !== "repaired") return false;
       }
     }
 
@@ -819,10 +824,7 @@
 
             return `
               <tr class="clickable${isOpen ? " open" : ""}" data-key="${key}">
-                <td class="num col-num">
-  ${toStr(r.Number)}
-  ${r.Notes ? '<span class="noteDot"></span>' : ''}
-</td>
+                <td class="num col-num"><span class="numWrap">${toStr(r.Number)}${r.Notes ? '<span class="noteDot"></span>' : ''}</span></td>
                 <td class="col-tent">${toStr(r.Tent)}</td>
                 <td class="col-grade"><b>${toStr(r.Grade) || "<span class='small'>—</span>"}</b></td>
                 <td class="col-avail">${pill}</td>
