@@ -283,10 +283,28 @@
     /* Make the summary button match the card style */
     .older-summary { width: 100%; text-align: center; }
 
+  
+    .admin-link-wrap{
+      position:fixed;
+      top:14px;
+      left:14px;
+      z-index:10;
+    }
+    .admin-link-wrap .btn{
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      box-shadow:0 2px 10px rgba(0,0,0,0.08);
+    }
+
   </style>
 </head>
 
 <body>
+  <div class="admin-link-wrap">
+    <a href="jobedit.html" class="btn primary">Edit Jobs</a>
+  </div>
   <div class="container" style="margin-top:2.5rem;">
     <h1>Admin Live – Crew Hours History</h1>
 
