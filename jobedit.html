@@ -495,8 +495,11 @@
 
     function formatJobDate(startDate, strikeDate){
       if (startDate && strikeDate){
-        const sd = new Date(startDate);
-        if (startDate === strikeDate) return (sd.getMonth()+1) + "/" + sd.getDate() + "/" + sd.getFullYear() + " - SAME DAY STRIKE";
+        if (startDate === strikeDate) {
+          const parts = String(startDate).split("-");
+          const sd = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+          return (sd.getMonth()+1) + "/" + sd.getDate() + "/" + sd.getFullYear() + " - SAME DAY STRIKE";
+        }
         return formatDatePretty(startDate) + " - " + formatDatePretty(strikeDate);
       }
       return startDate ? formatDatePretty(startDate) : (strikeDate ? formatDatePretty(strikeDate) : "—");
