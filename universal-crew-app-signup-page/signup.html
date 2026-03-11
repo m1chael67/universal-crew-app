@@ -7,54 +7,55 @@
 <link rel="stylesheet" href="style.css">
 
 <style>
+html, body{
+  height:100%;
+}
 
-	.login-btn{
-	  position: fixed;
-	  top: 20px;
-	  left: 20px;
-	  background:#333;
-	  color:white;
-	  padding:8px 14px;
-	  border-radius:6px;
-	  text-decoration:none;
-	  font-weight:bold;
-	  z-index:1000;
-	}
-
-	.login-btn:hover{
-	  background:#000;
-	}
-
-.topbar{
-  display:flex;
-  align-items:center;
-  padding:10px 15px;
+body{
+  font-family: Arial, sans-serif;
+  background-color:#f4f4f4;
+  margin:0;
+  min-height:100vh;
+  position:relative;
 }
 
 .login-btn{
+  position:fixed;
+  top:20px;
+  left:20px;
   background:#333;
-  color:white;
-  padding:8px 14px;
-  border-radius:6px;
+  color:#fff;
+  padding:10px 16px;
+  border-radius:8px;
   text-decoration:none;
   font-weight:bold;
+  z-index:1000;
+  box-shadow:0 4px 10px rgba(0,0,0,0.12);
 }
 
 .login-btn:hover{
   background:#000;
 }
 
+.page-wrap{
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+}
+
 .signup-card{
-  width: 420px;
-  padding: 30px;
-  background:white;
+  width:min(420px, calc(100vw - 48px));
+  padding:30px;
+  background:#fff;
   border-radius:12px;
   box-shadow:0 8px 20px rgba(0,0,0,0.15);
 }
 
 .signup-card h1{
   text-align:center;
-  margin-bottom:25px;
+  margin:0 0 25px 0;
 }
 
 .signup-card input{
@@ -64,13 +65,14 @@
   border-radius:6px;
   border:1px solid #ccc;
   font-size:16px;
+  box-sizing:border-box;
 }
 
 .signup-card button{
   width:100%;
   padding:12px;
   background:#2b7cff;
-  color:white;
+  color:#fff;
   border:none;
   border-radius:6px;
   font-size:16px;
@@ -81,36 +83,27 @@
 .signup-card button:hover{
   background:#1a5fe0;
 }
-
 </style>
 </head>
 
 <body>
 
-<div class="topbar">
 <a class="login-btn" href="../index.html">Login</a>
-</div>
 
-<div class="signup-card">
+<div class="page-wrap">
+  <div class="signup-card">
+    <h1>Create Account</h1>
 
-<h1>Create Account</h1>
-
-<form id="signup-form" onsubmit="return handleSignup(event)">
-
-<input type="text" id="name" placeholder="Your Name" required>
-
-<input type="password" id="pin1" placeholder="Enter 4 Digit PIN" maxlength="4" required>
-
-<input type="password" id="pin2" placeholder="Confirm PIN" maxlength="4" required>
-
-<button type="submit">Create Account</button>
-
-</form>
-
+    <form id="signup-form" onsubmit="return handleSignup(event)">
+      <input type="text" id="name" placeholder="Your Name" required>
+      <input type="password" id="pin1" placeholder="Enter 4 Digit PIN" maxlength="4" required>
+      <input type="password" id="pin2" placeholder="Confirm PIN" maxlength="4" required>
+      <button type="submit">Create Account</button>
+    </form>
+  </div>
 </div>
 
 <script>
-
 let existingPins = null;
 
 function fetchExistingPins() {
@@ -185,7 +178,6 @@ form.submit();
 
 return true;
 }
-
 </script>
 
 </body>
