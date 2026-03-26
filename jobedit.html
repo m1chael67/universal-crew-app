@@ -63,6 +63,8 @@
       gap:8px;
     }
     .btn.primary{background:#111;color:#fff;border-color:#111}
+    .btn:disabled{opacity:.6;cursor:not-allowed}
+    .btn.primary.is-saving,.btn.primary:disabled{background:#6b7280;border-color:#6b7280;color:#fff}
     .btn.danger{background:var(--danger-bg);color:var(--danger);border-color:#f4b4ad}
     .btn.small{padding:8px 12px;font-size:13px}
     .top-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
@@ -531,6 +533,28 @@
       autoGrow(txt);
       txt.addEventListener("input", ()=>autoGrow(txt));
       txt.addEventListener("blur", ()=>{ txt.value = toTitleCaseWords(txt.value); autoGrow(txt); });
+      txt.addEventListener("keydown", (e)=>{
+        if (e.key === "Enter" && !e.shiftKey){
+          e.preventDefault();
+          ensureInventoryRow();
+          const cards = Array.from(document.querySelectorAll('#inventoryWrap .inv-card'));
+          const lastCard = cards[cards.length - 1];
+          const nextTxt = lastCard ? lastCard.querySelector('.inv-text') : null;
+          if (nextTxt) nextTxt.focus();
+        }
+      });
+
+      const qty = card.querySelector(".inv-qty");
+      qty.addEventListener("keydown", (e)=>{
+        if (e.key === "Enter"){
+          e.preventDefault();
+          ensureInventoryRow();
+          const cards = Array.from(document.querySelectorAll('#inventoryWrap .inv-card'));
+          const lastCard = cards[cards.length - 1];
+          const nextTxt = lastCard ? lastCard.querySelector('.inv-text') : null;
+          if (nextTxt) nextTxt.focus();
+        }
+      });
 
       card.querySelector(".delete-item-btn").addEventListener("click", ()=>{
         card.remove();
@@ -754,7 +778,11 @@
       const err = validateForm(payload);
       if (err) return setFormMsg(err, true);
 
-      document.getElementById("saveBtn").disabled = true;
+      const saveBtn = document.getElementById("saveBtn");
+      const originalSaveText = saveBtn.textContent;
+      saveBtn.disabled = true;
+      saveBtn.classList.add("is-saving");
+      saveBtn.textContent = "Saving...";
       setFormMsg("Saving…", false);
 
       try{
@@ -769,7 +797,9 @@
       }catch(e){
         setFormMsg(String(e.message || e), true);
       }finally{
-        document.getElementById("saveBtn").disabled = false;
+        saveBtn.disabled = false;
+        saveBtn.classList.remove("is-saving");
+        saveBtn.textContent = originalSaveText;
       }
     }
 
@@ -835,6 +865,12 @@
     document.getElementById("jobForm").addEventListener("submit", saveJob);
     document.getElementById("deleteJobBtn").addEventListener("click", deleteJob);
     ["jobName","jobAddress","jobNotes"].forEach(id=>document.getElementById(id).addEventListener("input", e=>autoGrow(e.target)));
+    document.getElementById("jobNotes").addEventListener("keydown", (e)=>{
+      if (e.key === "Enter" && !e.shiftKey){
+        e.preventDefault();
+        document.getElementById("jobForm").requestSubmit();
+      }
+    });
     document.getElementById("jobType").addEventListener("change", syncTypeVisibility);
 
     (async function init(){
