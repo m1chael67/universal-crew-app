@@ -71,6 +71,7 @@
       border-radius: 12px;
       background: #fff;
       box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+      cursor: pointer;
     }
     .emp-left {
       display: flex;
@@ -314,10 +315,6 @@
         Auto-refresh: <span id="refresh-seconds">—</span>s
       </p>
     </div>
-
-    <p id="currently-logged" style="font-size:13px;color:#333;margin-top:0.5rem;">
-      Currently clocked in: <span id="clocked-list" style="font-weight:500;">Checking...</span>
-    </p>
 
     
     <div id="periods-wrap">
@@ -781,6 +778,15 @@ var now = new Date();
         var row = document.createElement("div");
         row.className = "emp-row";
         row.id = "emp-row-" + emp;
+
+        row.addEventListener("click", function(e) {
+          if (e.target && e.target.tagName && e.target.tagName.toLowerCase() === "button") return;
+
+          if (emp === "Michael") window.location.href = "64445533.html";
+          if (emp === "Alan")    window.location.href = "84446.html";
+          if (emp === "Joe")     window.location.href = "533333.html";
+          if (emp === "Jeff")    window.location.href = "533333.html";
+        });
 
         var left = document.createElement("div");
         left.className = "emp-left";
