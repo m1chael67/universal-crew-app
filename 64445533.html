@@ -176,6 +176,18 @@
     }
 
 
+    .schematic-link{
+      display:inline-block;
+      margin-top:6px;
+      font-size:12px;
+      font-weight:700;
+      color:#1e88e5;
+      text-decoration:none;
+    }
+    .schematic-link:hover{
+      text-decoration:underline;
+    }
+
 </style>
 </head>
 <body>
@@ -634,6 +646,20 @@ function waitForClockState(expectedState, triesLeft) {
       return "";
     }
 
+
+    function getTentSize(text) {
+      if (!text) return null;
+      var match = String(text).match(/\b(\d{2}x\d{2,3})\b/i);
+      return match ? match[1] : null;
+    }
+
+    function buildSchematicLink(text) {
+      var tentSize = getTentSize(text);
+      if (!tentSize) return "";
+      var href = "schematic-viewer.html?tent=" + encodeURIComponent(tentSize) + "&type=Frame";
+      return '<br><a class="schematic-link" href="' + href + '" target="_blank" rel="noopener">View Schematic</a>';
+    }
+
     function renderCurrentDateChip() {
       var el = document.getElementById("current-date-chip");
       if (!el) return;
@@ -688,7 +714,9 @@ function waitForClockState(expectedState, triesLeft) {
 
         var inventoryHtml = (job.inventory || []).map(function(i) {
           var qtyPart = i.quantity ? " × <strong>" + i.quantity + "</strong>" : "";
-          return '<li class="inventory-row">• <span class="inventory-main">' + (i.inventory || '') + qtyPart + '</span></li>';
+          var itemText = i.inventory || '';
+          var schematicLink = buildSchematicLink(itemText);
+          return '<li class="inventory-row">• <span class="inventory-main">' + itemText + qtyPart + schematicLink + '</span></li>';
         }).join("");
 
         block.innerHTML = ''

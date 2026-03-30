@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tent Schematic Viewer</title>
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: #0b0b0b;
+      color: #fff;
+      font-family: Arial, sans-serif;
+    }
+    body {
+      display: flex;
+      flex-direction: column;
+    }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px;
+      background: rgba(0,0,0,0.82);
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+    }
+    .title {
+      font-size: 15px;
+      font-weight: 700;
+      text-align: center;
+      flex: 1 1 auto;
+    }
+    .btn {
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: 1px solid #3a3a3a;
+      background: #181818;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+    }
+    .viewer {
+      flex: 1 1 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: auto;
+      padding: 12px;
+      box-sizing: border-box;
+    }
+    .img-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 100%;
+      min-height: 100%;
+    }
+    img {
+      max-width: 100%;
+      max-height: calc(100vh - 88px);
+      object-fit: contain;
+      transform-origin: center center;
+      transition: transform 0.2s ease;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+      background: #111;
+    }
+    .msg {
+      color: #ddd;
+      font-size: 15px;
+      text-align: center;
+      line-height: 1.5;
+      max-width: 420px;
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <button class="btn" type="button" id="backBtn">Back</button>
+    <div class="title" id="titleText">Schematic Viewer</div>
+    <button class="btn" type="button" id="rotateBtn">Rotate</button>
+  </div>
+
+  <div class="viewer" id="viewer">
+    <div class="img-wrap" id="imgWrap">
+      <img id="schematicImg" alt="Tent schematic" />
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var params = new URLSearchParams(window.location.search);
+      var tent = params.get("tent") || "";
+      var type = params.get("type") || "Frame";
+      var img = document.getElementById("schematicImg");
+      var titleText = document.getElementById("titleText");
+      var rotateBtn = document.getElementById("rotateBtn");
+      var backBtn = document.getElementById("backBtn");
+      var imgWrap = document.getElementById("imgWrap");
+      var rotation = 0;
+
+      function showMessage(message) {
+        imgWrap.innerHTML = '<div class="msg">' + message + '</div>';
+      }
+
+      backBtn.addEventListener("click", function () {
+        if (window.history.length > 1) window.history.back();
+        else window.location.href = "index.html";
+      });
+
+      rotateBtn.addEventListener("click", function () {
+        rotation += 90;
+        img.style.transform = "rotate(" + rotation + "deg)";
+      });
+
+      if (!tent) {
+        titleText.textContent = "No schematic selected";
+        showMessage("No tent size was provided.");
+        rotateBtn.style.display = "none";
+        return;
+      }
+
+      titleText.textContent = type + " - " + tent;
+      img.src = "schematics/" + encodeURIComponent(type) + "/" + encodeURIComponent(tent) + ".png";
+
+      img.addEventListener("error", function () {
+        rotateBtn.style.display = "none";
+        showMessage("Could not find schematic for " + type + " " + tent + ".");
+      });
+    })();
+  </script>
+</body>
+</html>
