@@ -177,6 +177,149 @@
       white-space:nowrap;
     }
 
+
+
+.schematic-link{
+      display:inline-block;
+      margin-top:6px;
+      font-size:12px;
+      font-weight:700;
+      color:#1e88e5;
+      text-decoration:none;
+    }
+    .schematic-link:hover{
+      text-decoration:underline;
+    }
+
+
+    .job-block{
+      border:1px solid #e5e5e5;
+      border-radius:18px;
+      background:#fff;
+      box-shadow:0 2px 10px rgba(0,0,0,.04);
+      padding:16px;
+      margin:0 0 14px 0;
+      transition:transform .12s ease, box-shadow .12s ease;
+    }
+    .job-block:hover{
+      transform:translateY(-1px);
+      box-shadow:0 8px 20px rgba(0,0,0,.08);
+    }
+    .job-block-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:10px;
+      margin-bottom:12px;
+    }
+    .job-block-header h2{
+      margin:0;
+      font-size:24px;
+      line-height:1.1;
+      letter-spacing:-0.4px;
+    }
+    .job-meta{
+      display:grid;
+      gap:8px;
+      margin-bottom:12px;
+    }
+    .job-meta-row{
+      font-size:14px;
+      color:#222;
+      line-height:1.45;
+    }
+    .job-meta-row strong{
+      color:#111;
+    }
+    .job-inventory{
+      border-top:1px solid #f0f0f0;
+      padding-top:12px;
+      margin-top:4px;
+    }
+    .job-inventory h3{
+      margin:0 0 10px 0;
+      font-size:14px;
+      font-weight:800;
+      color:#111;
+      letter-spacing:0.2px;
+      text-transform:uppercase;
+    }
+    .job-inventory ul{
+      list-style:none;
+      margin:0;
+      padding:0;
+      display:grid;
+      gap:8px;
+    }
+    .inventory-row{
+      border-top:1px solid #f0f0f0;
+      padding-top:8px;
+    }
+    .inventory-row:first-child{
+      border-top:none;
+      padding-top:0;
+    }
+    .inventory-main{
+      line-height:1.45;
+    }
+    .job-address{
+      text-decoration:underline;
+      cursor:pointer;
+      text-underline-offset:2px;
+    }
+    .job-phone-link{
+      color:#111;
+      text-decoration:none;
+      font-weight:600;
+    }
+    .job-phone-link:hover{
+      text-decoration:underline;
+    }
+    @media (max-width:640px){
+      .job-block{padding:14px;border-radius:16px;}
+      .job-block-header{flex-direction:column;align-items:flex-start;}
+      .job-block-header h2{font-size:22px;}
+      .job-date-badge{align-self:flex-start;}
+    }
+
+
+/* ===== LOGOUT BUTTON UPGRADE ===== */
+#logout-btn {
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid #ddd;
+  background: #fff;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+#logout-btn:hover {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
+#logout-btn:active {
+  transform: scale(0.96);
+}
+
+/* ===== EXTRA JOB POLISH ===== */
+.job-block{
+  box-shadow:0 6px 18px rgba(0,0,0,0.08);
+  border-color:#e9e9e9;
+}
+.job-block-header{
+  margin-bottom:14px;
+}
+.job-meta-row{
+  font-size:15px;
+}
+.job-inventory li{
+  font-size:15px;
+}
+
+
 </style>
 </head>
 <body>
@@ -198,7 +341,7 @@
   </div>
   <div class="container" style="margin-top: 2.5rem;">
     <div style="text-align:right;margin-bottom:8px;">
-      <button id="logout-btn" type="button" style="font-size:12px;padding:4px 8px;cursor:pointer;">Log Out</button>
+      <button id="logout-btn" type="button">Log Out</button>
     </div>
     <h1>Jeff</h1>
     <div id="current-date-chip" class="today-chip"></div>
@@ -626,6 +769,19 @@ function waitForClockState(expectedState, triesLeft) {
       return "";
     }
 
+function getTentSize(text) {
+      if (!text) return null;
+      var match = String(text).match(/\b(\d{2}x\d{2,3})\b/i);
+      return match ? match[1] : null;
+    }
+
+    function buildSchematicLink(text) {
+      var tentSize = getTentSize(text);
+      if (!tentSize) return "";
+      var href = "schematic-viewer.html?tent=" + encodeURIComponent(tentSize) + "&type=Frame";
+      return '<br><a class="schematic-link" href="' + href + '" target="_blank" rel="noopener">View Schematic</a>';
+    }
+
     function renderCurrentDateChip() {
       var el = document.getElementById("current-date-chip");
       if (!el) return;
@@ -680,7 +836,9 @@ function waitForClockState(expectedState, triesLeft) {
 
         var inventoryHtml = (job.inventory || []).map(function(i) {
           var qtyPart = i.quantity ? " × <strong>" + i.quantity + "</strong>" : "";
-          return '<li class="inventory-row">• <span class="inventory-main">' + (i.inventory || '') + qtyPart + '</span></li>';
+          var itemText = i.inventory || '';
+          var schematicLink = buildSchematicLink(itemText);
+          return '<li class="inventory-row">• <span class="inventory-main">' + itemText + qtyPart + schematicLink + '</span></li>';
         }).join("");
 
         block.innerHTML = ''
@@ -688,12 +846,13 @@ function waitForClockState(expectedState, triesLeft) {
           +   '<h2>' + (job.Name || '') + '</h2>'
           +   '<span class="job-date-badge' + (isToday ? ' today' : '') + '">' + job.DateLabel + '</span>'
           + '</div>'
-          + '<p><strong>Type:</strong> ' + (job.Type || '') + '</p>'
-          + '<p><strong>Address:</strong> <span class="job-address" style="text-decoration:underline;cursor:pointer;">'
-          +    (job.Address || '') + '</span></p>'
-          + ((job.Phone && String(job.Phone).trim()) ? ('<p><strong>Phone:</strong> <a href="tel:' + job.Phone + '">' + job.Phone + '</a></p>') : '')
-          + (crewLabel ? '<p><strong>Crew:</strong> ' + crewLabel + '</p>' : '')
-          + ((job.Notes && job.Notes !== "—") ? ('<p><strong>Notes:</strong> ' + job.Notes + '</p>') : '')
+          + '<div class="job-meta">'
+          +   '<div class="job-meta-row"><strong>Type:</strong> ' + (job.Type || '') + '</div>'
+          +   '<div class="job-meta-row"><strong>Address:</strong> <span class="job-address">' + (job.Address || '') + '</span></div>'
+          +   ((job.Phone && String(job.Phone).trim()) ? ('<div class="job-meta-row"><strong>Phone:</strong> <a class="job-phone-link" href="tel:' + job.Phone + '">' + job.Phone + '</a></div>') : '')
+          +   (crewLabel ? '<div class="job-meta-row"><strong>Crew:</strong> ' + crewLabel + '</div>' : '')
+          +   ((job.Notes && job.Notes !== "—") ? ('<div class="job-meta-row"><strong>Notes:</strong> ' + job.Notes + '</div>') : '')
+          + '</div>'
           + '<div class="job-inventory"><h3>Inventory</h3>'
           + '<ul>' + inventoryHtml + '</ul></div>';
 
