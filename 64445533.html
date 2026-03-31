@@ -785,6 +785,8 @@ function waitForClockState(expectedState, triesLeft) {
       if (!text) return null;
       var raw = String(text).trim();
       var lower = raw.toLowerCase();
+      var knownRoundSizes = ["90R", "108R", "120R", "132R"];
+      var knownBanquetSizes = ["60x102", "60x126", "90x132", "90x156"];
 
       if (lower.indexOf("cocktail") !== -1 && lower.indexOf("linen") !== -1) {
         return {
@@ -793,22 +795,24 @@ function waitForClockState(expectedState, triesLeft) {
         };
       }
 
-      if (lower.indexOf("round") !== -1) {
-        var roundMatch = raw.match(/(?:^|[^0-9A-Za-z])(\d{2,3}r)(?=$|[^0-9A-Za-z])/i);
-        if (roundMatch) {
+      var roundMatch = raw.match(/(?:^|[^0-9A-Za-z])(\d{2,3}r)(?=$|[^0-9A-Za-z])/i);
+      if (roundMatch) {
+        var roundSize = roundMatch[1].toUpperCase();
+        if (lower.indexOf("round") !== -1 || knownRoundSizes.indexOf(roundSize) !== -1) {
           return {
-            label: roundMatch[1].toUpperCase() + " Round Linen",
-            pathBase: "schematics/Linen/Round/" + roundMatch[1].toUpperCase()
+            label: roundSize + " Round Linen",
+            pathBase: "schematics/Linen/Round/" + roundSize
           };
         }
       }
 
-      if (lower.indexOf("banquet") !== -1) {
-        var banquetMatch = raw.match(/(?:^|[^0-9A-Za-z])(\d{2,3}x\d{2,3})(?=$|[^0-9A-Za-z])/i);
-        if (banquetMatch) {
+      var banquetMatch = raw.match(/(?:^|[^0-9A-Za-z])(\d{2,3}x\d{2,3})(?=$|[^0-9A-Za-z])/i);
+      if (banquetMatch) {
+        var banquetSize = banquetMatch[1];
+        if (lower.indexOf("banquet") !== -1 || knownBanquetSizes.indexOf(banquetSize) !== -1) {
           return {
-            label: banquetMatch[1] + " Banquet Linen",
-            pathBase: "schematics/Linen/Banquet/" + banquetMatch[1]
+            label: banquetSize + " Banquet Linen",
+            pathBase: "schematics/Linen/Banquet/" + banquetSize
           };
         }
       }
