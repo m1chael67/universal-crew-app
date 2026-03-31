@@ -777,11 +777,52 @@ function waitForClockState(expectedState, triesLeft) {
 
     function getTentSize(text) {
       if (!text) return null;
-      var match = String(text).match(/\b(\d{2}x\d{2,3})\b/i);
+      var match = String(text).match(/(\d{2}x\d{2,3})/i);
       return match ? match[1] : null;
     }
 
+    function getLinenSchematicInfo(text) {
+      if (!text) return null;
+      var raw = String(text).trim();
+      var lower = raw.toLowerCase();
+
+      if (lower.indexOf("cocktail") !== -1 && lower.indexOf("linen") !== -1) {
+        return {
+          label: "Cocktail Linen",
+          pathBase: "schematics/Linen/Cocktail/CocktailLinen"
+        };
+      }
+
+      if (lower.indexOf("round") !== -1) {
+        var roundMatch = raw.match(/(\d{2,3}r)/i);
+        if (roundMatch) {
+          return {
+            label: roundMatch[1].toUpperCase() + " Round Linen",
+            pathBase: "schematics/Linen/Round/" + roundMatch[1].toUpperCase()
+          };
+        }
+      }
+
+      if (lower.indexOf("banquet") !== -1) {
+        var banquetMatch = raw.match(/(\d{2,3}x\d{2,3})/i);
+        if (banquetMatch) {
+          return {
+            label: banquetMatch[1] + " Banquet Linen",
+            pathBase: "schematics/Linen/Banquet/" + banquetMatch[1]
+          };
+        }
+      }
+
+      return null;
+    }
+
     function buildSchematicLink(text) {
+      var linenInfo = getLinenSchematicInfo(text);
+      if (linenInfo) {
+        var linenHref = "schematic-viewer.html?path=" + encodeURIComponent(linenInfo.pathBase) + "&label=" + encodeURIComponent(linenInfo.label);
+        return '<br><a class="schematic-link" href="' + linenHref + '" target="_blank" rel="noopener">View Schematic</a>';
+      }
+
       var tentSize = getTentSize(text);
       if (!tentSize) return "";
       var href = "schematic-viewer.html?tent=" + encodeURIComponent(tentSize) + "&type=Frame";

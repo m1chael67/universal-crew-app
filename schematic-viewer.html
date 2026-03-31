@@ -98,6 +98,8 @@
       var params = new URLSearchParams(window.location.search);
       var tent = params.get("tent") || "";
       var type = params.get("type") || "Frame";
+      var pathBase = params.get("path") || "";
+      var label = params.get("label") || "";
       var img = document.getElementById("schematicImg");
       var titleText = document.getElementById("titleText");
       var rotateBtn = document.getElementById("rotateBtn");
@@ -107,6 +109,20 @@
 
       function showMessage(message) {
         imgWrap.innerHTML = '<div class="msg">' + message + '</div>';
+      }
+
+      function tryImageSources(sources, notFoundMessage) {
+        var index = 0;
+        function tryNext() {
+          if (index >= sources.length) {
+            rotateBtn.style.display = "none";
+            showMessage(notFoundMessage);
+            return;
+          }
+          img.onerror = tryNext;
+          img.src = sources[index++];
+        }
+        tryNext();
       }
 
       backBtn.addEventListener("click", function () {
@@ -119,20 +135,32 @@
         img.style.transform = "rotate(" + rotation + "deg)";
       });
 
+      if (pathBase) {
+        titleText.textContent = label || "Schematic Viewer";
+        tryImageSources([
+          pathBase,
+          pathBase + ".png",
+          pathBase + ".jpg",
+          pathBase + ".jpeg",
+          pathBase + ".webp"
+        ], "Could not find schematic for " + (label || pathBase) + ".");
+        return;
+      }
+
       if (!tent) {
         titleText.textContent = "No schematic selected";
-        showMessage("No tent size was provided.");
+        showMessage("No schematic was provided.");
         rotateBtn.style.display = "none";
         return;
       }
 
       titleText.textContent = type + " - " + tent;
-      img.src = "schematics/" + encodeURIComponent(type) + "/" + encodeURIComponent(tent) + ".png";
-
-      img.addEventListener("error", function () {
-        rotateBtn.style.display = "none";
-        showMessage("Could not find schematic for " + type + " " + tent + ".");
-      });
+      tryImageSources([
+        "schematics/" + encodeURIComponent(type) + "/" + encodeURIComponent(tent) + ".png",
+        "schematics/" + encodeURIComponent(type) + "/" + encodeURIComponent(tent) + ".jpg",
+        "schematics/" + encodeURIComponent(type) + "/" + encodeURIComponent(tent) + ".jpeg",
+        "schematics/" + encodeURIComponent(type) + "/" + encodeURIComponent(tent) + ".webp"
+      ], "Could not find schematic for " + type + " " + tent + ".");
     })();
   </script>
 </body>
