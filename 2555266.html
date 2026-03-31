@@ -769,13 +769,58 @@ function waitForClockState(expectedState, triesLeft) {
       return "";
     }
 
-function getTentSize(text) {
+    function getTentSize(text) {
       if (!text) return null;
-      var match = String(text).match(/\b(\d{2}x\d{2,3})\b/i);
+      var match = String(text).match(/(?:^|[^0-9A-Za-z])(\d{2}x\d{2,3})(?=$|[^0-9A-Za-z])/i);
       return match ? match[1] : null;
     }
 
+    function getLinenSchematicInfo(text) {
+      if (!text) return null;
+      var raw = String(text).trim();
+      var lower = raw.toLowerCase();
+      var knownRoundSizes = ["90R", "108R", "120R", "132R"];
+      var knownBanquetSizes = ["60x102", "60x126", "90x132", "90x156"];
+
+      if (lower.indexOf("cocktail") !== -1 && lower.indexOf("linen") !== -1) {
+        return {
+          label: "Cocktail Linen",
+          pathBase: "schematics/Linen/Cocktail/CocktailLinen"
+        };
+      }
+
+      var roundMatch = raw.match(/(?:^|[^0-9A-Za-z])(\d{2,3}r)(?=$|[^0-9A-Za-z])/i);
+      if (roundMatch) {
+        var roundSize = roundMatch[1].toUpperCase();
+        if (lower.indexOf("round") !== -1 || knownRoundSizes.indexOf(roundSize) !== -1) {
+          return {
+            label: roundSize + " Round Linen",
+            pathBase: "schematics/Linen/Round/" + roundSize
+          };
+        }
+      }
+
+      var banquetMatch = raw.match(/(?:^|[^0-9A-Za-z])(\d{2,3}x\d{2,3})(?=$|[^0-9A-Za-z])/i);
+      if (banquetMatch) {
+        var banquetSize = banquetMatch[1];
+        if (lower.indexOf("banquet") !== -1 || knownBanquetSizes.indexOf(banquetSize) !== -1) {
+          return {
+            label: banquetSize + " Banquet Linen",
+            pathBase: "schematics/Linen/Banquet/" + banquetSize
+          };
+        }
+      }
+
+      return null;
+    }
+
     function buildSchematicLink(text) {
+      var linenInfo = getLinenSchematicInfo(text);
+      if (linenInfo) {
+        var linenHref = "schematic-viewer.html?path=" + encodeURIComponent(linenInfo.pathBase) + "&label=" + encodeURIComponent(linenInfo.label);
+        return '<br><a class="schematic-link" href="' + linenHref + '" target="_blank" rel="noopener">View Schematic</a>';
+      }
+
       var tentSize = getTentSize(text);
       if (!tentSize) return "";
       var href = "schematic-viewer.html?tent=" + encodeURIComponent(tentSize) + "&type=Frame";
