@@ -777,7 +777,7 @@ function waitForClockState(expectedState, triesLeft) {
 
     function getTentSize(text) {
       if (!text) return null;
-      var match = String(text).match(/(\d{2}x\d{2,3})/i);
+      var match = String(text).match(/(?:^|[^0-9A-Za-z])(\d{2}x\d{2,3})(?=$|[^0-9A-Za-z])/i);
       return match ? match[1] : null;
     }
 
@@ -794,7 +794,7 @@ function waitForClockState(expectedState, triesLeft) {
       }
 
       if (lower.indexOf("round") !== -1) {
-        var roundMatch = raw.match(/(\d{2,3}r)/i);
+        var roundMatch = raw.match(/(?:^|[^0-9A-Za-z])(\d{2,3}r)(?=$|[^0-9A-Za-z])/i);
         if (roundMatch) {
           return {
             label: roundMatch[1].toUpperCase() + " Round Linen",
@@ -804,7 +804,7 @@ function waitForClockState(expectedState, triesLeft) {
       }
 
       if (lower.indexOf("banquet") !== -1) {
-        var banquetMatch = raw.match(/(\d{2,3}x\d{2,3})/i);
+        var banquetMatch = raw.match(/(?:^|[^0-9A-Za-z])(\d{2,3}x\d{2,3})(?=$|[^0-9A-Za-z])/i);
         if (banquetMatch) {
           return {
             label: banquetMatch[1] + " Banquet Linen",
