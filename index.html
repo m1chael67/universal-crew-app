@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <link rel=\"manifest\" href=\"manifest.json\">
-  <meta name=\"theme-color\" content=\"#ffffff\">
-  <meta name=\"apple-mobile-web-app-capable\" content=\"yes\">
-  <meta name=\"apple-mobile-web-app-status-bar-style\" content=\"default\">
-  <link rel=\"apple-touch-icon\" href=\"icon-192.png\">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="apple-touch-icon" href="icon-192.png">
 
   <link rel="icon" type="image/png" href="favicon.png" />
   <link rel="apple-touch-icon" href="logo_resized.png" />
@@ -20,11 +20,21 @@
     <h2 style="text-align:center; color:#333;">Employee Log In</h2>
     <h1>Universal Crew App</h1>
     <form id="login-form" onsubmit="return handleLogin(event)">
-      <input type="tel" style="padding:10px;font-size:16px;width:100%;max-width:300px;margin:10px auto;display:block;" inputmode="numeric" pattern="[0-9]*" id="pin" maxlength="4" placeholder="Enter PIN" required />
+      <input
+        type="password"
+        style="padding:10px;font-size:16px;width:100%;max-width:300px;margin:10px auto;display:block;"
+        inputmode="numeric"
+        pattern="[0-9]*"
+        id="pin"
+        maxlength="4"
+        placeholder="Enter PIN"
+        required
+      />
       <button type="submit" style="padding:10px 20px;font-size:16px;background-color:#4b5320;color:#fff;border:none;border-radius:5px;cursor:pointer;display:block;margin:10px auto;">Login</button>
     </form>
   </div>
-    <script>
+
+  <script>
     const EMPLOYEES = {
       "8080": "Michael",
       "7032": "Arthur",
@@ -34,69 +44,42 @@
       "1439": "Jeff"
     };
 
+    const EMPLOYEE_PAGES = {
+      "Michael": "https://m1chael67.github.io/universal-crew-app/64445533.html",
+      "Alan": "https://m1chael67.github.io/universal-crew-app/2555266.html",
+      "Joe": "https://m1chael67.github.io/universal-crew-app/566633.html",
+      "Jeff": "https://m1chael67.github.io/universal-crew-app/533333.html",
+      "ADMIN": "https://m1chael67.github.io/universal-crew-app/admin.html",
+      "Arthur": "https://m1chael67.github.io/universal-crew-app/jobs.html"
+    };
+
     function handleLogin(e) {
       e.preventDefault();
-      const pin = document.getElementById('pin').value;
+
+      const pinInput = document.getElementById('pin');
+      const pin = pinInput.value.trim();
       const employeeName = EMPLOYEES[pin];
 
-      if (employeeName) {
-        // Remember who logged in
-        localStorage.setItem("employee", employeeName);
-        localStorage.setItem("clockedIn", "true");
-
-        // Decide where to send them after login
-        let nextUrl = "https://m1chael67.github.io/universal-crew-app/jobs.html";
-
-        if (employeeName === "Michael") {
-          nextUrl = "https://m1chael67.github.io/universal-crew-app/64445533.html";
-        } else if (employeeName === "Alan") {
-          nextUrl = "https://m1chael67.github.io/universal-crew-app/2555266.html";
-        } else if (employeeName === "Joe") {
-          nextUrl = "https://m1chael67.github.io/universal-crew-app/566633.html";
-        } else if (employeeName === "Jeff") {
-          nextUrl = "https://m1chael67.github.io/universal-crew-app/533333.html";
-        } else if (employeeName === "ADMIN") {
-          nextUrl = "https://m1chael67.github.io/universal-crew-app/admin.html";
-        }
-
-        // Build a hidden form to notify via FormSubmit
-        const form = document.createElement('form');
-        form.action = "https://formsubmit.co/michaellazarov12@gmail.com";
-        form.method = "POST";
-        form.style.display = "none";
-
-        const login = document.createElement('input');
-        login.type = "hidden";
-        login.name = "Login Success";
-        login.value = employeeName + " logged in.";
-
-        const redirect = document.createElement('input');
-        redirect.type = "hidden";
-        redirect.name = "_next";
-        redirect.value = nextUrl;
-
-        const disableCaptcha = document.createElement('input');
-        disableCaptcha.type = "hidden";
-        disableCaptcha.name = "_captcha";
-        disableCaptcha.value = "false";
-
-        form.appendChild(login);
-        form.appendChild(redirect);
-        form.appendChild(disableCaptcha);
-        document.body.appendChild(form);
-        form.submit();
-      } else {
+      if (!employeeName) {
         alert("Invalid PIN");
+        pinInput.focus();
+        pinInput.select();
+        return false;
       }
+
+      localStorage.setItem("employee", employeeName);
+      localStorage.setItem("clockedIn", "true");
+
+      const nextUrl = EMPLOYEE_PAGES[employeeName] || "https://m1chael67.github.io/universal-crew-app/jobs.html";
+      window.location.href = nextUrl;
       return false;
     }
   </script>
+
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/universal-crew-app/service-worker.js');
     }
-
   </script>
-
 </body>
 </html>
