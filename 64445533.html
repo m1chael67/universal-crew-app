@@ -1319,10 +1319,13 @@ function waitForClockState(expectedState, triesLeft) {
 
     function getJobDisplayContext(job) {
       var displayDate = getDisplayDateForJob(job);
+      var currentType = cleanJobType(job.Type || job.OriginalType || "Job");
       var originalType = cleanJobType(job.OriginalType || job.Type || "Job");
-      var displayType = originalType || "Job";
+      var displayType = currentType || "Job";
       var dateLabel = job.DateLabel || "";
 
+      // Normal/default page view should use the already-computed current job status.
+      // The calendar-specific setup/strike/return logic should ONLY apply after a calendar date is selected.
       if (selectedCalendarDate) {
         var onSetup = job.SetupDate && sameDay(job.SetupDate, selectedCalendarDate);
         var onStrike = job.StrikeDate && sameDay(job.StrikeDate, selectedCalendarDate);
