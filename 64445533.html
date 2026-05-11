@@ -316,6 +316,272 @@
   font-size:15px;
 }
 
+
+/* ===== PAGE ACTIONS + CALENDAR ===== */
+.page-title-row{
+  display:grid;
+  grid-template-columns:44px 1fr 44px;
+  align-items:center;
+  gap:10px;
+  margin:6px 0 8px 0;
+}
+.page-title-row h1{
+  margin:0;
+  text-align:center;
+}
+.icon-action{
+  width:42px;
+  height:42px;
+  border-radius:14px;
+  border:1px solid #e0e0e0;
+  background:#fff;
+  color:#111;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  font-size:21px;
+  font-weight:800;
+  cursor:pointer;
+  box-shadow:0 4px 12px rgba(0,0,0,0.08);
+  transition:transform .12s ease, box-shadow .12s ease, background .12s ease;
+}
+.icon-action:active{
+  transform:scale(.96);
+  box-shadow:0 2px 8px rgba(0,0,0,0.08);
+}
+.icon-action:hover{
+  background:#f8f8f8;
+}
+.calendar-hidden-input{
+  position:absolute;
+  opacity:0;
+  pointer-events:none;
+  width:1px;
+  height:1px;
+}
+.calendar-filter-chip{
+  display:none;
+  width:fit-content;
+  margin:0 auto 12px auto;
+  padding:8px 12px;
+  border:1px solid #e2e2e2;
+  border-radius:999px;
+  background:#fff;
+  box-shadow:0 4px 12px rgba(0,0,0,0.07);
+  font-size:13px;
+  font-weight:700;
+  color:#222;
+}
+.calendar-filter-chip button{
+  margin-left:8px;
+  border:none;
+  background:#111;
+  color:#fff;
+  border-radius:999px;
+  padding:3px 8px;
+  font-size:11px;
+  font-weight:800;
+  cursor:pointer;
+}
+
+/* ===== HOURS DROPDOWN ===== */
+.top-bar.hours-panel{
+  padding:0;
+  background:transparent;
+}
+.hours-box{
+  position:relative;
+  background:white;
+  border:1px solid #e5e5e5;
+  border-radius:14px;
+  box-shadow:0 4px 14px rgba(0,0,0,0.08);
+  overflow:visible;
+}
+.hours-toggle{
+  border:none;
+  background:#fff;
+  color:#111;
+  padding:8px 10px;
+  border-radius:14px;
+  font-size:12px;
+  font-weight:800;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  gap:5px;
+}
+.hours-arrow{
+  display:inline-block;
+  transition:transform .15s ease;
+  font-size:11px;
+}
+.hours-box.open .hours-arrow{
+  transform:rotate(180deg);
+}
+.hours-dropdown{
+  display:none;
+  position:absolute;
+  right:0;
+  top:calc(100% + 6px);
+  min-width:190px;
+  background:#fff;
+  border:1px solid #e5e5e5;
+  border-radius:14px;
+  box-shadow:0 8px 22px rgba(0,0,0,0.14);
+  padding:10px 12px;
+  z-index:1001;
+  font-size:12px;
+  line-height:1.35;
+}
+.hours-box.open .hours-dropdown{
+  display:block;
+}
+.hours-dropdown strong{
+  display:block;
+  font-size:13px;
+  margin-bottom:3px;
+}
+.hours-dropdown .period-small{
+  color:#666;
+  font-size:11px;
+}
+
+/* ===== DAY SEPARATORS ===== */
+.day-separator{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin:18px 0 10px 0;
+  color:#111;
+  font-weight:900;
+  letter-spacing:.2px;
+}
+.day-separator::before,
+.day-separator::after{
+  content:"";
+  height:1px;
+  background:#dedede;
+  flex:1;
+}
+.day-separator span{
+  display:inline-flex;
+  align-items:center;
+  padding:7px 12px;
+  border-radius:999px;
+  background:#111;
+  color:#fff;
+  font-size:13px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.12);
+}
+
+/* ===== BETTER JOB CARDS ===== */
+.job-block{
+  position:relative;
+  overflow:hidden;
+  border-radius:20px;
+  border:1px solid #e9e9e9;
+  background:linear-gradient(180deg,#fff 0%,#fdfdfd 100%);
+  box-shadow:0 8px 24px rgba(0,0,0,0.08);
+  padding:17px;
+  margin:0 0 16px 0;
+}
+.job-block:hover{
+  transform:translateY(-1px);
+  box-shadow:0 10px 26px rgba(0,0,0,.10);
+}
+.job-block-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:12px;
+  margin-bottom:12px;
+}
+.job-block-header h2{
+  margin:0;
+  font-size:24px;
+  line-height:1.08;
+  letter-spacing:-0.5px;
+}
+.job-card-subhead{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-top:8px;
+}
+.job-type-pill{
+  display:inline-flex;
+  align-items:center;
+  padding:4px 9px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:900;
+  color:#fff;
+  background:#333;
+  text-transform:uppercase;
+  letter-spacing:.3px;
+}
+.job-meta{
+  display:grid;
+  gap:8px;
+  margin:12px 0;
+  padding:12px;
+  border-radius:14px;
+  background:#fafafa;
+  border:1px solid #f0f0f0;
+}
+.job-meta-row{
+  font-size:15px;
+  color:#222;
+  line-height:1.45;
+}
+.job-inventory{
+  border-top:1px solid #ededed;
+  padding-top:13px;
+  margin-top:10px;
+}
+.job-inventory h3{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  margin:0 0 9px 0;
+  font-size:13px;
+  font-weight:900;
+  color:#111;
+  letter-spacing:.35px;
+  text-transform:uppercase;
+}
+.job-inventory h3::before{
+  content:"";
+  width:8px;
+  height:8px;
+  border-radius:999px;
+  background:#111;
+}
+.job-inventory ul{
+  list-style:none;
+  margin:0;
+  padding:0;
+  display:grid;
+  gap:8px;
+}
+.inventory-row{
+  border-top:1px solid #f0f0f0;
+  padding-top:8px;
+  font-size:15px;
+}
+.inventory-row:first-child{
+  border-top:none;
+  padding-top:0;
+}
+@media (max-width:640px){
+  .page-title-row{grid-template-columns:42px 1fr 42px;}
+  .job-block{padding:15px;border-radius:18px;}
+  .job-block-header{flex-direction:column;align-items:flex-start;}
+  .job-block-header h2{font-size:22px;}
+  .job-date-badge{align-self:flex-start;}
+}
+
 </style>
 </head>
 <body>
@@ -331,14 +597,30 @@
     <a id="propaneLink" href="propane.html?from=64445533.html">Propane</a>
   </nav>
 
-  <div class="top-bar" style="position: fixed; top: 0; right: 0; padding: 0.5rem; font-size: 12px; background: white; z-index: 1000;">
-    Hours this period: <span id="hour-counter">0</span>
+  <div class="top-bar hours-panel" style="position: fixed; top: 0; right: 0; padding: 0.5rem; font-size: 12px; z-index: 1000;">
+    <div id="hours-box" class="hours-box">
+      <button id="hours-toggle" class="hours-toggle" type="button">
+        Hours this period: <span id="hour-counter">0</span> <span class="hours-arrow">▼</span>
+      </button>
+      <div id="hours-dropdown" class="hours-dropdown">
+        <strong>Latest pay period: <span id="last-period-hours">0.00</span> hrs</strong>
+        <div id="last-period-label" class="period-small">Previous finished period</div>
+      </div>
+    </div>
   </div>
   <div class="container" style="margin-top: 2.5rem;">
     <div style="text-align:right;margin-bottom:8px;">
       <button id="logout-btn" type="button">Log Out</button>
     </div>
-    <h1>Michael's Jobs</h1>
+    <div class="page-title-row">
+      <button id="refresh-page-btn" class="icon-action" type="button" aria-label="Refresh page" title="Refresh">↻</button>
+      <h1>Michael's Jobs</h1>
+      <button id="calendar-btn" class="icon-action" type="button" aria-label="Choose date" title="Calendar">📅</button>
+      <input id="calendar-input" class="calendar-hidden-input" type="date">
+    </div>
+    <div id="calendar-filter-chip" class="calendar-filter-chip">
+      <span id="calendar-filter-label"></span><button id="clear-date-filter" type="button">Clear</button>
+    </div>
     <div id="current-date-chip" class="today-chip"></div>
     <div class="jobs-toolbar">
       <label class="toggle-chip"><input type="checkbox" id="today-only-toggle"> Today Only</label>
@@ -373,6 +655,20 @@
                   " - " + (end.getMonth() + 1) + "/" + end.getDate() + "/" + end.getFullYear();
 
       return { start: start, end: end, key: key, label: label };
+    }
+
+    function parsePeriodKeyDate(periodKey) {
+      var m = String(periodKey || "").match(/^pp-(\d+)-(\d+)-(\d+)/);
+      if (!m) return null;
+      var d = new Date(parseInt(m[1],10), parseInt(m[2],10)-1, parseInt(m[3],10), 12, 0, 0);
+      return isNaN(d.getTime()) ? null : d;
+    }
+
+    function labelForPeriodKey(periodKey) {
+      var end = parsePeriodKeyDate(periodKey);
+      if (!end) return "Previous finished period";
+      var start = new Date(end.getTime() - 13 * 24 * 60 * 60 * 1000);
+      return formatShortDate(start) + " - " + formatShortDate(end);
     }
 
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwDMoZjhy2IHA0PFEqSwd79cOteIBX-QhIVjLh8pXHnzm6frGjoO1FkS9_xrdIQh8M/exec";
@@ -845,6 +1141,51 @@ function waitForClockState(expectedState, triesLeft) {
       return !!(toggle && toggle.checked);
     }
 
+    var selectedCalendarDate = null;
+
+    function dateKey(d) {
+      if (!d) return "";
+      return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+    }
+
+    function formatCalendarDateLabel(d) {
+      var days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+      return days[d.getDay()] + " " + (d.getMonth() + 1) + "/" + d.getDate() + "/" + d.getFullYear();
+    }
+
+    function parseDateInputValue(v) {
+      if (!v) return null;
+      var parts = String(v).split("-");
+      if (parts.length !== 3) return null;
+      var d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+      return isNaN(d.getTime()) ? null : d;
+    }
+
+    function jobMatchesDate(job, d) {
+      if (!job || !d) return false;
+      return (job.SetupDate && sameDay(job.SetupDate, d)) ||
+             (job.StrikeDate && sameDay(job.StrikeDate, d)) ||
+             (job.ActiveDate && sameDay(job.ActiveDate, d));
+    }
+
+    function getDisplayDateForJob(job) {
+      if (selectedCalendarDate) return selectedCalendarDate;
+      return job.ActiveDate || job.SetupDate || job.StrikeDate;
+    }
+
+    function updateCalendarFilterChip() {
+      var chip = document.getElementById("calendar-filter-chip");
+      var label = document.getElementById("calendar-filter-label");
+      if (!chip || !label) return;
+      if (!selectedCalendarDate) {
+        chip.style.display = "none";
+        label.textContent = "";
+        return;
+      }
+      chip.style.display = "block";
+      label.textContent = "Viewing: " + formatCalendarDateLabel(selectedCalendarDate);
+    }
+
     function renderJobsTodayOnly() {
       var list = document.getElementById("job-list");
       if (!list || !window.__jobsCache) return;
@@ -853,20 +1194,45 @@ function waitForClockState(expectedState, triesLeft) {
       today = new Date(today.getFullYear(), today.getMonth(), today.getDate());
       var jobsArray = window.__jobsCache.slice();
 
-      if (isTodayOnlyEnabled()) {
+      if (selectedCalendarDate) {
+        jobsArray = jobsArray.filter(function(job) {
+          return jobMatchesDate(job, selectedCalendarDate);
+        });
+      } else if (isTodayOnlyEnabled()) {
         jobsArray = jobsArray.filter(function(job) {
           return job.ActiveDate && sameDay(job.ActiveDate, today);
         });
       }
 
+      jobsArray.sort(function(a, b) {
+        var da = getDisplayDateForJob(a) ? getDisplayDateForJob(a).getTime() : 0;
+        var db = getDisplayDateForJob(b) ? getDisplayDateForJob(b).getTime() : 0;
+        return da - db;
+      });
+
       list.innerHTML = "";
+      updateCalendarFilterChip();
 
       if (!jobsArray.length) {
-        list.textContent = isTodayOnlyEnabled() ? "No jobs for today." : "No jobs scheduled.";
+        list.textContent = selectedCalendarDate
+          ? ("No jobs for " + formatCalendarDateLabel(selectedCalendarDate) + ".")
+          : (isTodayOnlyEnabled() ? "No jobs for today." : "No jobs scheduled.");
         return;
       }
 
+      var lastGroup = "";
+
       jobsArray.forEach(function(job) {
+        var groupDate = getDisplayDateForJob(job);
+        var groupKey = dateKey(groupDate);
+        if (groupKey && groupKey !== lastGroup) {
+          var sep = document.createElement("div");
+          sep.className = "day-separator";
+          sep.innerHTML = "<span>" + formatCalendarDateLabel(groupDate) + "</span>";
+          list.appendChild(sep);
+          lastGroup = groupKey;
+        }
+
         var block = document.createElement("div");
         block.className = "job-block";
 
@@ -881,7 +1247,7 @@ function waitForClockState(expectedState, triesLeft) {
           else if (t.includes("delivery")) typeColor = "#7c3aed";
         }
 
-        block.style.borderLeft = "4px solid " + typeColor;
+        block.style.borderLeft = "5px solid " + typeColor;
 
         var isToday = job.ActiveDate && sameDay(job.ActiveDate, today);
 
@@ -889,16 +1255,18 @@ function waitForClockState(expectedState, triesLeft) {
           var qtyPart = i.quantity ? " × <strong>" + i.quantity + "</strong>" : "";
           var itemText = i.inventory || '';
           var schematicLink = buildSchematicLink(itemText);
-          return '<li class="inventory-row">• <span class="inventory-main">' + itemText + qtyPart + schematicLink + '</span></li>';
+          return '<li class="inventory-row"><span class="inventory-main">• ' + itemText + qtyPart + schematicLink + '</span></li>';
         }).join("");
 
         block.innerHTML = ''
           + '<div class="job-block-header">'
-          +   '<h2>' + (job.Name || '') + '</h2>'
+          +   '<div>'
+          +     '<h2>' + (job.Name || '') + '</h2>'
+          +     '<div class="job-card-subhead"><span class="job-type-pill" style="background:' + typeColor + '">' + (job.Type || 'Job') + '</span></div>'
+          +   '</div>'
           +   '<span class="job-date-badge' + (isToday ? ' today' : '') + '">' + job.DateLabel + '</span>'
           + '</div>'
           + '<div class="job-meta">'
-          +   '<div class="job-meta-row"><strong>Type:</strong> ' + (job.Type || '') + '</div>'
           +   '<div class="job-meta-row"><strong>Address:</strong> <span class="job-address">' + (job.Address || '') + '</span></div>'
           +   ((job.Phone && String(job.Phone).trim()) ? ('<div class="job-meta-row"><strong>Phone:</strong> <a class="job-phone-link" href="tel:' + job.Phone + '">' + job.Phone + '</a></div>') : '')
           +   (crewLabel ? '<div class="job-meta-row"><strong>Crew:</strong> ' + crewLabel + '</div>' : '')
@@ -911,13 +1279,14 @@ function waitForClockState(expectedState, triesLeft) {
       });
     }
 
+
     (function loadJobs() {
       renderCurrentDateChip();
 
       var toggle = document.getElementById("today-only-toggle");
       if (toggle && !toggle.dataset.bound) {
         toggle.dataset.bound = "1";
-        toggle.addEventListener("change", renderJobsTodayOnly);
+        toggle.addEventListener("change", function(){ if (this.checked) { selectedCalendarDate = null; var ci = document.getElementById("calendar-input"); if (ci) ci.value = ""; } renderJobsTodayOnly(); });
       }
 
       var today = new Date();
@@ -1006,11 +1375,10 @@ function waitForClockState(expectedState, triesLeft) {
         var periodKey = pp.key;
 
         var tq =
-          "select sum(F) " +
+          "select D, sum(F) " +
           "where C = 'clock_out' " +
-          "and D = '" + periodKey + "' " +
           "and B = '" + EMPLOYEE_NAME + "' " +
-          "group by D, B " +
+          "group by D " +
           "label sum(F) ''";
 
         var baseUrl = "https://docs.google.com/spreadsheets/d/" + TIME_LOG_SHEET_ID + "/gviz/tq";
@@ -1026,14 +1394,36 @@ function waitForClockState(expectedState, triesLeft) {
             var json = parseGvizResponse(textResp);
             var rows = json.table.rows || [];
             var counterEl = document.getElementById("hour-counter");
-            if (!counterEl) return;
-            if (!rows.length || !rows[0] || !rows[0].c[0]) {
-              counterEl.textContent = "0.00";
-              return;
+            var lastHoursEl = document.getElementById("last-period-hours");
+            var lastLabelEl = document.getElementById("last-period-label");
+
+            var currentHours = 0;
+            var periods = [];
+
+            rows.forEach(function(row) {
+              if (!row || !row.c || !row.c[0]) return;
+              var pk = String(row.c[0].v || "");
+              var hrs = row.c[1] ? Number(row.c[1].v || 0) : 0;
+              if (isNaN(hrs)) hrs = 0;
+              var endDate = parsePeriodKeyDate(pk);
+              if (pk === periodKey) currentHours = hrs;
+              if (endDate) periods.push({ key: pk, hours: hrs, endDate: endDate });
+            });
+
+            if (counterEl) counterEl.textContent = currentHours.toFixed(2);
+
+            periods.sort(function(a, b) { return b.endDate.getTime() - a.endDate.getTime(); });
+            var currentEnd = parsePeriodKeyDate(periodKey);
+            var previous = null;
+            for (var i = 0; i < periods.length; i++) {
+              if (periods[i].key !== periodKey && (!currentEnd || periods[i].endDate < currentEnd)) {
+                previous = periods[i];
+                break;
+              }
             }
-            var hrs = Number(rows[0].c[0].v || 0);
-            if (isNaN(hrs)) hrs = 0;
-            counterEl.textContent = hrs.toFixed(2);
+
+            if (lastHoursEl) lastHoursEl.textContent = previous ? previous.hours.toFixed(2) : "0.00";
+            if (lastLabelEl) lastLabelEl.textContent = previous ? labelForPeriodKey(previous.key) : "No previous period found";
           })
           .catch(function(err) {
             console.error("Failed to load hours from sheet", err);
@@ -1043,7 +1433,50 @@ function waitForClockState(expectedState, triesLeft) {
       }
     }
 
-    document.addEventListener("DOMContentLoaded", loadHoursFromSheet);
+
+    document.addEventListener("DOMContentLoaded", function(){
+      loadHoursFromSheet();
+
+      var hoursToggle = document.getElementById("hours-toggle");
+      var hoursBox = document.getElementById("hours-box");
+      if (hoursToggle && hoursBox) {
+        hoursToggle.addEventListener("click", function(e) {
+          e.stopPropagation();
+          hoursBox.classList.toggle("open");
+        });
+        document.addEventListener("click", function(e) {
+          if (!hoursBox.contains(e.target)) hoursBox.classList.remove("open");
+        });
+      }
+
+      var refreshBtn = document.getElementById("refresh-page-btn");
+      if (refreshBtn) {
+        refreshBtn.addEventListener("click", function(){ window.location.reload(); });
+      }
+
+      var calendarBtn = document.getElementById("calendar-btn");
+      var calendarInput = document.getElementById("calendar-input");
+      var clearDateBtn = document.getElementById("clear-date-filter");
+      if (calendarBtn && calendarInput) {
+        calendarBtn.addEventListener("click", function(){
+          if (calendarInput.showPicker) calendarInput.showPicker();
+          else calendarInput.click();
+        });
+        calendarInput.addEventListener("change", function(){
+          selectedCalendarDate = parseDateInputValue(calendarInput.value);
+          var toggle = document.getElementById("today-only-toggle");
+          if (toggle) toggle.checked = false;
+          renderJobsTodayOnly();
+        });
+      }
+      if (clearDateBtn) {
+        clearDateBtn.addEventListener("click", function(){
+          selectedCalendarDate = null;
+          if (calendarInput) calendarInput.value = "";
+          renderJobsTodayOnly();
+        });
+      }
+    });
 
 
     // Hamburger menu wiring
