@@ -1303,6 +1303,65 @@ function waitForClockState(expectedState, triesLeft) {
       return job.ActiveDate || job.SetupDate || job.StrikeDate;
     }
 
+    function cleanJobType(type) {
+      return String(type || "").trim();
+    }
+
+    function typeColorFor(type) {
+      var t = cleanJobType(type).toLowerCase();
+      if (t.includes("return")) return "#f59e0b";
+      if (t.includes("pickup") || t.includes("pick-up") || t.includes("pick up")) return "#1e88e5";
+      if (t.includes("setup") || t.includes("set-up") || t.includes("set up")) return "#43a047";
+      if (t.includes("strike")) return "#e53935";
+      if (t.includes("delivery")) return "#7c3aed";
+      return "#333";
+    }
+
+    function getJobDisplayContext(job) {
+      var displayDate = getDisplayDateForJob(job);
+      var originalType = cleanJobType(job.OriginalType || job.Type || "Job");
+      var displayType = originalType || "Job";
+      var dateLabel = job.DateLabel || "";
+
+      if (selectedCalendarDate) {
+        var onSetup = job.SetupDate && sameDay(job.SetupDate, selectedCalendarDate);
+        var onStrike = job.StrikeDate && sameDay(job.StrikeDate, selectedCalendarDate);
+        var originalLower = originalType.toLowerCase();
+
+        displayDate = selectedCalendarDate;
+
+        if (onStrike && !onSetup) {
+          if (originalLower.includes("pickup") || originalLower.includes("pick-up") || originalLower.includes("pick up")) {
+            displayType = "Return";
+            dateLabel = "Return - " + formatLongDayDate(selectedCalendarDate);
+          } else {
+            displayType = "Strike";
+            dateLabel = "Strike - " + formatLongDayDate(selectedCalendarDate);
+          }
+        } else if (onSetup && onStrike) {
+          if (originalLower.includes("pickup") || originalLower.includes("pick-up") || originalLower.includes("pick up")) {
+            displayType = "Return";
+            dateLabel = "Return - " + formatLongDayDate(selectedCalendarDate);
+          } else {
+            displayType = originalType + " / Strike";
+            dateLabel = formatShortDate(selectedCalendarDate) + " - SAME DAY STRIKE";
+          }
+        } else if (onSetup) {
+          displayType = originalType || "Setup";
+          dateLabel = displayType + " - " + formatLongDayDate(selectedCalendarDate);
+        } else {
+          dateLabel = formatLongDayDate(selectedCalendarDate);
+        }
+      }
+
+      return {
+        type: displayType,
+        color: typeColorFor(displayType),
+        dateLabel: dateLabel,
+        date: displayDate
+      };
+    }
+
     function updateCalendarFilterChip() {
       var chip = document.getElementById("calendar-filter-chip");
       var label = document.getElementById("calendar-filter-label");
@@ -1448,18 +1507,12 @@ function waitForClockState(expectedState, triesLeft) {
 
         var crewLabel = (job.employees || []).join(", ");
 
-        var typeColor = "#333";
-        if (job.Type && typeof job.Type === "string") {
-          var t = job.Type.toLowerCase();
-          if (t.includes("pickup") || t.includes("pick-up") || t.includes("pick up")) typeColor = "#1e88e5";
-          else if (t.includes("setup") || t.includes("set-up") || t.includes("set up")) typeColor = "#43a047";
-          else if (t.includes("strike")) typeColor = "#e53935";
-          else if (t.includes("delivery")) typeColor = "#7c3aed";
-        }
+        var display = getJobDisplayContext(job);
+        var typeColor = display.color;
 
         block.style.borderLeft = "5px solid " + typeColor;
 
-        var isToday = job.ActiveDate && sameDay(job.ActiveDate, today);
+        var isToday = display.date && sameDay(display.date, today);
 
         var inventoryHtml = (job.inventory || []).map(function(i) {
           var qtyPart = i.quantity ? " × <strong>" + i.quantity + "</strong>" : "";
@@ -1472,9 +1525,9 @@ function waitForClockState(expectedState, triesLeft) {
           + '<div class="job-block-header">'
           +   '<div>'
           +     '<h2>' + (job.Name || '') + '</h2>'
-          +     '<div class="job-card-subhead"><span class="job-type-pill" style="background:' + typeColor + '">' + (job.Type || 'Job') + '</span></div>'
+          +     '<div class="job-card-subhead"><span class="job-type-pill" style="background:' + typeColor + '">' + (display.type || 'Job') + '</span></div>'
           +   '</div>'
-          +   '<span class="job-date-badge' + (isToday ? ' today' : '') + '">' + job.DateLabel + '</span>'
+          +   '<span class="job-date-badge' + (isToday ? ' today' : '') + '">' + display.dateLabel + '</span>'
           + '</div>'
           + '<div class="job-meta">'
           +   '<div class="job-meta-row"><strong>Address:</strong> <span class="job-address">' + (job.Address || '') + '</span></div>'
@@ -1543,6 +1596,7 @@ function waitForClockState(expectedState, triesLeft) {
               ActiveDate: activeDate,
               DateLabel: buildDateLabel(setupDate, strikeDate, showAsStrikeOnly),
               Type: showAsStrikeOnly ? "Strike" : (job.type || ""),
+              OriginalType: job.type || "",
               Address: job.address || "",
               Phone: job.phone || "",
               Notes: job.notes || "",
