@@ -384,6 +384,120 @@
   cursor:pointer;
 }
 
+
+
+/* ===== BASIC CALENDAR PICKER ===== */
+.calendar-popover{
+  display:none;
+  width:min(330px, calc(100vw - 32px));
+  margin:0 auto 14px auto;
+  background:#fff;
+  border:1px solid #e3e3e3;
+  border-radius:18px;
+  box-shadow:0 10px 28px rgba(0,0,0,0.14);
+  padding:12px;
+  position:relative;
+  z-index:50;
+}
+.calendar-popover.open{ display:block; }
+.calendar-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  margin-bottom:10px;
+}
+.calendar-title{
+  font-size:15px;
+  font-weight:900;
+  color:#111;
+  text-align:center;
+  flex:1;
+}
+.calendar-nav{
+  width:34px;
+  height:34px;
+  border-radius:12px;
+  border:1px solid #e0e0e0;
+  background:#fafafa;
+  color:#111;
+  font-size:18px;
+  font-weight:900;
+  cursor:pointer;
+}
+.calendar-weekdays,
+.calendar-grid{
+  display:grid;
+  grid-template-columns:repeat(7, 1fr);
+  gap:5px;
+}
+.calendar-weekdays div{
+  text-align:center;
+  font-size:11px;
+  font-weight:900;
+  color:#666;
+  padding:4px 0;
+}
+.calendar-day{
+  min-height:38px;
+  border-radius:12px;
+  border:1px solid #eee;
+  background:#fff;
+  font-size:13px;
+  font-weight:800;
+  color:#111;
+  cursor:pointer;
+  position:relative;
+}
+.calendar-day:hover{ background:#f7f7f7; }
+.calendar-day.empty{
+  border-color:transparent;
+  background:transparent;
+  cursor:default;
+}
+.calendar-day.today{
+  border-color:#111;
+}
+.calendar-day.selected{
+  background:#111;
+  color:#fff;
+  border-color:#111;
+}
+.calendar-day.has-job::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  bottom:5px;
+  width:5px;
+  height:5px;
+  border-radius:50%;
+  background:#43a047;
+  transform:translateX(-50%);
+}
+.calendar-day.selected.has-job::after{ background:#fff; }
+.calendar-actions{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  margin-top:10px;
+}
+.calendar-small-btn{
+  flex:1;
+  border:1px solid #e0e0e0;
+  background:#fff;
+  color:#111;
+  border-radius:12px;
+  padding:8px 10px;
+  font-size:12px;
+  font-weight:900;
+  cursor:pointer;
+}
+.calendar-small-btn.primary{
+  background:#111;
+  color:#fff;
+  border-color:#111;
+}
+
 /* ===== HOURS DROPDOWN ===== */
 .top-bar.hours-panel{
   padding:0;
@@ -620,6 +734,21 @@
     </div>
     <div id="calendar-filter-chip" class="calendar-filter-chip">
       <span id="calendar-filter-label"></span><button id="clear-date-filter" type="button">Clear</button>
+    </div>
+    <div id="calendar-popover" class="calendar-popover" aria-label="Calendar filter">
+      <div class="calendar-head">
+        <button id="calendar-prev" class="calendar-nav" type="button" aria-label="Previous month">‹</button>
+        <div id="calendar-title" class="calendar-title"></div>
+        <button id="calendar-next" class="calendar-nav" type="button" aria-label="Next month">›</button>
+      </div>
+      <div class="calendar-weekdays">
+        <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+      </div>
+      <div id="calendar-grid" class="calendar-grid"></div>
+      <div class="calendar-actions">
+        <button id="calendar-today" class="calendar-small-btn primary" type="button">Today</button>
+        <button id="calendar-clear" class="calendar-small-btn" type="button">Clear</button>
+      </div>
     </div>
     <div id="current-date-chip" class="today-chip"></div>
     <div class="jobs-toolbar">
@@ -1142,6 +1271,7 @@ function waitForClockState(expectedState, triesLeft) {
     }
 
     var selectedCalendarDate = null;
+    var calendarMonthDate = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 
     function dateKey(d) {
       if (!d) return "";
@@ -1186,6 +1316,78 @@ function waitForClockState(expectedState, triesLeft) {
       label.textContent = "Viewing: " + formatCalendarDateLabel(selectedCalendarDate);
     }
 
+
+    function monthTitle(d) {
+      var months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+      return months[d.getMonth()] + " " + d.getFullYear();
+    }
+
+    function jobListHasDate(d) {
+      if (!window.__jobsCache) return false;
+      return window.__jobsCache.some(function(job){ return jobMatchesDate(job, d); });
+    }
+
+    function renderCalendar() {
+      var title = document.getElementById("calendar-title");
+      var grid = document.getElementById("calendar-grid");
+      if (!title || !grid) return;
+
+      var year = calendarMonthDate.getFullYear();
+      var month = calendarMonthDate.getMonth();
+      var first = new Date(year, month, 1);
+      var daysInMonth = new Date(year, month + 1, 0).getDate();
+      var startDay = first.getDay();
+      var today = new Date();
+      today = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+      title.textContent = monthTitle(calendarMonthDate);
+      grid.innerHTML = "";
+
+      for (var i = 0; i < startDay; i++) {
+        var empty = document.createElement("button");
+        empty.type = "button";
+        empty.className = "calendar-day empty";
+        empty.disabled = true;
+        grid.appendChild(empty);
+      }
+
+      for (var day = 1; day <= daysInMonth; day++) {
+        (function(dayNum){
+          var d = new Date(year, month, dayNum);
+          var btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "calendar-day";
+          btn.textContent = String(dayNum);
+          if (sameDay(d, today)) btn.classList.add("today");
+          if (selectedCalendarDate && sameDay(d, selectedCalendarDate)) btn.classList.add("selected");
+          if (jobListHasDate(d)) btn.classList.add("has-job");
+          btn.addEventListener("click", function(){
+            selectedCalendarDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+            var toggle = document.getElementById("today-only-toggle");
+            if (toggle) toggle.checked = false;
+            renderCalendar();
+            renderJobsTodayOnly();
+          });
+          grid.appendChild(btn);
+        })(day);
+      }
+    }
+
+    function openCalendar() {
+      var pop = document.getElementById("calendar-popover");
+      if (!pop) return;
+      if (selectedCalendarDate) {
+        calendarMonthDate = new Date(selectedCalendarDate.getFullYear(), selectedCalendarDate.getMonth(), 1);
+      }
+      renderCalendar();
+      pop.classList.toggle("open");
+    }
+
+    function closeCalendar() {
+      var pop = document.getElementById("calendar-popover");
+      if (pop) pop.classList.remove("open");
+    }
+
     function renderJobsTodayOnly() {
       var list = document.getElementById("job-list");
       if (!list || !window.__jobsCache) return;
@@ -1193,6 +1395,14 @@ function waitForClockState(expectedState, triesLeft) {
       var today = new Date();
       today = new Date(today.getFullYear(), today.getMonth(), today.getDate());
       var jobsArray = window.__jobsCache.slice();
+
+      if (!selectedCalendarDate) {
+        jobsArray = jobsArray.filter(function(job) {
+          if (job.StrikeDate) return job.StrikeDate >= today;
+          if (job.SetupDate) return job.SetupDate >= today;
+          return true;
+        });
+      }
 
       if (selectedCalendarDate) {
         jobsArray = jobsArray.filter(function(job) {
@@ -1286,7 +1496,14 @@ function waitForClockState(expectedState, triesLeft) {
       var toggle = document.getElementById("today-only-toggle");
       if (toggle && !toggle.dataset.bound) {
         toggle.dataset.bound = "1";
-        toggle.addEventListener("change", function(){ if (this.checked) { selectedCalendarDate = null; var ci = document.getElementById("calendar-input"); if (ci) ci.value = ""; } renderJobsTodayOnly(); });
+        toggle.addEventListener("change", function(){
+          if (this.checked) {
+            selectedCalendarDate = null;
+            closeCalendar();
+            renderCalendar();
+          }
+          renderJobsTodayOnly();
+        });
       }
 
       var today = new Date();
@@ -1307,8 +1524,8 @@ function waitForClockState(expectedState, triesLeft) {
             var showAsStrikeOnly = false;
             var activeDate = setupDate || strikeDate;
 
-            if (strikeDate && strikeDate < today) return null;
-            if (!strikeDate && setupDate && setupDate < today) return null;
+            // Keep all dated jobs in cache so the calendar can show any selected day.
+            // The normal unfiltered view still focuses on active/upcoming jobs below.
 
             if (setupDate && setupDate < today && strikeDate && strikeDate >= today) {
               showAsStrikeOnly = true;
@@ -1341,6 +1558,7 @@ function waitForClockState(expectedState, triesLeft) {
           });
 
           window.__jobsCache = jobsArray;
+          renderCalendar();
           renderJobsTodayOnly();
 
           var list = document.getElementById("job-list");
@@ -1455,27 +1673,60 @@ function waitForClockState(expectedState, triesLeft) {
       }
 
       var calendarBtn = document.getElementById("calendar-btn");
-      var calendarInput = document.getElementById("calendar-input");
       var clearDateBtn = document.getElementById("clear-date-filter");
-      if (calendarBtn && calendarInput) {
-        calendarBtn.addEventListener("click", function(){
-          if (calendarInput.showPicker) calendarInput.showPicker();
-          else calendarInput.click();
+      var calendarPrev = document.getElementById("calendar-prev");
+      var calendarNext = document.getElementById("calendar-next");
+      var calendarToday = document.getElementById("calendar-today");
+      var calendarClear = document.getElementById("calendar-clear");
+
+      if (calendarBtn) {
+        calendarBtn.addEventListener("click", function(e){
+          e.stopPropagation();
+          openCalendar();
         });
-        calendarInput.addEventListener("change", function(){
-          selectedCalendarDate = parseDateInputValue(calendarInput.value);
+      }
+      if (calendarPrev) {
+        calendarPrev.addEventListener("click", function(e){
+          e.stopPropagation();
+          calendarMonthDate = new Date(calendarMonthDate.getFullYear(), calendarMonthDate.getMonth() - 1, 1);
+          renderCalendar();
+        });
+      }
+      if (calendarNext) {
+        calendarNext.addEventListener("click", function(e){
+          e.stopPropagation();
+          calendarMonthDate = new Date(calendarMonthDate.getFullYear(), calendarMonthDate.getMonth() + 1, 1);
+          renderCalendar();
+        });
+      }
+      if (calendarToday) {
+        calendarToday.addEventListener("click", function(e){
+          e.stopPropagation();
+          var t = new Date();
+          selectedCalendarDate = new Date(t.getFullYear(), t.getMonth(), t.getDate());
+          calendarMonthDate = new Date(t.getFullYear(), t.getMonth(), 1);
           var toggle = document.getElementById("today-only-toggle");
           if (toggle) toggle.checked = false;
+          renderCalendar();
           renderJobsTodayOnly();
         });
       }
-      if (clearDateBtn) {
-        clearDateBtn.addEventListener("click", function(){
-          selectedCalendarDate = null;
-          if (calendarInput) calendarInput.value = "";
-          renderJobsTodayOnly();
-        });
+      function clearCalendarFilter() {
+        selectedCalendarDate = null;
+        closeCalendar();
+        renderCalendar();
+        renderJobsTodayOnly();
       }
+      if (calendarClear) calendarClear.addEventListener("click", function(e){ e.stopPropagation(); clearCalendarFilter(); });
+      if (clearDateBtn) clearDateBtn.addEventListener("click", clearCalendarFilter);
+
+      document.addEventListener("click", function(e){
+        var pop = document.getElementById("calendar-popover");
+        var btn = document.getElementById("calendar-btn");
+        if (!pop || !pop.classList.contains("open")) return;
+        if ((btn && btn.contains(e.target)) || pop.contains(e.target)) return;
+        closeCalendar();
+      });
     });
 
 
