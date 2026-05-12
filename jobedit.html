@@ -240,6 +240,132 @@
     .msg.error{color:#b42318}
     .msg.ok{color:#166534}
     .muted{color:#666;font-size:13px}
+
+    /* ===== Calendar Filter ===== */
+    .calendar-wrap{
+      position:relative;
+      display:inline-flex;
+    }
+    .calendar-popover{
+      display:none;
+      width:min(360px, calc(100vw - 32px));
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:18px;
+      box-shadow:0 18px 38px rgba(0,0,0,.16);
+      padding:14px;
+      position:absolute;
+      top:48px;
+      right:0;
+      z-index:50;
+      text-align:left;
+    }
+    .calendar-popover.open{display:block}
+    .calendar-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:10px;
+    }
+    .calendar-title{
+      font-weight:900;
+      font-size:15px;
+      text-align:center;
+      flex:1;
+    }
+    .calendar-nav{
+      width:34px;
+      height:34px;
+      border-radius:12px;
+      border:1px solid #ddd;
+      background:#fafafa;
+      font-weight:900;
+      cursor:pointer;
+    }
+    .calendar-grid{
+      display:grid;
+      grid-template-columns:repeat(7, 1fr);
+      gap:6px;
+    }
+    .calendar-dow{
+      text-align:center;
+      font-size:11px;
+      color:#777;
+      font-weight:800;
+      padding:4px 0;
+    }
+    .calendar-day{
+      position:relative;
+      height:38px;
+      border-radius:12px;
+      border:1px solid transparent;
+      background:#fafafa;
+      cursor:pointer;
+      font-weight:800;
+      font-size:13px;
+    }
+    .calendar-day:hover{border-color:#ccc;background:#fff}
+    .calendar-day.empty{
+      visibility:hidden;
+      pointer-events:none;
+    }
+    .calendar-day.today{
+      border-color:#111;
+      background:#fff;
+    }
+    .calendar-day.selected{
+      background:#111;
+      color:#fff;
+      border-color:#111;
+    }
+    .calendar-day.has-job::after{
+      content:"";
+      position:absolute;
+      left:50%;
+      bottom:5px;
+      transform:translateX(-50%);
+      width:5px;
+      height:5px;
+      border-radius:50%;
+      background:#43a047;
+    }
+    .calendar-day.selected.has-job::after{background:#fff}
+    .calendar-actions{
+      display:flex;
+      gap:8px;
+      justify-content:space-between;
+      margin-top:12px;
+    }
+    .selected-filter-pill{
+      display:none;
+      align-items:center;
+      gap:8px;
+      padding:8px 12px;
+      border-radius:999px;
+      border:1px solid #d8d8d8;
+      background:#fff;
+      font-size:13px;
+      font-weight:800;
+      color:#111;
+    }
+    .selected-filter-pill.show{display:inline-flex}
+    .job-chip.state-selected{
+      background:#eef5ff;
+      border-color:#bcd4ff;
+      color:#175cd3;
+    }
+    .job-chip.state-strike-selected{
+      background:#fff1f0;
+      border-color:#f5b5ae;
+      color:#b42318;
+    }
+    .job-chip.state-return{
+      background:#fff7ed;
+      border-color:#fed7aa;
+      color:#c2410c;
+    }
+
     @media (max-width:640px){
       .container{width:min(100%, calc(100% - 14px));padding:16px 12px 22px}
       h1{font-size:34px}
@@ -272,11 +398,27 @@
       <div class="top-actions">
         <a href="admin.html" class="btn small">← Back to Admin</a>
         <button id="refreshBtn" class="btn small">Refresh</button>
+        <div class="calendar-wrap">
+          <button id="calendarBtn" class="btn small" type="button">📅 Calendar</button>
+          <div id="calendarPopover" class="calendar-popover">
+            <div class="calendar-head">
+              <button id="calendarPrev" class="calendar-nav" type="button">‹</button>
+              <div id="calendarTitle" class="calendar-title"></div>
+              <button id="calendarNext" class="calendar-nav" type="button">›</button>
+            </div>
+            <div id="calendarGrid" class="calendar-grid"></div>
+            <div class="calendar-actions">
+              <button id="calendarToday" class="btn small" type="button">Today</button>
+              <button id="calendarClear" class="btn small" type="button">Clear</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
     <div class="toolbar">
       <div class="count-pill">Active jobs: <span id="jobCount">0</span></div>
+      <div id="selectedDatePill" class="selected-filter-pill"></div>
       <select id="jobFilter" class="filter-select">
         <option value="upcoming" selected>Upcoming Jobs</option>
         <option value="past">Past Jobs</option>
@@ -401,7 +543,7 @@
       }
     })();
 
-    const state = { employees: [], jobs: [], editingJob: null };
+    const state = { employees: [], jobs: [], editingJob: null, selectedDateKey: null, calendarMonth: new Date() };
 
     function autoGrow(el){
       if (!el) return;
@@ -648,6 +790,102 @@
       return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
     }
 
+    function dateKey(d){
+      if (!d) return "";
+      return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+    }
+
+    function dateFromKey(key){
+      if (!key) return null;
+      const parts = String(key).split("-");
+      if (parts.length !== 3) return null;
+      return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+    }
+
+    function formatShortSelectedDate(d){
+      if (!d) return "";
+      const days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+      return days[d.getDay()] + " " + (d.getMonth()+1) + "/" + d.getDate() + "/" + String(d.getFullYear()).slice(-2);
+    }
+
+    function jobOccursOnDate(job, key){
+      if (!job || !key) return false;
+      return String(job.startDate || "") === key || String(job.strikeDate || "") === key;
+    }
+
+    function getSelectedJobChip(job){
+      const key = state.selectedDateKey;
+      if (!key) return null;
+      const isStart = String(job.startDate || "") === key;
+      const isStrike = String(job.strikeDate || "") === key;
+      const type = String(job.type || "").toLowerCase();
+      if (isStrike && type === "pickup") return { label: "Return", cls: "return" };
+      if (isStrike && !isStart) return { label: "Strike", cls: "strike-selected" };
+      if (isStart) return { label: job.type || "Job", cls: "selected" };
+      return { label: job.type || "Job", cls: "selected" };
+    }
+
+    function getCalendarJobKeys(){
+      const keys = new Set();
+      (state.jobs || []).forEach(job=>{
+        if (job.startDate) keys.add(String(job.startDate));
+        if (job.strikeDate) keys.add(String(job.strikeDate));
+      });
+      return keys;
+    }
+
+    function renderCalendar(){
+      const pop = document.getElementById("calendarPopover");
+      const grid = document.getElementById("calendarGrid");
+      const title = document.getElementById("calendarTitle");
+      const pill = document.getElementById("selectedDatePill");
+      if (!grid || !title) return;
+
+      const monthDate = state.calendarMonth || new Date();
+      const year = monthDate.getFullYear();
+      const month = monthDate.getMonth();
+      const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+      title.textContent = monthNames[month] + " " + year;
+
+      const jobKeys = getCalendarJobKeys();
+      const todayKey = dateKey(getTodayStart());
+      const first = new Date(year, month, 1);
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const blanks = first.getDay();
+      const dows = ["S","M","T","W","T","F","S"];
+      let html = dows.map(d=>'<div class="calendar-dow">' + d + '</div>').join("");
+      for (let i=0;i<blanks;i++) html += '<button class="calendar-day empty" type="button"></button>';
+      for (let day=1; day<=daysInMonth; day++){
+        const d = new Date(year, month, day);
+        const key = dateKey(d);
+        const cls = ["calendar-day"];
+        if (key === todayKey) cls.push("today");
+        if (key === state.selectedDateKey) cls.push("selected");
+        if (jobKeys.has(key)) cls.push("has-job");
+        html += '<button class="' + cls.join(" ") + '" type="button" data-date="' + key + '">' + day + '</button>';
+      }
+      grid.innerHTML = html;
+      grid.querySelectorAll(".calendar-day[data-date]").forEach(btn=>{
+        btn.addEventListener("click", ()=>{
+          state.selectedDateKey = btn.dataset.date;
+          document.getElementById("jobFilter").value = "all";
+          renderCalendar();
+          renderJobs();
+          if (pop) pop.classList.remove("open");
+        });
+      });
+
+      if (pill) {
+        if (state.selectedDateKey) {
+          pill.textContent = "Showing: " + formatShortSelectedDate(dateFromKey(state.selectedDateKey));
+          pill.classList.add("show");
+        } else {
+          pill.textContent = "";
+          pill.classList.remove("show");
+        }
+      }
+    }
+
     function getRelevantJobDate(job){
       const today = getTodayStart();
       const start = toLocalDate(job.startDate);
@@ -701,6 +939,7 @@
       setStatus("Loading jobs…");
       const res = await jsonp(JOBS_WEBAPP_URL, { action: "listJobs" });
       state.jobs = res.jobs || [];
+      renderCalendar();
       renderJobs();
       setStatus("Ready");
     }
@@ -712,6 +951,8 @@
       const filter = getJobFilterValue();
 
       let jobs = allJobs.filter(job=>{
+        if (state.selectedDateKey) return jobOccursOnDate(job, state.selectedDateKey);
+
         const start = toLocalDate(job.startDate);
         const strike = toLocalDate(job.strikeDate);
         const latest = strike || start;
@@ -738,18 +979,21 @@
       document.getElementById("jobCount").textContent = String(jobs.length);
 
       if (!jobs.length){
-        grid.innerHTML = `<div class="empty">${filter === "past" ? "No past jobs." : (filter === "upcoming" ? "No upcoming jobs." : "No jobs yet.")}</div>`;
+        grid.innerHTML = `<div class="empty">${state.selectedDateKey ? ("No jobs on " + formatShortSelectedDate(dateFromKey(state.selectedDateKey)) + ".") : (filter === "past" ? "No past jobs." : (filter === "upcoming" ? "No upcoming jobs." : "No jobs yet."))}</div>`;
         return;
       }
 
       grid.innerHTML = jobs.map(job=>{
         const employees = (job.employees || []).join(", ") || "—";
         const invHtml = (job.inventory || []).map(item=>`<li class="inventory-view"><span>${item.inventory || "—"} × ${item.quantity || "—"}</span></li>`).join("");
+        const selectedChip = getSelectedJobChip(job);
+        const chipClass = selectedChip ? selectedChip.cls : getJobState(job);
+        const chipLabel = selectedChip ? selectedChip.label : getJobStateLabel(job);
         return `
           <div class="job-card" data-job-id="${job.jobId}">
             <div class="job-card-header">
               <h2>${job.jobName || "Untitled Job"}</h2>
-              <span class="job-chip state-${getJobState(job)}">${getJobStateLabel(job)}</span>
+              <span class="job-chip state-${chipClass}">${chipLabel}</span>
             </div>
             <div class="job-meta">
               <div class="job-meta-row"><strong>Dates:</strong> ${formatJobDate(job.startDate, job.strikeDate)}</div>
@@ -857,7 +1101,13 @@
 
     document.getElementById("newJobBtn").addEventListener("click", ()=>openSheet(null));
     document.getElementById("refreshBtn").addEventListener("click", loadJobs);
-    document.getElementById("jobFilter").addEventListener("change", renderJobs);
+    document.getElementById("jobFilter").addEventListener("change", ()=>{ state.selectedDateKey = null; renderCalendar(); renderJobs(); });
+    document.getElementById("calendarBtn").addEventListener("click", (e)=>{ e.stopPropagation(); document.getElementById("calendarPopover").classList.toggle("open"); renderCalendar(); });
+    document.getElementById("calendarPrev").addEventListener("click", ()=>{ state.calendarMonth = new Date(state.calendarMonth.getFullYear(), state.calendarMonth.getMonth() - 1, 1); renderCalendar(); });
+    document.getElementById("calendarNext").addEventListener("click", ()=>{ state.calendarMonth = new Date(state.calendarMonth.getFullYear(), state.calendarMonth.getMonth() + 1, 1); renderCalendar(); });
+    document.getElementById("calendarToday").addEventListener("click", ()=>{ const t = getTodayStart(); state.calendarMonth = new Date(t.getFullYear(), t.getMonth(), 1); state.selectedDateKey = dateKey(t); document.getElementById("jobFilter").value = "all"; renderCalendar(); renderJobs(); document.getElementById("calendarPopover").classList.remove("open"); });
+    document.getElementById("calendarClear").addEventListener("click", ()=>{ state.selectedDateKey = null; renderCalendar(); renderJobs(); document.getElementById("calendarPopover").classList.remove("open"); });
+    document.addEventListener("click", (e)=>{ const wrap = document.querySelector(".calendar-wrap"); const pop = document.getElementById("calendarPopover"); if (wrap && pop && !wrap.contains(e.target)) pop.classList.remove("open"); });
     document.getElementById("closeSheetBtn").addEventListener("click", closeSheet);
     document.getElementById("cancelBtn").addEventListener("click", closeSheet);
     document.getElementById("overlay").addEventListener("click", closeSheet);
