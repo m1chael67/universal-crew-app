@@ -491,6 +491,23 @@
   #bulkSubmitBtn{width:120px;}
 }
 
+
+.typeGroupRow td{
+  background:#111;
+  color:#fff;
+  font-weight:900;
+  letter-spacing:.02em;
+  padding:10px 14px;
+  font-size:15px;
+  border-bottom:none;
+}
+.typeGroupSub{
+  color:rgba(255,255,255,.72);
+  font-weight:700;
+  font-size:12px;
+  margin-left:8px;
+}
+
 </style>
 
 </head>
@@ -513,7 +530,7 @@
       <h1>Tents</h1>
       <div class="card">
         <div class="filters">
-          <label> Tent
+          <label> Tent Type
             <select id="filter-tent"></select>
           </label>
           <label> Grade
@@ -727,6 +744,10 @@
     return (toStr(r.Tent).trim().toLowerCase() + "||" + toStr(r.Number).trim());
   }
 
+  function getTentType(r){
+    return toStr(r.Type || r.type || r["Column 1"] || r.Tent).trim();
+  }
+
   let tentsRows = [];
   let logRows = [];
   let currentRows = [];
@@ -888,7 +909,7 @@
   }
 
   function fillFilters(){
-    const tents = uniqSorted(currentRows.map(r=>toStr(r.Tent).trim()));
+    const tents = uniqSorted(currentRows.map(r=>getTentType(r)));
     const gradesPresent = uniqSorted(currentRows.map(r=>toStr(r.Grade).trim()));
 
     const gradeOrder = ["A+","A","A-","B+","B","B-","C+","C","C-","D+","D"];
@@ -908,7 +929,7 @@
     const fg = document.getElementById("filter-grade").value;
     const fa = document.getElementById("filter-avail").value;
 
-    if (ft && toStr(r.Tent).trim() !== ft) return false;
+    if (ft && getTentType(r) !== ft) return false;
     if (fg && toStr(r.Grade).trim() !== fg) return false;
 
     if (fa){
@@ -976,7 +997,7 @@
     const selected = getSelectedRows();
     const list = document.getElementById("selectedTentsList");
     list.innerHTML = selected.map(r=>{
-      return '<div class="bulk-selected-item"><span>' + toStr(r.Tent) + '</span><span>#' + toStr(r.Number) + '</span></div>';
+      return '<div class="bulk-selected-item"><span>' + toStr(r.Tent) + '</span><span>' + getTentType(r) + ' #' + toStr(r.Number) + '</span></div>';
     }).join("");
     document.getElementById("bulkSheetSub").textContent = selected.length + " selected tent" + (selected.length === 1 ? "" : "s") + " will all receive the same status update.";
     document.getElementById("bulkJobInput").value = "";
@@ -1042,9 +1063,12 @@
     const rows = currentRows
       .filter(passesFilter)
       .sort((a,b)=>{
-        const ta = toStr(a.Tent).toLowerCase();
-        const tb = toStr(b.Tent).toLowerCase();
+        const ta = getTentType(a).toLowerCase();
+        const tb = getTentType(b).toLowerCase();
         if (ta !== tb) return ta.localeCompare(tb, undefined, {numeric:true});
+        const pa = toStr(a.Tent).toLowerCase();
+        const pb = toStr(b.Tent).toLowerCase();
+        if (pa !== pb) return pa.localeCompare(pb, undefined, {numeric:true});
         const na = Number(toStr(a.Number));
         const nb = Number(toStr(b.Number));
         if (!isNaN(na) && !isNaN(nb)) return na-nb;
@@ -1080,8 +1104,13 @@
           </tr>
         </thead>
         <tbody>
-          ${rows.map(r=>{
+          ${rows.map((r, idx)=>{
             const key = toKey(r);
+            const typeName = getTentType(r) || "Other";
+            const prevType = idx > 0 ? (getTentType(rows[idx - 1]) || "Other") : "";
+            const groupHeader = (idx === 0 || typeName !== prevType)
+              ? `<tr class="typeGroupRow"><td colspan="6">${typeName}<span class="typeGroupSub">Type</span></td></tr>`
+              : "";
             const isOpen = (expandedKey === key);
             const pill = (toStr(r.Availability).toLowerCase() === "available")
               ? `<span class="pill good">Available</span>`
@@ -1118,6 +1147,7 @@
             const checked = selectedTentKeys.has(key) ? "checked" : "";
 
             return `
+              ${groupHeader}
               <tr class="clickable${isOpen ? " open" : ""}" data-key="${key}">
                 <td class="num col-num"><span class="numWrap">${toStr(r.Number)}${r.Notes ? '<span class="noteDot"></span>' : ''}</span></td>
                 <td class="col-tent">${toStr(r.Tent)}</td>
