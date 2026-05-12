@@ -364,6 +364,133 @@
   vertical-align:middle;
 }
 
+
+/* ===== BULK TENT UPDATE FORM ===== */
+.top-right{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  align-items:flex-end;
+}
+#bulkSubmitBtn{
+  padding:10px 14px;
+  font-size:15px;
+  border-radius:16px;
+}
+#bulkSubmitBtn:disabled{
+  background:#9ca3af;
+  color:#fff;
+  cursor:not-allowed;
+  opacity:.75;
+  box-shadow:none;
+}
+.col-select{width:58px;text-align:center;}
+.tent-check{
+  width:22px;
+  height:22px;
+  accent-color:#111;
+  cursor:pointer;
+}
+.bulk-sheet-overlay{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.24);
+  display:none;
+  z-index:70;
+}
+.bulk-sheet-overlay.show{display:block;}
+.bulk-sheet{
+  position:fixed;
+  top:0;
+  right:0;
+  height:100%;
+  width:min(720px,100%);
+  background:#fff;
+  box-shadow:-12px 0 30px rgba(0,0,0,.18);
+  transform:translateX(100%);
+  transition:transform .18s ease;
+  z-index:75;
+  display:flex;
+  flex-direction:column;
+}
+.bulk-sheet.open{transform:translateX(0);}
+.bulk-sheet-head{
+  padding:18px 18px 14px;
+  border-bottom:1px solid var(--line);
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:12px;
+}
+.bulk-sheet-head h2{
+  margin:0;
+  font-size:30px;
+  letter-spacing:-0.6px;
+}
+.bulk-sheet-head p{
+  margin:6px 0 0;
+  color:#666;
+  font-size:13px;
+}
+.bulk-sheet-body{
+  padding:16px 18px 24px;
+  overflow:auto;
+}
+.bulk-form-grid{display:grid;gap:14px;}
+.bulk-row{display:grid;gap:8px;}
+.bulk-row label{font-weight:800;font-size:14px;}
+.bulk-row select,.bulk-row input{
+  width:100%;
+  padding:12px 14px;
+  border:1px solid #ddd;
+  border-radius:14px;
+  font-size:15px;
+  font-family:inherit;
+  background:#fff;
+  outline:none;
+}
+.bulk-selected-list{
+  display:grid;
+  gap:8px;
+  margin:4px 0 2px;
+}
+.bulk-selected-item{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  align-items:center;
+  padding:10px 12px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:#fafafa;
+  font-weight:800;
+}
+.bulk-selected-item span:last-child{color:#666;font-weight:700;}
+.bulk-sheet-actions{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:20px;
+  padding-top:16px;
+  border-top:1px solid var(--line);
+}
+.bulk-msg{
+  margin-top:10px;
+  font-size:14px;
+  font-weight:800;
+  display:none;
+}
+.bulk-msg.error{color:var(--bad);}
+.bulk-msg.ok{color:var(--good);}
+@media (max-width:520px){
+  col.col-select{width:44px;}
+  th.col-select,td.col-select{width:44px;padding-left:4px;padding-right:4px;}
+  .tent-check{width:20px;height:20px;}
+  .bulk-sheet-head h2{font-size:26px;}
+  #bulkSubmitBtn{width:120px;}
+}
+
 </style>
 
 </head>
@@ -378,6 +505,7 @@
 
   <div class="top-right">
     <button class="btn" id="refreshBtn">Refresh</button>
+    <button class="btn" id="bulkSubmitBtn" disabled>Submit</button>
   </div>
 
   <div class="wrap">
@@ -396,9 +524,6 @@
           </label>
 </div>
 
-        <div class="formLink">
-          <button class="btn" id="toFormBtn">Tent Form</button>
-        </div>
 
         <div id="errorMsg" class="msg" style="display:none;"></div>
         <div id="hintMsg" class="submsg" style="display:none;"></div>
@@ -407,6 +532,54 @@
       </div>
     </div>
   </div>
+
+
+  <div class="bulk-sheet-overlay" id="bulkSheetOverlay"></div>
+  <aside class="bulk-sheet" id="bulkSheet" aria-label="Tent update form">
+    <div class="bulk-sheet-head">
+      <div>
+        <h2>Update Tents</h2>
+        <p id="bulkSheetSub">Selected tents will all receive the same status update.</p>
+      </div>
+      <button class="btn" id="closeBulkSheetBtn" type="button">Close</button>
+    </div>
+    <div class="bulk-sheet-body">
+      <form id="bulkTentForm" class="bulk-form-grid">
+        <div class="bulk-row">
+          <label>Selected Tents</label>
+          <div id="selectedTentsList" class="bulk-selected-list"></div>
+        </div>
+
+        <div class="bulk-row">
+          <label for="bulkActionSel">Action</label>
+          <select id="bulkActionSel">
+            <option>On job</option>
+            <option>Return</option>
+            <option>Washed</option>
+            <option>Needs Wash</option>
+            <option>Needs Repair</option>
+            <option>Repaired</option>
+          </select>
+        </div>
+
+        <div class="bulk-row" id="bulkJobRow" style="display:none;">
+          <label for="bulkJobInput">Job</label>
+          <input id="bulkJobInput" placeholder="Which job are they on?" />
+        </div>
+
+        <div class="bulk-row" id="bulkRepairRow" style="display:none;">
+          <label for="bulkRepairInput">Repair Note</label>
+          <input id="bulkRepairInput" placeholder="What needs repair?" />
+        </div>
+
+        <div class="bulk-sheet-actions">
+          <button type="button" class="btn" id="cancelBulkBtn">Cancel</button>
+          <button type="submit" class="btn" id="submitBulkTentBtn">Submit</button>
+        </div>
+        <div class="bulk-msg" id="bulkMsg"></div>
+      </form>
+    </div>
+  </aside>
 
   <script>
   // IMPORTANT: keep this as your /exec URL
@@ -476,9 +649,6 @@
     location.href = withQuery("propane.html");
   });
 
-  document.getElementById("toFormBtn").addEventListener("click", ()=>{
-    location.href = withQuery("tent_entry.html");
-  });
   document.getElementById("refreshBtn").addEventListener("click", ()=> loadAll(true));
 ["filter-tent","filter-grade","filter-avail"].forEach(id=>{
   const el = document.getElementById(id);
@@ -561,6 +731,7 @@
   let logRows = [];
   let currentRows = [];
   let expandedKey = null;
+  const selectedTentKeys = new Set();
 
   function setError(msg){
     const el = document.getElementById("errorMsg");
@@ -761,6 +932,112 @@
     return true;
   }
 
+
+  function getSelectedRows(){
+    return currentRows.filter(r=>selectedTentKeys.has(toKey(r)));
+  }
+
+  function updateBulkSubmitState(){
+    const btn = document.getElementById("bulkSubmitBtn");
+    if (!btn) return;
+    const count = selectedTentKeys.size;
+    btn.disabled = count < 1;
+    btn.textContent = count ? ("Submit (" + count + ")") : "Submit";
+  }
+
+  function clearMissingSelections(){
+    const valid = new Set(currentRows.map(toKey));
+    Array.from(selectedTentKeys).forEach(k=>{ if (!valid.has(k)) selectedTentKeys.delete(k); });
+    updateBulkSubmitState();
+  }
+
+  function setBulkMsg(text, isError){
+    const el = document.getElementById("bulkMsg");
+    if (!el) return;
+    if (!text){
+      el.style.display = "none";
+      el.textContent = "";
+      el.className = "bulk-msg";
+      return;
+    }
+    el.style.display = "block";
+    el.textContent = text;
+    el.className = "bulk-msg " + (isError ? "error" : "ok");
+  }
+
+  function updateBulkActionVisibility(){
+    const action = toStr(document.getElementById("bulkActionSel").value).toLowerCase();
+    document.getElementById("bulkJobRow").style.display = (action === "on job") ? "grid" : "none";
+    document.getElementById("bulkRepairRow").style.display = (action === "needs repair") ? "grid" : "none";
+  }
+
+  function openBulkSheet(){
+    if (selectedTentKeys.size < 1) return;
+    const selected = getSelectedRows();
+    const list = document.getElementById("selectedTentsList");
+    list.innerHTML = selected.map(r=>{
+      return '<div class="bulk-selected-item"><span>' + toStr(r.Tent) + '</span><span>#' + toStr(r.Number) + '</span></div>';
+    }).join("");
+    document.getElementById("bulkSheetSub").textContent = selected.length + " selected tent" + (selected.length === 1 ? "" : "s") + " will all receive the same status update.";
+    document.getElementById("bulkJobInput").value = "";
+    document.getElementById("bulkRepairInput").value = "";
+    setBulkMsg("", false);
+    updateBulkActionVisibility();
+    document.getElementById("bulkSheetOverlay").classList.add("show");
+    document.getElementById("bulkSheet").classList.add("open");
+  }
+
+  function closeBulkSheet(){
+    document.getElementById("bulkSheetOverlay").classList.remove("show");
+    document.getElementById("bulkSheet").classList.remove("open");
+  }
+
+  async function submitBulkTentUpdate(evt){
+    evt.preventDefault();
+    const selected = getSelectedRows();
+    if (!selected.length){
+      closeBulkSheet();
+      return;
+    }
+
+    const action = toStr(document.getElementById("bulkActionSel").value).trim();
+    const job = toStr(document.getElementById("bulkJobInput").value).trim();
+    const repairNote = toStr(document.getElementById("bulkRepairInput").value).trim();
+
+    if (!action) return setBulkMsg("Pick an action.", true);
+    if (action.toLowerCase() === "on job" && !job) return setBulkMsg("On job requires a job name.", true);
+    if (action.toLowerCase() === "needs repair" && !repairNote) return setBulkMsg("Needs Repair requires a repair note.", true);
+
+    const submitBtn = document.getElementById("submitBulkTentBtn");
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Saving...";
+    setBulkMsg("Saving " + selected.length + " tent" + (selected.length === 1 ? "" : "s") + "…", false);
+
+    try{
+      for (const r of selected){
+        await jsonp(WEBAPP_URL, {
+          action: "submit",
+          actionType: action,
+          tent: toStr(r.Tent).trim(),
+          number: toStr(r.Number).trim(),
+          job: job,
+          repairNote: repairNote
+        }, 12000);
+      }
+      setBulkMsg("Saved.", false);
+      selectedTentKeys.clear();
+      updateBulkSubmitState();
+      await loadAll(true);
+      setTimeout(()=>closeBulkSheet(), 250);
+    }catch(e){
+      setBulkMsg("Save failed. Check Apps Script deployment + permissions.", true);
+    }finally{
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalText;
+    }
+  }
+
   function render(){
     const rows = currentRows
       .filter(passesFilter)
@@ -773,6 +1050,8 @@
         if (!isNaN(na) && !isNaN(nb)) return na-nb;
         return toStr(a.Number).localeCompare(toStr(b.Number), undefined, {numeric:true});
       });
+
+    clearMissingSelections();
 
     const wrap = document.getElementById("tableWrap");
     if (!rows.length){
@@ -788,6 +1067,7 @@
           <col class="col-grade">
           <col class="col-avail">
           <col class="col-notes">
+          <col class="col-select">
         </colgroup>
         <thead>
           <tr>
@@ -796,6 +1076,7 @@
             <th class="col-grade">Grade</th>
             <th class="col-avail">Availability</th>
             <th class="col-notes">Notes</th>
+            <th class="col-select">✓</th>
           </tr>
         </thead>
         <tbody>
@@ -811,7 +1092,7 @@
 
             const details = isOpen ? `
               <tr class="detailRow" data-key="${key}">
-                <td colspan="5">
+                <td colspan="6">
                   <div class="detailBox">
                     <div>
                       <div class="k">Notes</div>
@@ -834,6 +1115,8 @@
               </tr>
             ` : "";
 
+            const checked = selectedTentKeys.has(key) ? "checked" : "";
+
             return `
               <tr class="clickable${isOpen ? " open" : ""}" data-key="${key}">
                 <td class="num col-num"><span class="numWrap">${toStr(r.Number)}${r.Notes ? '<span class="noteDot"></span>' : ''}</span></td>
@@ -841,6 +1124,7 @@
                 <td class="col-grade"><b>${toStr(r.Grade) || "<span class='small'>—</span>"}</b></td>
                 <td class="col-avail">${pill}</td>
                 <td class="col-notes">${toStr(r.Notes) || "<span class='small'>—</span>"}</td>
+                <td class="col-select"><input type="checkbox" class="tent-check" data-key="${key}" ${checked} aria-label="Select tent ${toStr(r.Tent)} number ${toStr(r.Number)}"></td>
               </tr>
               ${details}
             `;
@@ -852,13 +1136,32 @@
 
     // click expand/collapse
     wrap.querySelectorAll("tr.clickable").forEach(tr=>{
-      tr.addEventListener("click", ()=>{
+      tr.addEventListener("click", (ev)=>{
+        if (ev.target && ev.target.classList && ev.target.classList.contains("tent-check")) return;
         const key = tr.getAttribute("data-key");
         expandedKey = (expandedKey === key) ? null : key;
         render();
       });
     });
+
+    wrap.querySelectorAll(".tent-check").forEach(cb=>{
+      cb.addEventListener("click", (ev)=>ev.stopPropagation());
+      cb.addEventListener("change", ()=>{
+        const key = cb.getAttribute("data-key");
+        if (cb.checked) selectedTentKeys.add(key);
+        else selectedTentKeys.delete(key);
+        updateBulkSubmitState();
+      });
+    });
   }
+
+  document.getElementById("bulkSubmitBtn").addEventListener("click", openBulkSheet);
+  document.getElementById("closeBulkSheetBtn").addEventListener("click", closeBulkSheet);
+  document.getElementById("cancelBulkBtn").addEventListener("click", closeBulkSheet);
+  document.getElementById("bulkSheetOverlay").addEventListener("click", closeBulkSheet);
+  document.getElementById("bulkActionSel").addEventListener("change", updateBulkActionVisibility);
+  document.getElementById("bulkTentForm").addEventListener("submit", submitBulkTentUpdate);
+  updateBulkSubmitState();
 
   // boot
   loadAll();
