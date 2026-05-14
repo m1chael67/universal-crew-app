@@ -188,6 +188,28 @@
       background:#fcfcfc;
       font-weight:700;
     }
+
+    .check-card.old-period{
+      background:#fff5f5;
+      border-color:#f4b4ad;
+      color:#b42318;
+    }
+    .check-card.old-period .check-sub{color:#b42318;}
+    tr.old-period td{
+      background:#fff5f5 !important;
+      color:#b42318;
+    }
+    .old-warning{
+      margin-top:10px;
+      padding:10px 12px;
+      border:1px solid #f4b4ad;
+      background:#fff5f5;
+      color:#b42318;
+      border-radius:14px;
+      font-size:13px;
+      font-weight:800;
+    }
+
     @media(max-width:640px){
       .container{width:min(100%, calc(100% - 14px));padding:18px 12px 24px;}
       h1{font-size:30px;margin-top:34px;}
@@ -211,7 +233,6 @@
       <p id="status-line" class="status-line">Loading pay periods…</p>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
         <button id="refreshBtn" class="btn" type="button">Refresh</button>
-        <p class="refresh-pill">Auto-refresh: <span id="refresh-seconds">—</span>s</p>
       </div>
     </div>
 
@@ -304,6 +325,17 @@
       return fmt(start) + " - " + fmt(end);
     }
 
+    function isOldPeriod(periodKey) {
+      var end = parsePeriodKey(periodKey);
+      if (!end) return false;
+      var cutoff = new Date(2026, 0, 23, 23, 59, 59);
+      return end.getTime() <= cutoff.getTime();
+    }
+
+    function oldPeriodNote(periodKey) {
+      return isOldPeriod(periodKey) ? " · Time may not be accurate" : "";
+    }
+
     function setStatus(msg) {
       document.getElementById("status-line").textContent = msg || "";
     }
@@ -378,10 +410,11 @@
         var checked = selectedPeriods.has(p.key) ? "checked" : "";
         var isCurrent = p.key === currentKey;
         var total = EMPLOYEES.reduce(function(sum, emp){ return sum + Number(p.employees[emp] || 0); }, 0);
-        return "<label class='check-card " + (isCurrent ? "current" : "") + "'>" +
+        var cardClasses = "check-card" + (isCurrent ? " current" : "") + (isOldPeriod(p.key) ? " old-period" : "");
+        return "<label class='" + cardClasses + "'>" +
           "<input type='checkbox' class='period-check' value='" + p.key + "' " + checked + ">" +
           "<span class='check-main'>" +
-            "<span class='check-title'>" + labelForPeriodKey(p.key) + (isCurrent ? " · Current" : "") + "</span>" +
+            "<span class='check-title'>" + labelForPeriodKey(p.key) + (isCurrent ? " · Current" : "") + oldPeriodNote(p.key) + "</span>" +
             "<span class='check-sub'>Logged total: " + total.toFixed(2) + " hrs</span>" +
           "</span>" +
         "</label>";
@@ -434,6 +467,7 @@
         return;
       }
 
+      var hasOldSelectedPeriod = selectedPs.some(function(p){ return isOldPeriod(p.key); });
       var expectedPerEmployee = selectedPs.length * EXPECTED_HOURS_PER_PERIOD;
       var rows = employees.map(function(emp){
         var actual = selectedPs.reduce(function(sum, p){ return sum + Number(p.employees[emp] || 0); }, 0);
@@ -466,7 +500,8 @@
         return "Even";
       }
 
-      wrap.innerHTML = "<div class='table-scroll'><table>" +
+      wrap.innerHTML = (hasOldSelectedPeriod ? "<div class='old-warning'>Warning: one or more selected pay periods end on or before 01/23/2026, so time may not be accurate.</div>" : "") +
+        "<div class='table-scroll'><table>" +
         "<thead><tr>" +
           "<th>Employee</th>" +
           "<th class='num'>Selected Periods</th>" +
@@ -527,26 +562,9 @@
       renderResults();
     });
 
-    var REFRESH_EVERY_MS = 30000;
-    var countdownMs = REFRESH_EVERY_MS;
-    function startAutoRefresh(){
-      var secEl = document.getElementById("refresh-seconds");
-      if (secEl) secEl.textContent = String(Math.round(countdownMs / 1000));
-      setInterval(function(){
-        countdownMs -= 1000;
-        if (countdownMs < 0) countdownMs = 0;
-        if (secEl) secEl.textContent = String(Math.round(countdownMs / 1000));
-        if (countdownMs <= 0){
-          countdownMs = REFRESH_EVERY_MS;
-          fetchHistory();
-        }
-      }, 1000);
-    }
-
     document.addEventListener("DOMContentLoaded", function(){
       renderEmployeeChecks();
       fetchHistory();
-      startAutoRefresh();
     });
   </script>
 </body>
