@@ -508,6 +508,79 @@
   margin-left:8px;
 }
 
+
+/* ===== MOBILE SHEET/CHECKBOX FIXES ===== */
+html, body{
+  max-width:100%;
+  overflow-x:hidden;
+}
+
+.bulk-sheet,
+.bulk-sheet-overlay{
+  visibility:hidden;
+  pointer-events:none;
+}
+
+.bulk-sheet.open,
+.bulk-sheet-overlay.show{
+  visibility:visible;
+  pointer-events:auto;
+}
+
+.bulk-sheet{
+  right:0;
+  left:auto;
+}
+
+@media (max-width: 520px){
+  .tableBox{
+    overflow:hidden;
+  }
+
+  table{
+    table-layout:fixed;
+    width:100%;
+  }
+
+  col.col-num{ width:48px; }
+  col.col-tent{ width:76px; }
+  col.col-grade{ width:48px; }
+  col.col-avail{ width:118px; }
+  col.col-notes{ width:0; }
+  col.col-select{ width:42px; }
+
+  th.col-num, td.col-num{ width:48px; padding-left:6px; padding-right:4px; }
+  th.col-tent, td.col-tent{ width:76px; padding-left:6px; padding-right:4px; }
+  th.col-grade, td.col-grade{ width:48px; padding-left:4px; padding-right:4px; }
+  th.col-avail, td.col-avail{ width:118px; padding-left:4px; padding-right:4px; }
+  th.col-notes, td.col-notes{ display:none; width:0; }
+  th.col-select, td.col-select{
+    display:table-cell;
+    width:42px;
+    padding-left:2px;
+    padding-right:6px;
+    text-align:center;
+    overflow:visible;
+  }
+
+  .tent-check{
+    width:22px;
+    height:22px;
+    display:block;
+    margin:0 auto;
+  }
+
+  .pill{
+    font-size:13px;
+    padding:7px 6px;
+  }
+
+  .typeGroupRow td{
+    font-size:14px;
+    padding:9px 10px;
+  }
+}
+
 </style>
 
 </head>
