@@ -299,13 +299,85 @@
       box-shadow:0 2px 10px rgba(0,0,0,0.08);
     }
 
+
+    /* Admin hamburger menu */
+    .admin-menu-btn{
+      position:fixed;
+      left:14px;
+      top:14px;
+      width:50px;
+      height:50px;
+      border-radius:14px;
+      border:1px solid #ededed;
+      background:#f7f7f7;
+      box-shadow:0 6px 14px rgba(0,0,0,0.15);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      z-index:1002;
+      user-select:none;
+    }
+    .admin-menu-btn:active{ transform:scale(0.98); }
+    .admin-menu-btn span{
+      font-size:26px;
+      line-height:1;
+      color:#111;
+      transform:translateY(-1px);
+    }
+    .admin-menu-overlay{
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,0.25);
+      display:none;
+      z-index:1001;
+    }
+    .admin-menu-overlay.show{ display:block; }
+    .admin-side-menu{
+      position:fixed;
+      left:0;
+      top:0;
+      height:100%;
+      width:280px;
+      background:#fff;
+      box-shadow:16px 0 40px rgba(0,0,0,0.15);
+      transform:translateX(-105%);
+      transition:transform 0.18s ease;
+      z-index:1003;
+      padding:26px 18px;
+      box-sizing:border-box;
+    }
+    .admin-side-menu.open{ transform:translateX(0); }
+    .admin-side-menu h3{
+      margin:0 0 12px 0;
+      font-size:28px;
+    }
+    .admin-side-menu a{
+      display:block;
+      padding:14px 12px;
+      margin:10px 0;
+      background:#f3f3f3;
+      border-radius:14px;
+      text-decoration:none;
+      color:#111;
+      font-weight:700;
+      font-size:18px;
+    }
+    .admin-side-menu a:hover{ background:#eaeaea; }
+
   </style>
 </head>
 
 <body>
-  <div class="admin-link-wrap">
-    <a href="jobedit.html" class="btn primary">Edit Jobs</a>
-  </div>
+  <button class="admin-menu-btn" id="adminMenuBtn" type="button" aria-label="Menu"><span>≡</span></button>
+  <div class="admin-menu-overlay" id="adminMenuOverlay"></div>
+  <aside class="admin-side-menu" id="adminSideMenu" aria-label="Admin Menu">
+    <h3>Menu</h3>
+    <a href="jobedit.html">Edit Jobs</a>
+    <a href="tent.html">Tents</a>
+    <a href="hoursbalance.html">Hours Balance</a>
+    <a href="index.html" id="adminLoginLink">Login</a>
+  </aside>
   <div class="container" style="margin-top:2.5rem;">
     <h1>Admin Live – Crew Hours History</h1>
 
@@ -926,6 +998,38 @@ var now = new Date();
         }
       }, 1000);
     }
+
+
+    // --- Admin hamburger menu ---
+    (function initAdminMenu(){
+      var btn = document.getElementById("adminMenuBtn");
+      var menu = document.getElementById("adminSideMenu");
+      var overlay = document.getElementById("adminMenuOverlay");
+      var login = document.getElementById("adminLoginLink");
+
+      function openMenu(){
+        if (menu) menu.classList.add("open");
+        if (overlay) overlay.classList.add("show");
+      }
+      function closeMenu(){
+        if (menu) menu.classList.remove("open");
+        if (overlay) overlay.classList.remove("show");
+      }
+
+      if (btn) btn.addEventListener("click", function(){
+        if (menu && menu.classList.contains("open")) closeMenu();
+        else openMenu();
+      });
+      if (overlay) overlay.addEventListener("click", closeMenu);
+      if (login) login.addEventListener("click", function(e){
+        e.preventDefault();
+        window.open("index.html", "_blank");
+        closeMenu();
+      });
+      document.addEventListener("keydown", function(e){
+        if (e.key === "Escape") closeMenu();
+      });
+    })();
 
     document.addEventListener("DOMContentLoaded", function() {
       buildQuickPanel();
