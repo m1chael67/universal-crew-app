@@ -217,6 +217,16 @@
       .check-grid{grid-template-columns:1fr;}
       .section{padding:12px;}
     }
+  
+    .small-note{
+      display:inline-block;
+      margin-top:3px;
+      font-size:11px;
+      color:#666;
+      font-weight:700;
+      line-height:1.25;
+    }
+
   </style>
 </head>
 <body>
@@ -279,7 +289,13 @@
 
   <script>
     const TIME_LOG_SHEET_ID = "1gm39kMipfpLKS2n8g9F4SYG9Do36M_5Lc6GOs-c6jCM";
-    const EMPLOYEES = ["Michael", "Alan", "Joe", "Jeff"];
+    const EMPLOYEES = ["Michael", "Joe", "Jeff", "Alan"];
+    const EMPLOYEE_PERIOD_STARTS = {
+      // First pay period counted for salary/debit calculations.
+      // Anything before this period is ignored for that employee, even if selected.
+      "Alan": "pp-2026-4-17",  // 04/04/2026 - 04/17/2026
+      "Jeff": "pp-2026-5-15"   // 05/02/2026 - 05/15/2026
+    };
     const EXPECTED_HOURS_PER_PERIOD = 80;
 
     let periods = [];
@@ -334,6 +350,23 @@
 
     function oldPeriodNote(periodKey) {
       return isOldPeriod(periodKey) ? " · Time may not be accurate" : "";
+    }
+
+    function isPeriodCountedForEmployee(emp, periodKey) {
+      var minKey = EMPLOYEE_PERIOD_STARTS[emp];
+      if (!minKey) return true;
+
+      var end = parsePeriodKey(periodKey);
+      var minEnd = parsePeriodKey(minKey);
+      if (!end || !minEnd) return true;
+
+      return end.getTime() >= minEnd.getTime();
+    }
+
+    function employeeStartNote(emp) {
+      var minKey = EMPLOYEE_PERIOD_STARTS[emp];
+      if (!minKey) return "Salary target: 80 hrs / selected period";
+      return "Counts from " + labelForPeriodKey(minKey) + " forward";
     }
 
     function setStatus(msg) {
@@ -437,7 +470,7 @@
           "<input type='checkbox' class='employee-check' value='" + emp + "' " + checked + ">" +
           "<span class='check-main'>" +
             "<span class='check-title'>" + emp + "</span>" +
-            "<span class='check-sub'>Salary target: 80 hrs / selected period</span>" +
+            "<span class='check-sub'>" + employeeStartNote(emp) + "</span>" +
           "</span>" +
         "</label>";
       }).join("");
@@ -468,11 +501,22 @@
       }
 
       var hasOldSelectedPeriod = selectedPs.some(function(p){ return isOldPeriod(p.key); });
-      var expectedPerEmployee = selectedPs.length * EXPECTED_HOURS_PER_PERIOD;
       var rows = employees.map(function(emp){
-        var actual = selectedPs.reduce(function(sum, p){ return sum + Number(p.employees[emp] || 0); }, 0);
-        var delta = actual - expectedPerEmployee;
-        return { emp: emp, actual: actual, expected: expectedPerEmployee, delta: delta };
+        var countedPeriods = selectedPs.filter(function(p){
+          return isPeriodCountedForEmployee(emp, p.key);
+        });
+        var ignoredCount = selectedPs.length - countedPeriods.length;
+        var expected = countedPeriods.length * EXPECTED_HOURS_PER_PERIOD;
+        var actual = countedPeriods.reduce(function(sum, p){ return sum + Number(p.employees[emp] || 0); }, 0);
+        var delta = actual - expected;
+        return {
+          emp: emp,
+          actual: actual,
+          expected: expected,
+          delta: delta,
+          countedCount: countedPeriods.length,
+          ignoredCount: ignoredCount
+        };
       });
 
       var totalActual = rows.reduce(function(sum, r){ return sum + r.actual; }, 0);
@@ -512,9 +556,13 @@
         "</tr></thead>" +
         "<tbody>" +
         rows.map(function(r){
+          var periodCell = String(r.countedCount);
+          if (r.ignoredCount > 0) periodCell += " / " + selectedPs.length + "<br><span class='small-note'>" + r.ignoredCount + " ignored</span>";
+          var empCell = "<strong>" + r.emp + "</strong>";
+          if (EMPLOYEE_PERIOD_STARTS[r.emp]) empCell += "<br><span class='small-note'>Counts from " + labelForPeriodKey(EMPLOYEE_PERIOD_STARTS[r.emp]) + "</span>";
           return "<tr>" +
-            "<td><strong>" + r.emp + "</strong></td>" +
-            "<td class='num'>" + selectedPs.length + "</td>" +
+            "<td>" + empCell + "</td>" +
+            "<td class='num'>" + periodCell + "</td>" +
             "<td class='num'>" + r.expected.toFixed(2) + "</td>" +
             "<td class='num'>" + r.actual.toFixed(2) + "</td>" +
             "<td class='num'><span class='delta-pill " + deltaClass(r.delta) + "'>" + deltaLabel(r.delta) + "</span></td>" +
