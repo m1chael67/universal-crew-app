@@ -228,7 +228,11 @@
 
   <div id="drawer" class="drawer" aria-hidden="true">
     <h3>Menu</h3>
-    <a id="home-link" href="index.html">Home</a>
+    <a href="admin.html">Admin</a>
+    <a href="jobedit.html">Edit Jobs</a>
+    <a href="tent.html">Tents</a>
+    <a href="hoursbalance.html">Hours Balance</a>
+    <a href="index.html" id="propaneLoginLink">Login</a>
   </div>
   <div id="drawer-overlay" class="drawer-overlay" aria-hidden="true"></div>
 
@@ -654,6 +658,14 @@
   })();
 
   loadAll();
+
+  var propaneLoginLink = document.getElementById("propaneLoginLink");
+  if (propaneLoginLink) {
+    propaneLoginLink.addEventListener("click", function(e){
+      e.preventDefault();
+      window.open("index.html", "_blank");
+    });
+  }
 </script>
 </body>
 </html>

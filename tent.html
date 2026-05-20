@@ -589,8 +589,11 @@ html, body{
   <div class="overlay" id="overlay"></div>
   <aside class="menu" id="menu">
     <h3>Menu</h3>
-    <a id="menuHome" href="#">Home</a>
-    <a id="menuPropane" href="#">Propane</a>
+    <a id="menuHome" href="admin.html">Admin</a>
+    <a id="menuEditJobs" href="jobedit.html">Edit Jobs</a>
+    <a id="menuPropane" href="propane.html">Propane</a>
+    <a id="menuHoursBalance" href="hoursbalance.html">Hours Balance</a>
+    <a id="menuLogin" href="index.html">Login</a>
   </aside>
 
   <div class="top-right">
@@ -723,20 +726,25 @@ html, body{
 
   document.getElementById("menuHome").addEventListener("click", (e)=>{
     e.preventDefault();
-    // Priority:
-    // 1) explicit employee in query
-    // 2) stored return target from when the page was opened
-    // 3) index.html
-    let target = (Q.emp || Q.employee || "");
-    if (!target){
-      try{ target = sessionStorage.getItem("tent_return_to") || ""; }catch(_){ target = ""; }
-    }
-    if (!target) target = "index.html";
-    location.href = withQuery(target);
+    location.href = "admin.html";
   });
   document.getElementById("menuPropane").addEventListener("click", (e)=>{
     e.preventDefault();
     location.href = withQuery("propane.html");
+  });
+
+  
+  document.getElementById("menuEditJobs").addEventListener("click", (e)=>{
+    e.preventDefault();
+    location.href = withQuery("jobedit.html");
+  });
+  document.getElementById("menuHoursBalance").addEventListener("click", (e)=>{
+    e.preventDefault();
+    location.href = withQuery("hoursbalance.html");
+  });
+  document.getElementById("menuLogin").addEventListener("click", (e)=>{
+    e.preventDefault();
+    window.open("index.html", "_blank");
   });
 
   document.getElementById("refreshBtn").addEventListener("click", ()=> loadAll(true));

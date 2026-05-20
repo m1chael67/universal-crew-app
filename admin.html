@@ -365,19 +365,46 @@
     }
     .admin-side-menu a:hover{ background:#eaeaea; }
 
+  
+
+/* ===== GLOBAL ADMIN / MICHAEL MENU ===== */
+.global-menu-btn{
+  position:fixed; left:14px; top:14px; width:50px; height:50px;
+  border-radius:14px; border:1px solid #ededed; background:#f7f7f7;
+  box-shadow:0 6px 14px rgba(0,0,0,.15); display:flex;
+  align-items:center; justify-content:center; cursor:pointer; z-index:1202;
+  user-select:none;
+}
+.global-menu-btn:active{transform:scale(.98)}
+.global-menu-btn span{font-size:26px;line-height:1;color:#111;transform:translateY(-1px)}
+.global-menu-overlay{position:fixed;inset:0;background:rgba(0,0,0,.25);display:none;z-index:1201;}
+.global-menu-overlay.show{display:block;}
+.global-side-menu{
+  position:fixed;left:0;top:0;height:100%;width:280px;background:#fff;
+  box-shadow:16px 0 40px rgba(0,0,0,.15);transform:translateX(-105%);
+  transition:transform .18s ease;z-index:1203;padding:26px 18px;box-sizing:border-box;
+}
+.global-side-menu.open{transform:translateX(0)}
+.global-side-menu h3{margin:0 0 12px 0;font-size:28px;}
+.global-side-menu a{display:block;padding:14px 12px;margin:10px 0;background:#f3f3f3;border-radius:14px;text-decoration:none;color:#111;font-weight:700;font-size:18px;}
+.global-side-menu a:hover{background:#eaeaea;}
+
   </style>
 </head>
 
 <body>
-  <button class="admin-menu-btn" id="adminMenuBtn" type="button" aria-label="Menu"><span>≡</span></button>
-  <div class="admin-menu-overlay" id="adminMenuOverlay"></div>
-  <aside class="admin-side-menu" id="adminSideMenu" aria-label="Admin Menu">
+  <!-- Global admin menu -->
+  <button class="global-menu-btn" id="globalMenuBtn" type="button" aria-label="Menu"><span>≡</span></button>
+  <div class="global-menu-overlay" id="globalMenuOverlay"></div>
+  <aside class="global-side-menu" id="globalSideMenu" aria-label="Menu">
     <h3>Menu</h3>
     <a href="jobedit.html">Edit Jobs</a>
     <a href="tent.html">Tents</a>
+    <a href="propane.html">Propane</a>
     <a href="hoursbalance.html">Hours Balance</a>
-    <a href="index.html" id="adminLoginLink">Login</a>
+    <a href="index.html" id="globalLoginLink">Login</a>
   </aside>
+
   <div class="container" style="margin-top:2.5rem;">
     <h1>Admin Live – Crew Hours History</h1>
 
@@ -401,6 +428,7 @@
               <th>Alan</th>
               <th>Joe</th>
               <th>Jeff</th>
+              <th>Salim</th>
               <th>Total</th>
             </tr>
           </thead>
@@ -420,6 +448,7 @@
               <th>Alan</th>
               <th>Joe</th>
               <th>Jeff</th>
+              <th>Salim</th>
               <th>Total</th>
             </tr>
           </thead>
@@ -439,6 +468,7 @@
               <th>Alan</th>
               <th>Joe</th>
               <th>Jeff</th>
+              <th>Salim</th>
               <th>Total</th>
             </tr>
           </thead>
@@ -470,7 +500,7 @@
   <script>
     const TIME_LOG_SHEET_ID = "1gm39kMipfpLKS2n8g9F4SYG9Do36M_5Lc6GOs-c6jCM";
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwDMoZjhy2IHA0PFEqSwd79cOteIBX-QhIVjLh8pXHnzm6frGjoO1FkS9_xrdIQh8M/exec";
-    const EMPLOYEES = ["Michael","Alan","Joe","Jeff"];
+    const EMPLOYEES = ["Michael","Alan","Joe","Jeff","Salim"];
 
     // --- Pay period logic (unchanged) ---
     function getPayPeriodInfo(date) {
@@ -858,6 +888,7 @@ var now = new Date();
           if (emp === "Alan")    window.location.href = "2555266.html";
           if (emp === "Joe")     window.location.href = "566633.html";
           if (emp === "Jeff")    window.location.href = "533333.html";
+          if (emp === "Salim")   window.location.href = "7777255546.html";
         });
 
         var left = document.createElement("div");
@@ -1037,5 +1068,29 @@ var now = new Date();
       startAutoRefresh();
     });
   </script>
+<script>
+
+(function initGlobalAdminMenu(){
+  var btn = document.getElementById("globalMenuBtn");
+  var menu = document.getElementById("globalSideMenu");
+  var overlay = document.getElementById("globalMenuOverlay");
+  var login = document.getElementById("globalLoginLink");
+  if (!btn || !menu || !overlay) return;
+  btn.addEventListener("click", function(){
+    menu.classList.add("open");
+    overlay.classList.add("show");
+  });
+  overlay.addEventListener("click", function(){
+    menu.classList.remove("open");
+    overlay.classList.remove("show");
+  });
+  if (login) {
+    login.addEventListener("click", function(e){
+      e.preventDefault();
+      window.open("index.html", "_blank");
+    });
+  }
+})();
+</script>
 </body>
 </html>
