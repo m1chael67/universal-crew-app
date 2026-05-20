@@ -83,6 +83,21 @@ body{
 .signup-card button:hover{
   background:#1a5fe0;
 }
+
+.signup-card button:disabled{
+  background:#6b7280;
+  cursor:not-allowed;
+}
+
+.signup-message{
+  display:none;
+  margin-top:12px;
+  text-align:center;
+  font-weight:bold;
+  color:#444;
+  line-height:1.35;
+}
+
 </style>
 </head>
 
@@ -100,11 +115,15 @@ body{
       <input type="password" id="pin2" placeholder="Confirm PIN" maxlength="4" required>
       <button type="submit">Create Account</button>
     </form>
+    <div id="signup-message" class="signup-message">
+      Please allow the system up to 1 day to create your account before logging in.
+    </div>
   </div>
 </div>
 
 <script>
 let existingPins = null;
+const SIGNUP_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxw8snuctfO2oL6wvFKUM8ReNOqj4S_k9I7NDzb6tqjUWfpVhbOtbVD5bLMlKe7KDOV/exec";
 
 function fetchExistingPins() {
 fetch("https://m1chael67.github.io/universal-crew-app/index.html")
@@ -149,40 +168,35 @@ alert("That PIN is already in use.");
 return false;
 }
 
-const form = document.createElement('form');
-form.action = "https://formsubmit.co/michaellazarov12@gmail.com";
-form.method = "POST";
-form.style.display = "none";
+const btn = document.querySelector(".signup-card button");
+const msg = document.getElementById("signup-message");
 
-const n = document.createElement('input');
-n.type = "hidden";
-n.name = "New Employee Name";
-n.value = name;
+btn.disabled = true;
+btn.textContent = "Submitted";
+if (msg) msg.style.display = "block";
 
-const p = document.createElement('input');
-p.type = "hidden";
-p.name = "Requested PIN";
-p.value = pin1;
+fetch(SIGNUP_WEB_APP_URL, {
+  method: "POST",
+  mode: "no-cors",
+  headers: {
+    "Content-Type": "application/x-www-form-urlencoded"
+  },
+  body: new URLSearchParams({
+    name: name.trim(),
+    pin: pin1.trim(),
+    date: new Date().toISOString(),
+    source: "signup_page"
+  })
+}).catch(function(err) {
+  console.error("Signup submission failed", err);
+});
 
-const redirect = document.createElement('input');
-redirect.type = "hidden";
-redirect.name = "_next";
-redirect.value = "https://m1chael67.github.io/universal-crew-app/";
+// Clear fields after sending
+document.getElementById("name").value = "";
+document.getElementById("pin1").value = "";
+document.getElementById("pin2").value = "";
 
-const captcha = document.createElement('input');
-captcha.type = "hidden";
-captcha.name = "_captcha";
-captcha.value = "false";
-
-form.appendChild(n);
-form.appendChild(p);
-form.appendChild(redirect);
-form.appendChild(captcha);
-
-document.body.appendChild(form);
-form.submit();
-
-return true;
+return false;
 }
 </script>
 
