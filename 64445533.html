@@ -1592,13 +1592,21 @@ function waitForClockState(expectedState, triesLeft) {
               activeDate = strikeDate;
             }
 
+            var originalTypeText = String(job.type || "");
+            var originalTypeLower = originalTypeText.toLowerCase();
+            var isPickupJob = originalTypeLower.includes("pickup") || originalTypeLower.includes("pick-up") || originalTypeLower.includes("pick up");
+            var displayTypeForActiveDate = showAsStrikeOnly ? (isPickupJob ? "Return" : "Strike") : originalTypeText;
+            var displayDateLabel = showAsStrikeOnly
+              ? ((isPickupJob ? "Return" : "Strike") + " - " + formatLongDayDate(strikeDate))
+              : buildDateLabel(setupDate, strikeDate, showAsStrikeOnly);
+
             return {
               Name: job.jobName || "",
               SetupDate: setupDate,
               StrikeDate: strikeDate,
               ActiveDate: activeDate,
-              DateLabel: buildDateLabel(setupDate, strikeDate, showAsStrikeOnly),
-              Type: showAsStrikeOnly ? "Strike" : (job.type || ""),
+              DateLabel: displayDateLabel,
+              Type: displayTypeForActiveDate,
               OriginalType: job.type || "",
               Address: job.address || "",
               Phone: job.phone || "",
