@@ -228,11 +228,7 @@
 
   <div id="drawer" class="drawer" aria-hidden="true">
     <h3>Menu</h3>
-    <a href="admin.html">Admin</a>
-    <a href="jobedit.html">Edit Jobs</a>
-    <a href="tent.html">Tents</a>
-    <a href="hoursbalance.html">Hours Balance</a>
-    <a href="index.html" id="propaneLoginLink">Login</a>
+    <div id="drawerLinks"></div>
   </div>
   <div id="drawer-overlay" class="drawer-overlay" aria-hidden="true"></div>
 
@@ -343,6 +339,56 @@
   </div>
 
 <script>
+  function getQuery(){
+    const out = {};
+    const qs = new URLSearchParams(location.search);
+    for (const [k,v] of qs.entries()) out[k]=v;
+    return out;
+  }
+  const Q = getQuery();
+  function safeFromValue(v){
+    v = String(v || "").trim();
+    return /^[A-Za-z0-9_-]+\.html$/.test(v) ? v : "";
+  }
+  function referrerFile(){
+    const ref = document.referrer || "";
+    const m = ref.match(/\/([^\/]+\.html)(\?.*)?$/);
+    return m ? safeFromValue(m[1]) : "";
+  }
+  function accessSource(){
+    return safeFromValue(Q.from || Q.emp || Q.employee || "") || referrerFile();
+  }
+  function isPrivilegedSource(src){
+    src = String(src || "").toLowerCase();
+    return src === "admin.html" || src === "64445533.html" || src.indexOf("michael") !== -1;
+  }
+  function linkWithFrom(url, src){
+    src = safeFromValue(src);
+    if (!src) return url;
+    return url + (url.includes("?") ? "&" : "?") + "from=" + encodeURIComponent(src);
+  }
+  const ACCESS_SOURCE = accessSource();
+  const IS_PRIVILEGED_MENU = isPrivilegedSource(ACCESS_SOURCE);
+
+  (function buildPermissionAwareMenu(){
+    var links = document.getElementById("drawerLinks");
+    if (!links) return;
+    if (IS_PRIVILEGED_MENU) {
+      var src = ACCESS_SOURCE || "admin.html";
+      links.innerHTML = ''
+        + '<a href="' + linkWithFrom('admin.html', src) + '">Admin</a>'
+        + '<a href="' + linkWithFrom('jobedit.html', src) + '">Edit Jobs</a>'
+        + '<a href="' + linkWithFrom('tent.html', src) + '">Tents</a>'
+        + '<a href="' + linkWithFrom('hoursbalance.html', src) + '">Hours Balance</a>'
+        + '<a href="index.html" id="propaneLoginLink">Login</a>';
+    } else {
+      var from = safeFromValue(Q.from || Q.emp || Q.employee || "");
+      links.innerHTML = ''
+        + '<a id="home-link" href="' + (from || 'index.html') + '">Home</a>'
+        + '<a href="' + (from ? linkWithFrom('tent.html', from) : 'tent.html') + '">Tents</a>';
+    }
+  })();
+
   const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxg8cQtsPbDIqPbTyo5g7dpeA1yGixOQ5TH1SfUEAvdinAS-9j4sfSjfo1HnqlIfvAO/exec";
 
   function jsonp(url, params) {

@@ -589,11 +589,7 @@ html, body{
   <div class="overlay" id="overlay"></div>
   <aside class="menu" id="menu">
     <h3>Menu</h3>
-    <a id="menuHome" href="admin.html">Admin</a>
-    <a id="menuEditJobs" href="jobedit.html">Edit Jobs</a>
-    <a id="menuPropane" href="propane.html">Propane</a>
-    <a id="menuHoursBalance" href="hoursbalance.html">Hours Balance</a>
-    <a id="menuLogin" href="index.html">Login</a>
+    <div id="menuLinks"></div>
   </aside>
 
   <div class="top-right">
@@ -692,6 +688,48 @@ html, body{
     return url + (url.includes("?") ? "&" : "?") + qs;
   }
 
+  function safeFromValue(v){
+    v = String(v || "").trim();
+    return /^[A-Za-z0-9_-]+\.html$/.test(v) ? v : "";
+  }
+  function referrerFile(){
+    const ref = document.referrer || "";
+    const m = ref.match(/\/([^\/]+\.html)(\?.*)?$/);
+    return m ? safeFromValue(m[1]) : "";
+  }
+  function accessSource(){
+    return safeFromValue(Q.from || Q.emp || Q.employee || "") || referrerFile();
+  }
+  function isPrivilegedSource(src){
+    src = String(src || "").toLowerCase();
+    return src === "admin.html" || src === "64445533.html" || src.indexOf("michael") !== -1;
+  }
+  function linkWithFrom(url, src){
+    src = safeFromValue(src);
+    if (!src) return url;
+    return url + (url.includes("?") ? "&" : "?") + "from=" + encodeURIComponent(src);
+  }
+  const ACCESS_SOURCE = accessSource();
+  const IS_PRIVILEGED_MENU = isPrivilegedSource(ACCESS_SOURCE);
+
+  // menu links: admin/Michael get admin tools; regular employees only get normal employee links.
+  const menuLinks = document.getElementById("menuLinks");
+  if (menuLinks) {
+    if (IS_PRIVILEGED_MENU) {
+      const src = ACCESS_SOURCE || "admin.html";
+      menuLinks.innerHTML = ''
+        + '<a id="menuHome" href="' + linkWithFrom('admin.html', src) + '">Admin</a>'
+        + '<a id="menuEditJobs" href="' + linkWithFrom('jobedit.html', src) + '">Edit Jobs</a>'
+        + '<a id="menuPropane" href="' + linkWithFrom('propane.html', src) + '">Propane</a>'
+        + '<a id="menuHoursBalance" href="' + linkWithFrom('hoursbalance.html', src) + '">Hours Balance</a>'
+        + '<a id="menuLogin" href="index.html">Login</a>';
+    } else {
+      menuLinks.innerHTML = ''
+        + '<a id="menuHome" href="#">Home</a>'
+        + '<a id="menuPropane" href="' + withQuery('propane.html') + '">Propane</a>';
+    }
+  }
+
   // menu links (Home only exists here + propane pages, per your rule)
   const menu = document.getElementById("menu");
   const overlay = document.getElementById("overlay");
@@ -724,25 +762,38 @@ html, body{
     }
   })();
 
-  document.getElementById("menuHome").addEventListener("click", (e)=>{
+  const homeLink = document.getElementById("menuHome");
+  if (homeLink) homeLink.addEventListener("click", (e)=>{
+    if (IS_PRIVILEGED_MENU) return;
     e.preventDefault();
-    location.href = "admin.html";
-  });
-  document.getElementById("menuPropane").addEventListener("click", (e)=>{
-    e.preventDefault();
-    location.href = withQuery("propane.html");
+    let target = safeFromValue(Q.from || Q.emp || Q.employee || "");
+    if (!target){
+      try{ target = safeFromValue(sessionStorage.getItem("tent_return_to") || ""); }catch(_){ target = ""; }
+    }
+    if (!target) target = "index.html";
+    location.href = withQuery(target);
   });
 
-  
-  document.getElementById("menuEditJobs").addEventListener("click", (e)=>{
+  const propaneLink = document.getElementById("menuPropane");
+  if (propaneLink) propaneLink.addEventListener("click", (e)=>{
     e.preventDefault();
-    location.href = withQuery("jobedit.html");
+    location.href = IS_PRIVILEGED_MENU
+      ? linkWithFrom("propane.html", ACCESS_SOURCE || "admin.html")
+      : withQuery("propane.html");
   });
-  document.getElementById("menuHoursBalance").addEventListener("click", (e)=>{
+
+  const editJobsLink = document.getElementById("menuEditJobs");
+  if (editJobsLink) editJobsLink.addEventListener("click", (e)=>{
     e.preventDefault();
-    location.href = withQuery("hoursbalance.html");
+    location.href = linkWithFrom("jobedit.html", ACCESS_SOURCE || "admin.html");
   });
-  document.getElementById("menuLogin").addEventListener("click", (e)=>{
+  const hoursBalanceLink = document.getElementById("menuHoursBalance");
+  if (hoursBalanceLink) hoursBalanceLink.addEventListener("click", (e)=>{
+    e.preventDefault();
+    location.href = linkWithFrom("hoursbalance.html", ACCESS_SOURCE || "admin.html");
+  });
+  const loginLink = document.getElementById("menuLogin");
+  if (loginLink) loginLink.addEventListener("click", (e)=>{
     e.preventDefault();
     window.open("index.html", "_blank");
   });
