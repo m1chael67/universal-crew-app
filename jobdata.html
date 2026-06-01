@@ -170,29 +170,59 @@
   }
 
   function normalizeJobs(rawJobs) {
+    // This matches the employee jobs page method exactly: listJobs -> normalize fields -> keep inventory.
     return (rawJobs || []).map(function(job) {
+      var setupDate = parseUsDate(job.startDate || job.SetupDate || "");
+      var strikeDate = parseUsDate(job.strikeDate || job.StrikeDate || "");
+      var name = job.jobName || job.Name || "";
+      var address = job.address || job.Address || "";
+      var rowBasedBaseId = slugifyJobPart(job.id || job.row || job.rowNumber || "");
+      var fallbackBaseId = slugifyJobPart((name || "") + " " + (address || "") + " " + (job.startDate || "") + " " + (job.strikeDate || ""));
+
       return {
-        Name: job.jobName || job.Name || "",
-        SetupDate: parseUsDate(job.startDate || job.SetupDate || ""),
-        StrikeDate: parseUsDate(job.strikeDate || job.StrikeDate || ""),
+        Name: name,
+        SetupDate: setupDate,
+        StrikeDate: strikeDate,
         Type: job.type || job.Type || "",
-        Address: job.address || job.Address || "",
+        OriginalType: job.type || job.Type || "",
+        Address: address,
         Phone: job.phone || job.Phone || "",
         Notes: job.notes || job.Notes || "",
         employees: job.employees || [],
-        inventory: job.inventory || []
+        inventory: job.inventory || [],
+        JobBaseId: rowBasedBaseId || fallbackBaseId
       };
     });
+  }
+
+  function getTimerJobIdsForJob(job) {
+    var ids = [];
+    var base = getJobBaseId(job);
+    if (!base || base === "job") return ids;
+    if (job.SetupDate) ids.push(base + "_set-up_" + dateKey(job.SetupDate));
+    if (job.SetupDate) ids.push(base + "_setup_" + dateKey(job.SetupDate));
+    if (job.StrikeDate) ids.push(base + "_strike_" + dateKey(job.StrikeDate));
+    return ids;
   }
 
   function findJobForTimer(timer) {
     var timerId = String(timer.jobId || "");
     var timerDate = parseUsDate(timer.date || "");
-    var byId = allJobs.find(function(job) {
-      return timerId.indexOf(getJobBaseId(job)) === 0;
-    });
-    if (byId) return byId;
 
+    // First match the exact timer IDs created by jobs.html. This is the important part.
+    var byExactTimerId = allJobs.find(function(job) {
+      return getTimerJobIdsForJob(job).indexOf(timerId) !== -1;
+    });
+    if (byExactTimerId) return byExactTimerId;
+
+    // Then match by the base ID used by jobs.html.
+    var byBaseId = allJobs.find(function(job) {
+      var base = getJobBaseId(job);
+      return base && base !== "job" && timerId.indexOf(base) === 0;
+    });
+    if (byBaseId) return byBaseId;
+
+    // Fallback: match by normalized job name and setup/strike date.
     var timerName = String(timer.jobName || "").trim().toLowerCase();
     return allJobs.find(function(job) {
       var sameName = timerName && String(job.Name || "").trim().toLowerCase() === timerName;
@@ -219,7 +249,7 @@
           + '</li>';
       }).join('') + '</ul>';
     } else {
-      itemsHtml = '<div class="inventory-missing">Inventory not found for this timer. This usually means the job name/date changed after it was timed.</div>';
+      itemsHtml = '<div class="inventory-missing">Inventory not found. Refresh this page after uploading the latest jobs.html, or check that the original job still exists in UniversalToDo.</div>';
     }
 
     return ''
