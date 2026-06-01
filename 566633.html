@@ -696,6 +696,99 @@
   .job-date-badge{align-self:flex-start;}
 }
 
+
+/* ===== MICHAEL ADMIN / EDIT JOBS PANEL ===== */
+.edit-jobs-overlay{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.26);
+  display:none;
+  z-index:1200;
+}
+.edit-jobs-overlay.show{display:block;}
+.edit-jobs-panel{
+  position:fixed;
+  top:0;
+  right:0;
+  width:min(980px,100%);
+  height:100%;
+  background:#fff;
+  box-shadow:-14px 0 34px rgba(0,0,0,.22);
+  transform:translateX(105%);
+  transition:transform .22s ease;
+  z-index:1201;
+  display:flex;
+  flex-direction:column;
+}
+.edit-jobs-panel.open{transform:translateX(0);}
+.edit-jobs-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:14px 16px;
+  border-bottom:1px solid #e6e6e6;
+  background:#fff;
+}
+.edit-jobs-head h2{
+  margin:0;
+  font-size:20px;
+  letter-spacing:-.2px;
+}
+.edit-jobs-frame{
+  flex:1;
+  width:100%;
+  border:0;
+  background:#f5f5f5;
+}
+@media (max-width:640px){
+  .edit-jobs-head{padding:12px;}
+  .edit-jobs-head h2{font-size:18px;}
+}
+
+
+
+/* ===== JOB TYPE FILTER ===== */
+.job-type-filter{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:6px;
+  border-radius:999px;
+  background:#fff;
+  border:1px solid #e2e2e2;
+  box-shadow:0 6px 16px rgba(0,0,0,0.08);
+}
+.job-filter-btn{
+  border:none;
+  background:transparent;
+  color:#222;
+  border-radius:999px;
+  padding:8px 11px;
+  font-size:12px;
+  font-weight:900;
+  cursor:pointer;
+  white-space:nowrap;
+}
+.job-filter-btn.active{
+  background:#111;
+  color:#fff;
+}
+@media (max-width:640px){
+  .job-type-filter{width:100%;justify-content:center;flex-wrap:wrap;border-radius:18px;}
+}
+
+/* ===== SETUP / STRIKE TIMER CONTROLS ===== */
+.job-timer-panel{border-top:1px solid #ededed;margin-top:12px;padding-top:12px;display:grid;gap:8px;}
+.job-timer-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid #eeeeee;background:#fafafa;border-radius:14px;flex-wrap:wrap;}
+.job-timer-label{font-size:13px;font-weight:900;color:#111;text-transform:uppercase;letter-spacing:.25px;}
+.job-timer-status{font-size:13px;font-weight:700;color:#444;}
+.job-timer-status.complete{color:#1b7f35;}
+.job-timer-btn{padding:8px 12px;border-radius:999px;border:1px solid #111;background:#111;color:#fff;cursor:pointer;font-size:12px;font-weight:900;white-space:nowrap;}
+.job-timer-btn.stop{background:#fff3f3;border-color:#e0a8a8;color:#7a1e1e;}
+.job-timer-btn:disabled{opacity:.6;cursor:not-allowed;}
+@media (max-width:640px){.job-timer-row{align-items:flex-start;}}
+
 </style>
 </head>
 <body>
@@ -707,8 +800,13 @@
   <div id="menuOverlay" class="menu-overlay" aria-hidden="true"></div>
   <nav id="sideMenu" class="side-menu" aria-label="Menu">
     <h2>Menu</h2>
+    <a id="adminLink" href="admin.html?from=566633.html">Admin</a>
+    <a id="editJobsLink" href="jobedit.html?from=566633.html">Edit Jobs</a>
+    <a id="jobDataLink" href="jobdata.html?from=566633.html">Job Data</a>
     <a id="tentsLink" href="tent.html?from=566633.html">Tents</a>
     <a id="propaneLink" href="propane.html?from=566633.html">Propane</a>
+    <a id="hoursBalanceLink" href="hoursbalance.html?from=566633.html">Hours Balance</a>
+    <a id="loginLink" href="index.html" target="_blank" rel="noopener">Login</a>
   </nav>
 
   <div class="top-bar hours-panel" style="position: fixed; top: 0; right: 0; padding: 0.5rem; font-size: 12px; z-index: 1000;">
@@ -753,6 +851,11 @@
     <div id="current-date-chip" class="today-chip"></div>
     <div class="jobs-toolbar">
       <label class="toggle-chip"><input type="checkbox" id="today-only-toggle"> Today Only</label>
+      <div class="job-type-filter" aria-label="Job type filter">
+        <button type="button" class="job-filter-btn active" data-job-filter="all">All</button>
+        <button type="button" class="job-filter-btn" data-job-filter="pickupreturn">Pickups/Returns</button>
+        <button type="button" class="job-filter-btn" data-job-filter="activework">Setups/Deliveries/Strikes</button>
+      </div>
     </div>
     <div class="clock-row">
       <button id="clock-toggle-btn" type="button" class="btn primary" disabled>Loading…</button>
@@ -760,6 +863,16 @@
 </div>
     <div id="job-list">Loading...</div>
   </div>
+
+  <div id="editJobsOverlay" class="edit-jobs-overlay"></div>
+  <aside id="editJobsPanel" class="edit-jobs-panel" aria-label="Edit Jobs">
+    <div class="edit-jobs-head">
+      <h2>Edit Jobs</h2>
+      <button id="closeEditJobsBtn" type="button" class="btn">Close</button>
+    </div>
+    <iframe id="editJobsFrame" class="edit-jobs-frame" title="Edit Jobs"></iframe>
+  </aside>
+
 
   <script>
     // Pay period helper: 14-day Saturday–Friday periods anchored at 2025-11-01
@@ -801,6 +914,7 @@
 
     const TIME_LOG_SHEET_ID = "1gm39kMipfpLKS2n8g9F4SYG9Do36M_5Lc6GOs-c6jCM";
     const JOBS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxryknrt9pwA_lvmxbSs3Ww1KjIA3kbKkZwhGAD65dYhF_XF--bc8k0NvNiGFpSRuk/exec";
+    const JOB_TIMER_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxOegSJyWw4JCH8B0u3ewgzu5v0XT4nOTwj0eNu0aZg5hhPrXVZ1z1S0vgYmX2mBk_h/exec";
     const EMPLOYEE_NAME = "Joe";
 function parseGvizResponse(textResp) {
       // Google Visualization responses wrap JSON; parse robustly across browsers.
@@ -1268,6 +1382,7 @@ function waitForClockState(expectedState, triesLeft) {
     }
 
     var selectedCalendarDate = null;
+    var activeJobTypeFilter = "all";
     var calendarMonthDate = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 
     function dateKey(d) {
@@ -1396,6 +1511,17 @@ function waitForClockState(expectedState, triesLeft) {
       var first = new Date(year, month, 1);
       var daysInMonth = new Date(year, month + 1, 0).getDate();
       var startDay = first.getDay();
+      var filterBtns = document.querySelectorAll(".job-filter-btn");
+      filterBtns.forEach(function(btn) {
+        if (btn.dataset.bound) return;
+        btn.dataset.bound = "1";
+        btn.addEventListener("click", function() {
+          activeJobTypeFilter = this.dataset.jobFilter || "all";
+          filterBtns.forEach(function(b) { b.classList.toggle("active", b === btn); });
+          renderJobsTodayOnly();
+        });
+      });
+
       var today = new Date();
       today = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
@@ -1447,6 +1573,132 @@ function waitForClockState(expectedState, triesLeft) {
       if (pop) pop.classList.remove("open");
     }
 
+    var jobTimerCache = {};
+
+    function slugifyJobPart(value) {
+      return String(value || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60);
+    }
+
+    function getJobBaseId(job) {
+      if (!job) return "job";
+      if (job.JobBaseId) return job.JobBaseId;
+      var parts = [job.Name, job.Address, dateKey(job.SetupDate), dateKey(job.StrikeDate)];
+      return parts.map(slugifyJobPart).filter(Boolean).join("_") || "job";
+    }
+
+    function getTimerJobId(job, timerKind, displayDate) {
+      return getJobBaseId(job) + "_" + slugifyJobPart(timerKind) + "_" + dateKey(displayDate);
+    }
+
+    function getTimerCacheKey(jobId, timerKind) {
+      return String(jobId || "") + "||" + String(timerKind || "").toLowerCase();
+    }
+
+    function normalizeTimerKind(kind) {
+      var k = String(kind || "").toLowerCase();
+      if (k.indexOf("strike") !== -1) return "Strike";
+      return "Set-Up";
+    }
+
+    function canShowJobTimersFor(job, displayDate) {
+      if (!job || !displayDate) return [];
+      var today = new Date();
+      today = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      if (!sameDay(displayDate, today)) return [];
+      var kinds = [];
+      var originalTypeLower = String(job.OriginalType || job.Type || "").toLowerCase();
+      var isPickupJob = originalTypeLower.includes("pickup") || originalTypeLower.includes("pick-up") || originalTypeLower.includes("pick up") || originalTypeLower.includes("return");
+      if (job.SetupDate && sameDay(job.SetupDate, today) && !isPickupJob) kinds.push("Set-Up");
+      if (job.StrikeDate && sameDay(job.StrikeDate, today) && !isPickupJob) kinds.push("Strike");
+      return kinds;
+    }
+
+    function formatTimerDuration(minutes) {
+      minutes = Number(minutes || 0);
+      var hrs = Math.floor(minutes / 60);
+      var mins = minutes % 60;
+      if (hrs > 0 && mins > 0) return hrs + " hr " + mins + " min";
+      if (hrs > 0) return hrs + " hr";
+      return mins + " min";
+    }
+
+    function formatLiveElapsed(startTimeRaw) {
+      var start = startTimeRaw ? new Date(startTimeRaw) : null;
+      if (!start || isNaN(start.getTime())) return "Running";
+      var mins = Math.max(0, Math.floor((Date.now() - start.getTime()) / 60000));
+      return "Running: " + formatTimerDuration(mins);
+    }
+
+    function buildTimerControls(job, displayDate) {
+      var kinds = canShowJobTimersFor(job, displayDate);
+      if (!kinds.length) return "";
+      var html = '<div class="job-timer-panel">';
+      kinds.forEach(function(kind) {
+        var jobId = getTimerJobId(job, kind, displayDate);
+        var cacheKey = getTimerCacheKey(jobId, kind);
+        var timer = jobTimerCache[cacheKey];
+        var complete = timer && String(timer.completed || "").toUpperCase() === "YES";
+        var running = timer && !complete && String(timer.action || "").toUpperCase() === "START" && !timer.stopTime;
+        var durationText = timer && timer.formattedDuration ? timer.formattedDuration : (timer && timer.durationMinutes ? formatTimerDuration(timer.durationMinutes) : "");
+        var statusText = complete ? (kind + " Time: " + durationText + " — Complete") : (running ? formatLiveElapsed(timer.startTime) : "Not started");
+        var btnText = running ? "Stop" : (kind === "Strike" ? "Start Strike" : "Start Set-Up");
+        var btnClass = running ? "job-timer-btn stop" : "job-timer-btn";
+        html += ''
+          + '<div class="job-timer-row">'
+          +   '<div><div class="job-timer-label">' + kind + ' Timer</div><div class="job-timer-status' + (complete ? ' complete' : '') + '">' + statusText + '</div></div>'
+          +   (complete ? '' : '<button type="button" class="' + btnClass + '" data-action="' + (running ? 'stop' : 'start') + '" data-job-id="' + jobId + '" data-kind="' + kind + '" data-job-name="' + encodeURIComponent(job.Name || '') + '" data-job-date="' + dateKey(displayDate) + '">' + btnText + '</button>')
+          + '</div>';
+      });
+      html += '</div>';
+      return html;
+    }
+
+    function loadJobTimers() {
+      return jsonp(JOB_TIMER_WEBAPP_URL, { action: "getJobTimers" }, 20000)
+        .then(function(res) {
+          jobTimerCache = {};
+          (res.timers || []).forEach(function(t) {
+            var kind = normalizeTimerKind(t.type);
+            var key = getTimerCacheKey(t.jobId, kind);
+            var existing = jobTimerCache[key];
+            var existingTs = existing && existing.timestamp ? new Date(existing.timestamp).getTime() : 0;
+            var thisTs = t.timestamp ? new Date(t.timestamp).getTime() : 0;
+            if (!existing || thisTs >= existingTs) {
+              t.type = kind;
+              jobTimerCache[key] = t;
+            }
+          });
+        })
+        .catch(function(err) { console.error("Failed to load job timers", err); jobTimerCache = {}; });
+    }
+
+    function sendTimerAction(action, jobId, kind, jobName, jobDate) {
+      return jsonp(JOB_TIMER_WEBAPP_URL, {
+        action: action === "stop" ? "stopJobTimer" : "startJobTimer",
+        jobId: jobId,
+        jobName: jobName || "",
+        type: kind,
+        employee: EMPLOYEE_NAME,
+        date: jobDate || ""
+      }, 20000);
+    }
+
+
+    function getJobFilterTypeText(job) {
+      var display = getJobDisplayContext(job);
+      return String((display && display.type) || job.Type || job.OriginalType || "").toLowerCase();
+    }
+
+    function jobPassesTypeFilter(job) {
+      if (!activeJobTypeFilter || activeJobTypeFilter === "all") return true;
+      var t = getJobFilterTypeText(job);
+      var isPickupReturn = t.includes("pickup") || t.includes("pick-up") || t.includes("pick up") || t.includes("return");
+      var isSetupDeliveryStrike = t.includes("setup") || t.includes("set-up") || t.includes("set up") || t.includes("delivery") || t.includes("strike");
+      if (activeJobTypeFilter === "pickupreturn") return isPickupReturn;
+      if (activeJobTypeFilter === "activework") return isSetupDeliveryStrike;
+      return true;
+    }
+
     function renderJobsTodayOnly() {
       var list = document.getElementById("job-list");
       if (!list || !window.__jobsCache) return;
@@ -1473,6 +1725,10 @@ function waitForClockState(expectedState, triesLeft) {
         });
       }
 
+      // Apply the All / Pickups-Returns / Setups-Deliveries-Strikes filter after
+      // date filtering, because the displayed type can change by selected day.
+      jobsArray = jobsArray.filter(jobPassesTypeFilter);
+
       jobsArray.sort(function(a, b) {
         var da = getDisplayDateForJob(a) ? getDisplayDateForJob(a).getTime() : 0;
         var db = getDisplayDateForJob(b) ? getDisplayDateForJob(b).getTime() : 0;
@@ -1483,9 +1739,10 @@ function waitForClockState(expectedState, triesLeft) {
       updateCalendarFilterChip();
 
       if (!jobsArray.length) {
+        var filterMsg = activeJobTypeFilter && activeJobTypeFilter !== "all" ? " for this filter" : "";
         list.textContent = selectedCalendarDate
-          ? ("No jobs for " + formatCalendarDateLabel(selectedCalendarDate) + ".")
-          : (isTodayOnlyEnabled() ? "No jobs for today." : "No jobs scheduled.");
+          ? ("No jobs" + filterMsg + " for " + formatCalendarDateLabel(selectedCalendarDate) + ".")
+          : (isTodayOnlyEnabled() ? ("No jobs" + filterMsg + " for today.") : ("No jobs" + filterMsg + " scheduled."));
         return;
       }
 
@@ -1536,7 +1793,8 @@ function waitForClockState(expectedState, triesLeft) {
           +   ((job.Notes && job.Notes !== "—") ? ('<div class="job-meta-row"><strong>Notes:</strong> ' + job.Notes + '</div>') : '')
           + '</div>'
           + '<div class="job-inventory"><h3>Inventory</h3>'
-          + '<ul>' + inventoryHtml + '</ul></div>';
+          + '<ul>' + inventoryHtml + '</ul></div>'
+          + buildTimerControls(job, display.date);
 
         list.appendChild(block);
       });
@@ -1609,7 +1867,8 @@ function waitForClockState(expectedState, triesLeft) {
               Phone: job.phone || "",
               Notes: job.notes || "",
               employees: job.employees || [],
-              inventory: job.inventory || []
+              inventory: job.inventory || [],
+              JobBaseId: slugifyJobPart(job.id || job.row || job.rowNumber || "") || slugifyJobPart((job.jobName || "") + " " + (job.address || "") + " " + (job.startDate || "") + " " + (job.strikeDate || ""))
             };
           }).filter(Boolean);
 
@@ -1620,8 +1879,10 @@ function waitForClockState(expectedState, triesLeft) {
           });
 
           window.__jobsCache = jobsArray;
-          renderCalendar();
-          renderJobsTodayOnly();
+          loadJobTimers().then(function(){
+            renderCalendar();
+            renderJobsTodayOnly();
+          });
 
           var list = document.getElementById("job-list");
           if (!list.dataset.boundAddressClick) {
@@ -1637,6 +1898,26 @@ function waitForClockState(expectedState, triesLeft) {
                 }).catch(function(err) {
                   console.error("Copy failed", err);
                 });
+              }
+
+              if (target.classList.contains("job-timer-btn")) {
+                var action = target.dataset.action;
+                var jobId = target.dataset.jobId;
+                var kind = target.dataset.kind;
+                var jobName = decodeURIComponent(target.dataset.jobName || "");
+                var jobDate = target.dataset.jobDate || "";
+                target.disabled = true;
+                target.textContent = action === "stop" ? "Stopping..." : "Starting...";
+                sendTimerAction(action, jobId, kind, jobName, jobDate)
+                  .then(function(res) {
+                    if (!res || res.success === false) throw new Error((res && res.error) ? res.error : "Timer failed.");
+                    return loadJobTimers();
+                  })
+                  .then(function(){ renderJobsTodayOnly(); })
+                  .catch(function(err) {
+                    alert(err.message || "Timer failed. Try again.");
+                    renderJobsTodayOnly();
+                  });
               }
             });
           }
@@ -1716,6 +1997,9 @@ function waitForClockState(expectedState, triesLeft) {
 
     document.addEventListener("DOMContentLoaded", function(){
       loadHoursFromSheet();
+      setInterval(function(){
+        if (document.querySelector(".job-timer-btn.stop")) renderJobsTodayOnly();
+      }, 60000);
 
       var hoursToggle = document.getElementById("hours-toggle");
       var hoursBox = document.getElementById("hours-box");
@@ -1729,7 +2013,38 @@ function waitForClockState(expectedState, triesLeft) {
         });
       }
 
-      var refreshBtn = document.getElementById("refresh-page-btn");
+
+
+      function closeEditJobsPanel() {
+        var panel = document.getElementById("editJobsPanel");
+        var overlay = document.getElementById("editJobsOverlay");
+        if (panel) panel.classList.remove("open");
+        if (overlay) overlay.classList.remove("show");
+      }
+      function openEditJobsPanel() {
+        var panel = document.getElementById("editJobsPanel");
+        var overlay = document.getElementById("editJobsOverlay");
+        var frame = document.getElementById("editJobsFrame");
+        if (frame && !frame.getAttribute("src")) {
+          frame.setAttribute("src", "jobedit.html?from=566633.html");
+        }
+        if (overlay) overlay.classList.add("show");
+        if (panel) panel.classList.add("open");
+      }
+      var editJobsLink = document.getElementById("editJobsLink");
+      var closeEditJobsBtn = document.getElementById("closeEditJobsBtn");
+      var editJobsOverlay = document.getElementById("editJobsOverlay");
+      if (editJobsLink) {
+        editJobsLink.addEventListener("click", function(e) {
+          e.preventDefault();
+          document.body.classList.remove("menu-open");
+          openEditJobsPanel();
+        });
+      }
+      if (closeEditJobsBtn) closeEditJobsBtn.addEventListener("click", closeEditJobsPanel);
+      if (editJobsOverlay) editJobsOverlay.addEventListener("click", closeEditJobsPanel);
+
+            var refreshBtn = document.getElementById("refresh-page-btn");
       if (refreshBtn) {
         refreshBtn.addEventListener("click", function(){ window.location.reload(); });
       }
@@ -1804,7 +2119,13 @@ function waitForClockState(expectedState, triesLeft) {
       if (overlay) overlay.addEventListener("click", closeMenu);
       // Close on ESC
       document.addEventListener("keydown", function(e){
-        if (e.key === "Escape") closeMenu();
+        if (e.key === "Escape") {
+          closeMenu();
+          var panel = document.getElementById("editJobsPanel");
+          var overlay = document.getElementById("editJobsOverlay");
+          if (panel) panel.classList.remove("open");
+          if (overlay) overlay.classList.remove("show");
+        }
       });
     })();
 
