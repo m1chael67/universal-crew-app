@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="apple-touch-icon" href="logo_resized.png" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Job Data - Universal Rentals</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" type="image/png" href="favicon.png" />
+  <style>
+    body{background:#f7f7f7;color:#111;}
+    .container{max-width:980px;margin:2.5rem auto 0 auto;padding:16px;}
+    .menu-btn{position:fixed;top:12px;left:12px;width:44px;height:44px;border-radius:12px;border:1px solid #d9d9d9;background:#fff;display:flex;align-items:center;justify-content:center;z-index:1002;box-shadow:0 1px 8px rgba(0,0,0,0.08);}
+    .menu-icon{width:18px;height:12px;position:relative;}.menu-icon span{position:absolute;left:0;right:0;height:2px;background:#111;border-radius:2px;}.menu-icon span:nth-child(1){top:0;}.menu-icon span:nth-child(2){top:5px;}.menu-icon span:nth-child(3){top:10px;}
+    .menu-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.18);opacity:0;pointer-events:none;transition:opacity .2s ease;z-index:1001;}
+    .side-menu{position:fixed;top:0;left:0;height:100%;width:260px;background:#fff;transform:translateX(-105%);transition:transform .25s ease;z-index:1003;padding:72px 16px 16px;box-shadow:2px 0 16px rgba(0,0,0,0.18);}
+    body.menu-open .menu-overlay{opacity:1;pointer-events:auto;}body.menu-open .side-menu{transform:translateX(0);}.side-menu h2{margin:0 0 14px 0;font-size:22px;}.side-menu a{display:block;padding:12px 10px;border-radius:12px;text-decoration:none;color:#111;font-weight:600;}.side-menu a:hover{background:#f1f1f1;}
+    .page-title-row{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;gap:10px;margin:6px 0 12px 0;}.page-title-row h1{margin:0;text-align:center;}.icon-action{width:42px;height:42px;border-radius:14px;border:1px solid #e0e0e0;background:#fff;color:#111;display:inline-flex;align-items:center;justify-content:center;font-size:21px;font-weight:800;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.08);}
+    .data-toolbar{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;margin:0 0 14px 0;}.filter-btn{border:1px solid #e0e0e0;background:#fff;color:#111;border-radius:999px;padding:9px 13px;font-size:12px;font-weight:900;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.06);}.filter-btn.active{background:#111;color:#fff;border-color:#111;}
+    .summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}.summary-card{background:#fff;border:1px solid #e6e6e6;border-radius:16px;padding:12px;box-shadow:0 6px 18px rgba(0,0,0,.06);}.summary-label{font-size:11px;font-weight:900;text-transform:uppercase;color:#666;letter-spacing:.3px;}.summary-value{font-size:22px;font-weight:900;margin-top:3px;}
+    .data-card{background:#fff;border:1px solid #e7e7e7;border-radius:18px;padding:14px;margin:0 0 12px 0;box-shadow:0 7px 20px rgba(0,0,0,.07);border-left:5px solid #111;}.data-card.running{border-left-color:#f59e0b;}.data-card.complete{border-left-color:#1b7f35;}.data-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:10px;}.data-head h2{margin:0;font-size:21px;line-height:1.1;}.status-pill{display:inline-flex;align-items:center;border-radius:999px;padding:6px 10px;font-size:11px;font-weight:900;text-transform:uppercase;background:#f4f4f4;color:#111;white-space:nowrap;}.status-pill.running{background:#fff3d5;color:#7a4b00;}.status-pill.complete{background:#eaf8ee;color:#1b7f35;}.meta-grid{display:grid;gap:7px;background:#fafafa;border:1px solid #f0f0f0;border-radius:14px;padding:11px;}.meta-row{font-size:14px;line-height:1.35;}.meta-row strong{color:#111;}.empty-state{text-align:center;background:#fff;border:1px solid #e6e6e6;border-radius:18px;padding:24px;font-weight:800;color:#444;}.small-note{text-align:center;color:#666;font-size:12px;margin-top:-4px;margin-bottom:12px;}
+    @media(max-width:640px){.container{padding:12px;}.summary-grid{grid-template-columns:1fr;}.data-head{flex-direction:column;}.page-title-row{grid-template-columns:42px 1fr 42px;}.data-head h2{font-size:19px;}}
+  </style>
+</head>
+<body>
+  <button id="menuBtn" class="menu-btn" type="button" aria-label="Menu"><div class="menu-icon" aria-hidden="true"><span></span><span></span><span></span></div></button>
+  <div id="menuOverlay" class="menu-overlay" aria-hidden="true"></div>
+  <nav id="sideMenu" class="side-menu" aria-label="Menu">
+    <h2>Menu</h2>
+    <a href="jobs.html">Jobs</a>
+    <a href="admin.html?from=jobdata.html">Admin</a>
+    <a href="jobedit.html?from=jobdata.html">Edit Jobs</a>
+    <a href="tent.html?from=jobdata.html">Tents</a>
+    <a href="propane.html?from=jobdata.html">Propane</a>
+    <a href="hoursbalance.html?from=jobdata.html">Hours Balance</a>
+    <a href="index.html" target="_blank" rel="noopener">Login</a>
+  </nav>
+
+  <div class="container">
+    <div class="page-title-row">
+      <button id="back-btn" class="icon-action" type="button" aria-label="Back" title="Back">‹</button>
+      <h1>Job Data</h1>
+      <button id="refresh-btn" class="icon-action" type="button" aria-label="Refresh" title="Refresh">↻</button>
+    </div>
+    <div class="small-note">Timed setup and strike records from JobTimers</div>
+    <div class="data-toolbar">
+      <button type="button" class="filter-btn active" data-filter="all">All</button>
+      <button type="button" class="filter-btn" data-filter="running">In Progress</button>
+      <button type="button" class="filter-btn" data-filter="complete">Completed</button>
+      <button type="button" class="filter-btn" data-filter="setup">Set-Ups</button>
+      <button type="button" class="filter-btn" data-filter="strike">Strikes</button>
+    </div>
+    <div class="summary-grid">
+      <div class="summary-card"><div class="summary-label">Completed</div><div id="completed-count" class="summary-value">0</div></div>
+      <div class="summary-card"><div class="summary-label">In Progress</div><div id="running-count" class="summary-value">0</div></div>
+      <div class="summary-card"><div class="summary-label">Total Minutes</div><div id="total-minutes" class="summary-value">0</div></div>
+    </div>
+    <div id="data-list">Loading...</div>
+  </div>
+
+<script>
+  const JOB_TIMER_WEBAPP_URL = "https://script.google.com/macros/s/AKfycby0_MMZuC--jxXhooKsbU5yoy3cSdKrPOo2zkLZgjfF6nZx90-1RWrmubk5Amy9mcSy/exec";
+  let allTimers = [];
+  let activeFilter = "all";
+
+  function jsonp(url, params, timeoutMs) {
+    timeoutMs = timeoutMs || 15000;
+    return new Promise(function(resolve, reject) {
+      var cbName = "cb_" + Math.random().toString(16).slice(2);
+      var u = new URL(url);
+      Object.keys(params || {}).forEach(function(k){ u.searchParams.set(k, params[k]); });
+      u.searchParams.set("callback", cbName);
+      var done = false;
+      var script = document.createElement("script");
+      var timer = setTimeout(function(){ if(done) return; done = true; cleanup(); reject(new Error("JSONP request failed.")); }, timeoutMs);
+      function cleanup(){ clearTimeout(timer); script.remove(); try{ delete window[cbName]; }catch(_){} }
+      window[cbName] = function(data){ if(done) return; done = true; cleanup(); resolve(data); };
+      script.onerror = function(){ if(done) return; done = true; cleanup(); reject(new Error("JSONP request failed.")); };
+      script.src = u.toString();
+      document.body.appendChild(script);
+    });
+  }
+
+  function parseDate(value) {
+    if (!value) return null;
+    if (value instanceof Date) return value;
+    var d = new Date(value);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  function formatDateTime(value) {
+    var d = parseDate(value);
+    if (!d) return "—";
+    return d.toLocaleString([], { month:"numeric", day:"numeric", year:"2-digit", hour:"numeric", minute:"2-digit" });
+  }
+
+  function formatDateOnly(value) {
+    var d = parseDate(value);
+    if (d) return (d.getMonth()+1) + "/" + d.getDate() + "/" + d.getFullYear();
+    return value || "—";
+  }
+
+  function formatDuration(minutes) {
+    minutes = Number(minutes || 0);
+    var hrs = Math.floor(minutes / 60);
+    var mins = minutes % 60;
+    if (hrs > 0 && mins > 0) return hrs + " hr " + mins + " min";
+    if (hrs > 0) return hrs + " hr";
+    return mins + " min";
+  }
+
+  function liveDuration(startTime) {
+    var start = parseDate(startTime);
+    if (!start) return "Running";
+    var mins = Math.max(0, Math.floor((Date.now() - start.getTime()) / 60000));
+    return "Running: " + formatDuration(mins);
+  }
+
+  function isComplete(t) { return String(t.completed || "").toUpperCase() === "YES" || String(t.action || "").toUpperCase() === "COMPLETE" || !!t.stopTime; }
+  function isRunning(t) { return !isComplete(t) && String(t.action || "").toUpperCase() === "START"; }
+  function typeText(t) { return String(t.type || ""); }
+
+  function timerPassesFilter(t) {
+    var type = typeText(t).toLowerCase();
+    if (activeFilter === "all") return true;
+    if (activeFilter === "running") return isRunning(t);
+    if (activeFilter === "complete") return isComplete(t);
+    if (activeFilter === "setup") return type.includes("set") || type.includes("setup");
+    if (activeFilter === "strike") return type.includes("strike");
+    return true;
+  }
+
+  function updateSummary() {
+    var completed = allTimers.filter(isComplete).length;
+    var running = allTimers.filter(isRunning).length;
+    var totalMinutes = allTimers.reduce(function(sum, t){ return sum + (isComplete(t) ? Number(t.durationMinutes || 0) : 0); }, 0);
+    document.getElementById("completed-count").textContent = completed;
+    document.getElementById("running-count").textContent = running;
+    document.getElementById("total-minutes").textContent = totalMinutes;
+  }
+
+  function renderData() {
+    updateSummary();
+    var list = document.getElementById("data-list");
+    var timers = allTimers.filter(timerPassesFilter).slice();
+    timers.sort(function(a,b){
+      var da = parseDate(a.startTime || a.timestamp);
+      var db = parseDate(b.startTime || b.timestamp);
+      return (db ? db.getTime() : 0) - (da ? da.getTime() : 0);
+    });
+    if (!timers.length) {
+      list.innerHTML = '<div class="empty-state">No timed jobs found for this filter.</div>';
+      return;
+    }
+    list.innerHTML = timers.map(function(t){
+      var complete = isComplete(t);
+      var running = isRunning(t);
+      var status = complete ? "Completed" : (running ? "In Progress" : "Started");
+      var statusClass = complete ? "complete" : (running ? "running" : "");
+      var duration = complete ? (t.formattedDuration || formatDuration(t.durationMinutes)) : liveDuration(t.startTime);
+      return ''
+        + '<div class="data-card ' + statusClass + '">'
+        +   '<div class="data-head"><div><h2>' + escapeHtml(t.jobName || "Unnamed Job") + '</h2></div><span class="status-pill ' + statusClass + '">' + status + '</span></div>'
+        +   '<div class="meta-grid">'
+        +     '<div class="meta-row"><strong>Type:</strong> ' + escapeHtml(t.type || "—") + '</div>'
+        +     '<div class="meta-row"><strong>Employee:</strong> ' + escapeHtml(t.employee || "—") + '</div>'
+        +     '<div class="meta-row"><strong>Date:</strong> ' + escapeHtml(formatDateOnly(t.date)) + '</div>'
+        +     '<div class="meta-row"><strong>Start:</strong> ' + escapeHtml(formatDateTime(t.startTime)) + '</div>'
+        +     '<div class="meta-row"><strong>Stop:</strong> ' + escapeHtml(formatDateTime(t.stopTime)) + '</div>'
+        +     '<div class="meta-row"><strong>Time:</strong> ' + escapeHtml(duration) + '</div>'
+        +     '<div class="meta-row"><strong>Job ID:</strong> ' + escapeHtml(t.jobId || "—") + '</div>'
+        +   '</div>'
+        + '</div>';
+    }).join('');
+  }
+
+  function escapeHtml(value) {
+    return String(value == null ? "" : value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function loadTimers() {
+    var list = document.getElementById("data-list");
+    list.textContent = "Loading...";
+    jsonp(JOB_TIMER_WEBAPP_URL, { action: "getJobTimers" }, 20000)
+      .then(function(res){
+        if (!res || res.success === false) throw new Error((res && res.error) ? res.error : "Failed to load job data.");
+        allTimers = res.timers || [];
+        renderData();
+      })
+      .catch(function(err){
+        console.error(err);
+        list.innerHTML = '<div class="empty-state">Failed to load job data.</div>';
+      });
+  }
+
+  document.addEventListener("DOMContentLoaded", function(){
+    document.getElementById("back-btn").addEventListener("click", function(){ window.location.href = "jobs.html"; });
+    document.getElementById("refresh-btn").addEventListener("click", loadTimers);
+    document.querySelectorAll(".filter-btn").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        activeFilter = this.dataset.filter || "all";
+        document.querySelectorAll(".filter-btn").forEach(function(b){ b.classList.toggle("active", b === btn); });
+        renderData();
+      });
+    });
+    var menuBtn = document.getElementById("menuBtn");
+    var menuOverlay = document.getElementById("menuOverlay");
+    function closeMenu(){ document.body.classList.remove("menu-open"); }
+    if (menuBtn) menuBtn.addEventListener("click", function(){ document.body.classList.toggle("menu-open"); });
+    if (menuOverlay) menuOverlay.addEventListener("click", closeMenu);
+    document.addEventListener("keydown", function(e){ if(e.key === "Escape") closeMenu(); });
+    loadTimers();
+    setInterval(function(){ if (allTimers.some(isRunning)) renderData(); }, 60000);
+  });
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/universal-crew-app/service-worker.js');
+  }
+</script>
+</body>
+</html>
