@@ -914,7 +914,7 @@
 
     const TIME_LOG_SHEET_ID = "1gm39kMipfpLKS2n8g9F4SYG9Do36M_5Lc6GOs-c6jCM";
     const JOBS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxryknrt9pwA_lvmxbSs3Ww1KjIA3kbKkZwhGAD65dYhF_XF--bc8k0NvNiGFpSRuk/exec";
-    const JOB_TIMER_WEBAPP_URL = "https://script.google.com/macros/s/AKfycby0_MMZuC--jxXhooKsbU5yoy3cSdKrPOo2zkLZgjfF6nZx90-1RWrmubk5Amy9mcSy/exec";
+    const JOB_TIMER_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxOegSJyWw4JCH8B0u3ewgzu5v0XT4nOTwj0eNu0aZg5hhPrXVZ1z1S0vgYmX2mBk_h/exec";
     const EMPLOYEE_NAME = "Michael";
 function parseGvizResponse(textResp) {
       // Google Visualization responses wrap JSON; parse robustly across browsers.
@@ -1654,7 +1654,7 @@ function waitForClockState(expectedState, triesLeft) {
     }
 
     function loadJobTimers() {
-      return jsonp(JOB_TIMER_WEBAPP_URL, { action: "getJobTimers", employee: EMPLOYEE_NAME }, 20000)
+      return jsonp(JOB_TIMER_WEBAPP_URL, { action: "getJobTimers" }, 20000)
         .then(function(res) {
           jobTimerCache = {};
           (res.timers || []).forEach(function(t) {

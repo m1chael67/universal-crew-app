@@ -65,7 +65,7 @@
   </div>
 
 <script>
-  const JOB_TIMER_WEBAPP_URL = "https://script.google.com/macros/s/AKfycby0_MMZuC--jxXhooKsbU5yoy3cSdKrPOo2zkLZgjfF6nZx90-1RWrmubk5Amy9mcSy/exec";
+  const JOB_TIMER_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxOegSJyWw4JCH8B0u3ewgzu5v0XT4nOTwj0eNu0aZg5hhPrXVZ1z1S0vgYmX2mBk_h/exec";
   const JOBS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxryknrt9pwA_lvmxbSs3Ww1KjIA3kbKkZwhGAD65dYhF_XF--bc8k0NvNiGFpSRuk/exec";
   let allTimers = [];
   let allJobs = [];
@@ -165,6 +165,7 @@
 
   function getJobBaseId(job) {
     if (!job) return "job";
+    if (job.JobBaseId) return job.JobBaseId;
     var parts = [job.Name, job.Address, dateKey(job.SetupDate), dateKey(job.StrikeDate)];
     return parts.map(slugifyJobPart).filter(Boolean).join("_") || "job";
   }
