@@ -1725,6 +1725,10 @@ function waitForClockState(expectedState, triesLeft) {
         });
       }
 
+      // Apply the All / Pickups-Returns / Setups-Deliveries-Strikes filter after
+      // date filtering, because the displayed type can change by selected day.
+      jobsArray = jobsArray.filter(jobPassesTypeFilter);
+
       jobsArray.sort(function(a, b) {
         var da = getDisplayDateForJob(a) ? getDisplayDateForJob(a).getTime() : 0;
         var db = getDisplayDateForJob(b) ? getDisplayDateForJob(b).getTime() : 0;
@@ -1735,9 +1739,10 @@ function waitForClockState(expectedState, triesLeft) {
       updateCalendarFilterChip();
 
       if (!jobsArray.length) {
+        var filterMsg = activeJobTypeFilter && activeJobTypeFilter !== "all" ? " for this filter" : "";
         list.textContent = selectedCalendarDate
-          ? ("No jobs for " + formatCalendarDateLabel(selectedCalendarDate) + ".")
-          : (isTodayOnlyEnabled() ? "No jobs for today." : "No jobs scheduled.");
+          ? ("No jobs" + filterMsg + " for " + formatCalendarDateLabel(selectedCalendarDate) + ".")
+          : (isTodayOnlyEnabled() ? ("No jobs" + filterMsg + " for today.") : ("No jobs" + filterMsg + " scheduled."));
         return;
       }
 
