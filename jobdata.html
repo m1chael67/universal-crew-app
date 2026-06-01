@@ -53,8 +53,7 @@
       <button type="button" class="filter-btn active" data-filter="all">All</button>
       <button type="button" class="filter-btn" data-filter="running">In Progress</button>
       <button type="button" class="filter-btn" data-filter="complete">Completed</button>
-      <button type="button" class="filter-btn" data-filter="setup">Set-Ups</button>
-      <button type="button" class="filter-btn" data-filter="strike">Strikes</button>
+      <button type="button" class="filter-btn" id="expand-all-inventory" data-expanded="false">Expand All Inventory</button>
     </div>
     <div class="summary-grid">
       <div class="summary-card"><div class="summary-label">Completed</div><div id="completed-count" class="summary-value">0</div></div>
@@ -464,11 +463,31 @@
       var arrow = btn.querySelector("span:last-child");
       if (arrow) arrow.textContent = panel.classList.contains("open") ? "▴" : "▾";
     });
-    document.querySelectorAll(".filter-btn").forEach(function(btn){
+    var expandAllBtn = document.getElementById("expand-all-inventory");
+    if (expandAllBtn) {
+      expandAllBtn.addEventListener("click", function(){
+        var shouldExpand = this.getAttribute("data-expanded") !== "true";
+        document.querySelectorAll(".inventory-panel").forEach(function(panel){
+          panel.classList.toggle("open", shouldExpand);
+        });
+        document.querySelectorAll(".inventory-toggle").forEach(function(btn){
+          var arrow = btn.querySelector("span:last-child");
+          if (arrow) arrow.textContent = shouldExpand ? "▴" : "▾";
+        });
+        this.setAttribute("data-expanded", shouldExpand ? "true" : "false");
+        this.textContent = shouldExpand ? "Collapse All Inventory" : "Expand All Inventory";
+      });
+    }
+
+    document.querySelectorAll(".filter-btn[data-filter]").forEach(function(btn){
       btn.addEventListener("click", function(){
         activeFilter = this.dataset.filter || "all";
-        document.querySelectorAll(".filter-btn").forEach(function(b){ b.classList.toggle("active", b === btn); });
+        document.querySelectorAll(".filter-btn[data-filter]").forEach(function(b){ b.classList.toggle("active", b === btn); });
         renderData();
+        if (expandAllBtn) {
+          expandAllBtn.setAttribute("data-expanded", "false");
+          expandAllBtn.textContent = "Expand All Inventory";
+        }
       });
     });
     var menuBtn = document.getElementById("menuBtn");
