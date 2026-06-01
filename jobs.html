@@ -748,6 +748,36 @@
 
 
 
+/* ===== JOB TYPE FILTER ===== */
+.job-type-filter{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:6px;
+  border-radius:999px;
+  background:#fff;
+  border:1px solid #e2e2e2;
+  box-shadow:0 6px 16px rgba(0,0,0,0.08);
+}
+.job-filter-btn{
+  border:none;
+  background:transparent;
+  color:#222;
+  border-radius:999px;
+  padding:8px 11px;
+  font-size:12px;
+  font-weight:900;
+  cursor:pointer;
+  white-space:nowrap;
+}
+.job-filter-btn.active{
+  background:#111;
+  color:#fff;
+}
+@media (max-width:640px){
+  .job-type-filter{width:100%;justify-content:center;flex-wrap:wrap;border-radius:18px;}
+}
+
 /* ===== SETUP / STRIKE TIMER CONTROLS ===== */
 .job-timer-panel{border-top:1px solid #ededed;margin-top:12px;padding-top:12px;display:grid;gap:8px;}
 .job-timer-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid #eeeeee;background:#fafafa;border-radius:14px;flex-wrap:wrap;}
@@ -772,6 +802,7 @@
     <h2>Menu</h2>
     <a id="adminLink" href="admin.html?from=jobs.html">Admin</a>
     <a id="editJobsLink" href="jobedit.html?from=jobs.html">Edit Jobs</a>
+    <a id="jobDataLink" href="jobdata.html?from=jobs.html">Job Data</a>
     <a id="tentsLink" href="tent.html?from=jobs.html">Tents</a>
     <a id="propaneLink" href="propane.html?from=jobs.html">Propane</a>
     <a id="hoursBalanceLink" href="hoursbalance.html?from=jobs.html">Hours Balance</a>
@@ -820,6 +851,11 @@
     <div id="current-date-chip" class="today-chip"></div>
     <div class="jobs-toolbar">
       <label class="toggle-chip"><input type="checkbox" id="today-only-toggle"> Today Only</label>
+      <div class="job-type-filter" aria-label="Job type filter">
+        <button type="button" class="job-filter-btn active" data-job-filter="all">All</button>
+        <button type="button" class="job-filter-btn" data-job-filter="pickupreturn">Pickups/Returns</button>
+        <button type="button" class="job-filter-btn" data-job-filter="activework">Setups/Deliveries/Strikes</button>
+      </div>
     </div>
     <div class="clock-row">
       <button id="clock-toggle-btn" type="button" class="btn primary" disabled>Loading…</button>
@@ -1346,6 +1382,7 @@ function waitForClockState(expectedState, triesLeft) {
     }
 
     var selectedCalendarDate = null;
+    var activeJobTypeFilter = "all";
     var calendarMonthDate = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 
     function dateKey(d) {
@@ -1474,6 +1511,17 @@ function waitForClockState(expectedState, triesLeft) {
       var first = new Date(year, month, 1);
       var daysInMonth = new Date(year, month + 1, 0).getDate();
       var startDay = first.getDay();
+      var filterBtns = document.querySelectorAll(".job-filter-btn");
+      filterBtns.forEach(function(btn) {
+        if (btn.dataset.bound) return;
+        btn.dataset.bound = "1";
+        btn.addEventListener("click", function() {
+          activeJobTypeFilter = this.dataset.jobFilter || "all";
+          filterBtns.forEach(function(b) { b.classList.toggle("active", b === btn); });
+          renderJobsTodayOnly();
+        });
+      });
+
       var today = new Date();
       today = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
@@ -1633,6 +1681,22 @@ function waitForClockState(expectedState, triesLeft) {
         employee: EMPLOYEE_NAME,
         date: jobDate || ""
       }, 20000);
+    }
+
+
+    function getJobFilterTypeText(job) {
+      var display = getJobDisplayContext(job);
+      return String((display && display.type) || job.Type || job.OriginalType || "").toLowerCase();
+    }
+
+    function jobPassesTypeFilter(job) {
+      if (!activeJobTypeFilter || activeJobTypeFilter === "all") return true;
+      var t = getJobFilterTypeText(job);
+      var isPickupReturn = t.includes("pickup") || t.includes("pick-up") || t.includes("pick up") || t.includes("return");
+      var isSetupDeliveryStrike = t.includes("setup") || t.includes("set-up") || t.includes("set up") || t.includes("delivery") || t.includes("strike");
+      if (activeJobTypeFilter === "pickupreturn") return isPickupReturn;
+      if (activeJobTypeFilter === "activework") return isSetupDeliveryStrike;
+      return true;
     }
 
     function renderJobsTodayOnly() {
