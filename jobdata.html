@@ -24,6 +24,7 @@
     .data-toolbar{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;margin:0 0 14px 0;}.filter-btn{border:1px solid #e0e0e0;background:#fff;color:#111;border-radius:999px;padding:9px 13px;font-size:12px;font-weight:900;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.06);}.filter-btn.active{background:#111;color:#fff;border-color:#111;}
     .summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}.summary-card{background:#fff;border:1px solid #e6e6e6;border-radius:16px;padding:12px;box-shadow:0 6px 18px rgba(0,0,0,.06);}.summary-label{font-size:11px;font-weight:900;text-transform:uppercase;color:#666;letter-spacing:.3px;}.summary-value{font-size:22px;font-weight:900;margin-top:3px;}
     .data-card{background:#fff;border:1px solid #e7e7e7;border-radius:18px;padding:14px;margin:0 0 12px 0;box-shadow:0 7px 20px rgba(0,0,0,.07);border-left:5px solid #111;}.data-card.running{border-left-color:#f59e0b;}.data-card.complete{border-left-color:#1b7f35;}.data-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:10px;}.data-head h2{margin:0;font-size:21px;line-height:1.1;}.status-pill{display:inline-flex;align-items:center;border-radius:999px;padding:6px 10px;font-size:11px;font-weight:900;text-transform:uppercase;background:#f4f4f4;color:#111;white-space:nowrap;}.status-pill.running{background:#fff3d5;color:#7a4b00;}.status-pill.complete{background:#eaf8ee;color:#1b7f35;}.meta-grid{display:grid;gap:7px;background:#fafafa;border:1px solid #f0f0f0;border-radius:14px;padding:11px;}.meta-row{font-size:14px;line-height:1.35;}.meta-row strong{color:#111;}.empty-state{text-align:center;background:#fff;border:1px solid #e6e6e6;border-radius:18px;padding:24px;font-weight:800;color:#444;}.small-note{text-align:center;color:#666;font-size:12px;margin-top:-4px;margin-bottom:12px;}
+    .inventory-toggle{margin-top:10px;width:100%;border:1px solid #e0e0e0;background:#fff;border-radius:14px;padding:10px 12px;font-size:13px;font-weight:900;cursor:pointer;text-align:left;display:flex;justify-content:space-between;align-items:center;gap:10px;}.inventory-toggle:hover{background:#f7f7f7;}.inventory-panel{display:none;margin-top:8px;border:1px solid #eeeeee;background:#fcfcfc;border-radius:14px;padding:11px;}.inventory-panel.open{display:block;}.inventory-panel h3{margin:0 0 9px 0;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:.25px;}.inventory-list{list-style:none;margin:0;padding:0;display:grid;gap:7px;}.inventory-list li{font-size:14px;line-height:1.35;border-top:1px solid #eeeeee;padding-top:7px;}.inventory-list li:first-child{border-top:none;padding-top:0;}.inventory-note{display:block;color:#c62828;font-weight:700;margin-top:2px;}.inventory-missing{font-size:13px;color:#666;font-weight:700;}
     @media(max-width:640px){.container{padding:12px;}.summary-grid{grid-template-columns:1fr;}.data-head{flex-direction:column;}.page-title-row{grid-template-columns:42px 1fr 42px;}.data-head h2{font-size:19px;}}
   </style>
 </head>
@@ -65,7 +66,9 @@
 
 <script>
   const JOB_TIMER_WEBAPP_URL = "https://script.google.com/macros/s/AKfycby0_MMZuC--jxXhooKsbU5yoy3cSdKrPOo2zkLZgjfF6nZx90-1RWrmubk5Amy9mcSy/exec";
+  const JOBS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxryknrt9pwA_lvmxbSs3Ww1KjIA3kbKkZwhGAD65dYhF_XF--bc8k0NvNiGFpSRuk/exec";
   let allTimers = [];
+  let allJobs = [];
   let activeFilter = "all";
 
   function jsonp(url, params, timeoutMs) {
@@ -125,6 +128,105 @@
   function isRunning(t) { return !isComplete(t) && String(t.action || "").toUpperCase() === "START"; }
   function typeText(t) { return String(t.type || ""); }
 
+  function sameDay(a, b) {
+    return a && b && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  }
+
+  function parseUsDate(raw) {
+    if (!raw) return null;
+    if (raw instanceof Date) return new Date(raw.getFullYear(), raw.getMonth(), raw.getDate());
+    if (typeof raw === "string" && raw.indexOf("Date(") === 0) {
+      var m = raw.match(/Date\((\d+),(\d+),(\d+)\)/);
+      if (m) return new Date(parseInt(m[1],10), parseInt(m[2],10), parseInt(m[3],10));
+    }
+    var s = String(raw).trim();
+    var m2 = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+    if (m2) {
+      var mm = parseInt(m2[1],10), dd = parseInt(m2[2],10), yy = parseInt(m2[3],10);
+      if (yy < 100) yy += 2000;
+      return new Date(yy, mm - 1, dd);
+    }
+    var t = Date.parse(s);
+    if (!isNaN(t)) {
+      var d = new Date(t);
+      return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    }
+    return null;
+  }
+
+  function dateKey(d) {
+    if (!d) return "";
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+
+  function slugifyJobPart(value) {
+    return String(value || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60);
+  }
+
+  function getJobBaseId(job) {
+    if (!job) return "job";
+    var parts = [job.Name, job.Address, dateKey(job.SetupDate), dateKey(job.StrikeDate)];
+    return parts.map(slugifyJobPart).filter(Boolean).join("_") || "job";
+  }
+
+  function normalizeJobs(rawJobs) {
+    return (rawJobs || []).map(function(job) {
+      return {
+        Name: job.jobName || job.Name || "",
+        SetupDate: parseUsDate(job.startDate || job.SetupDate || ""),
+        StrikeDate: parseUsDate(job.strikeDate || job.StrikeDate || ""),
+        Type: job.type || job.Type || "",
+        Address: job.address || job.Address || "",
+        Phone: job.phone || job.Phone || "",
+        Notes: job.notes || job.Notes || "",
+        employees: job.employees || [],
+        inventory: job.inventory || []
+      };
+    });
+  }
+
+  function findJobForTimer(timer) {
+    var timerId = String(timer.jobId || "");
+    var timerDate = parseUsDate(timer.date || "");
+    var byId = allJobs.find(function(job) {
+      return timerId.indexOf(getJobBaseId(job)) === 0;
+    });
+    if (byId) return byId;
+
+    var timerName = String(timer.jobName || "").trim().toLowerCase();
+    return allJobs.find(function(job) {
+      var sameName = timerName && String(job.Name || "").trim().toLowerCase() === timerName;
+      var sameDate = !timerDate || (job.SetupDate && sameDay(job.SetupDate, timerDate)) || (job.StrikeDate && sameDay(job.StrikeDate, timerDate));
+      return sameName && sameDate;
+    }) || null;
+  }
+
+  function inventoryHtmlForTimer(timer, index) {
+    var job = findJobForTimer(timer);
+    var panelId = "inventory-panel-" + index;
+    var count = job && job.inventory ? job.inventory.length : 0;
+    var buttonLabel = count ? ("Show Inventory (" + count + ")") : "Show Inventory";
+    var itemsHtml = "";
+
+    if (job && count) {
+      itemsHtml = '<ul class="inventory-list">' + job.inventory.map(function(item) {
+        var name = item.inventory || item.item || item.name || "";
+        var qty = item.quantity || item.qty || "";
+        var note = item.note || item.notes || "";
+        return '<li><strong>' + escapeHtml(name || "Item") + '</strong>'
+          + (qty ? ' × ' + escapeHtml(qty) : '')
+          + (note ? '<span class="inventory-note">' + escapeHtml(note) + '</span>' : '')
+          + '</li>';
+      }).join('') + '</ul>';
+    } else {
+      itemsHtml = '<div class="inventory-missing">Inventory not found for this timer. This usually means the job name/date changed after it was timed.</div>';
+    }
+
+    return ''
+      + '<button type="button" class="inventory-toggle" data-target="' + panelId + '"><span>' + buttonLabel + '</span><span>▾</span></button>'
+      + '<div id="' + panelId + '" class="inventory-panel"><h3>Job Inventory</h3>' + itemsHtml + '</div>';
+  }
+
   function timerPassesFilter(t) {
     var type = typeText(t).toLowerCase();
     if (activeFilter === "all") return true;
@@ -157,7 +259,7 @@
       list.innerHTML = '<div class="empty-state">No timed jobs found for this filter.</div>';
       return;
     }
-    list.innerHTML = timers.map(function(t){
+    list.innerHTML = timers.map(function(t, index){
       var complete = isComplete(t);
       var running = isRunning(t);
       var status = complete ? "Completed" : (running ? "In Progress" : "Started");
@@ -175,6 +277,7 @@
         +     '<div class="meta-row"><strong>Time:</strong> ' + escapeHtml(duration) + '</div>'
         +     '<div class="meta-row"><strong>Job ID:</strong> ' + escapeHtml(t.jobId || "—") + '</div>'
         +   '</div>'
+        +   inventoryHtmlForTimer(t, index)
         + '</div>';
     }).join('');
   }
@@ -191,10 +294,16 @@
   function loadTimers() {
     var list = document.getElementById("data-list");
     list.textContent = "Loading...";
-    jsonp(JOB_TIMER_WEBAPP_URL, { action: "getJobTimers" }, 20000)
-      .then(function(res){
-        if (!res || res.success === false) throw new Error((res && res.error) ? res.error : "Failed to load job data.");
-        allTimers = res.timers || [];
+    Promise.all([
+      jsonp(JOB_TIMER_WEBAPP_URL, { action: "getJobTimers" }, 20000),
+      jsonp(JOBS_WEBAPP_URL, { action: "listJobs" }, 20000).catch(function(err){ console.warn("Jobs feed failed", err); return { jobs: [] }; })
+    ])
+      .then(function(results){
+        var timerRes = results[0];
+        var jobsRes = results[1];
+        if (!timerRes || timerRes.success === false) throw new Error((timerRes && timerRes.error) ? timerRes.error : "Failed to load job data.");
+        allTimers = timerRes.timers || [];
+        allJobs = normalizeJobs(jobsRes.jobs || []);
         renderData();
       })
       .catch(function(err){
@@ -206,6 +315,16 @@
   document.addEventListener("DOMContentLoaded", function(){
     document.getElementById("back-btn").addEventListener("click", function(){ window.location.href = "jobs.html"; });
     document.getElementById("refresh-btn").addEventListener("click", loadTimers);
+    document.getElementById("data-list").addEventListener("click", function(e){
+      var btn = e.target.closest ? e.target.closest(".inventory-toggle") : null;
+      if (!btn) return;
+      var id = btn.getAttribute("data-target");
+      var panel = id ? document.getElementById(id) : null;
+      if (!panel) return;
+      panel.classList.toggle("open");
+      var arrow = btn.querySelector("span:last-child");
+      if (arrow) arrow.textContent = panel.classList.contains("open") ? "▴" : "▾";
+    });
     document.querySelectorAll(".filter-btn").forEach(function(btn){
       btn.addEventListener("click", function(){
         activeFilter = this.dataset.filter || "all";
