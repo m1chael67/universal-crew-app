@@ -697,56 +697,6 @@
 }
 
 
-/* ===== MICHAEL ADMIN / EDIT JOBS PANEL ===== */
-.edit-jobs-overlay{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.26);
-  display:none;
-  z-index:1200;
-}
-.edit-jobs-overlay.show{display:block;}
-.edit-jobs-panel{
-  position:fixed;
-  top:0;
-  right:0;
-  width:min(980px,100%);
-  height:100%;
-  background:#fff;
-  box-shadow:-14px 0 34px rgba(0,0,0,.22);
-  transform:translateX(105%);
-  transition:transform .22s ease;
-  z-index:1201;
-  display:flex;
-  flex-direction:column;
-}
-.edit-jobs-panel.open{transform:translateX(0);}
-.edit-jobs-head{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:12px;
-  padding:14px 16px;
-  border-bottom:1px solid #e6e6e6;
-  background:#fff;
-}
-.edit-jobs-head h2{
-  margin:0;
-  font-size:20px;
-  letter-spacing:-.2px;
-}
-.edit-jobs-frame{
-  flex:1;
-  width:100%;
-  border:0;
-  background:#f5f5f5;
-}
-@media (max-width:640px){
-  .edit-jobs-head{padding:12px;}
-  .edit-jobs-head h2{font-size:18px;}
-}
-
-
 
 /* ===== JOB TYPE FILTER ===== */
 .job-type-filter{
@@ -858,18 +808,7 @@
 </div>
     <div id="job-list">Loading...</div>
   </div>
-
-  <div id="editJobsOverlay" class="edit-jobs-overlay"></div>
-  <aside id="editJobsPanel" class="edit-jobs-panel" aria-label="Edit Jobs">
-    <div class="edit-jobs-head">
-      <h2>Edit Jobs</h2>
-      <button id="closeEditJobsBtn" type="button" class="btn">Close</button>
-    </div>
-    <iframe id="editJobsFrame" class="edit-jobs-frame" title="Edit Jobs"></iframe>
-  </aside>
-
-
-  <script>
+<script>
     // Pay period helper: 14-day Saturday–Friday periods anchored at 2025-11-01
     function getPayPeriodInfo(date) {
       // 14-day pay periods: Saturday -> Friday, anchored at Sat 2025-11-01.
@@ -2007,39 +1946,7 @@ function waitForClockState(expectedState, triesLeft) {
           if (!hoursBox.contains(e.target)) hoursBox.classList.remove("open");
         });
       }
-
-
-
-      function closeEditJobsPanel() {
-        var panel = document.getElementById("editJobsPanel");
-        var overlay = document.getElementById("editJobsOverlay");
-        if (panel) panel.classList.remove("open");
-        if (overlay) overlay.classList.remove("show");
-      }
-      function openEditJobsPanel() {
-        var panel = document.getElementById("editJobsPanel");
-        var overlay = document.getElementById("editJobsOverlay");
-        var frame = document.getElementById("editJobsFrame");
-        if (frame && !frame.getAttribute("src")) {
-          frame.setAttribute("src", "jobedit.html?from=2555266.html");
-        }
-        if (overlay) overlay.classList.add("show");
-        if (panel) panel.classList.add("open");
-      }
-      var editJobsLink = document.getElementById("editJobsLink");
-      var closeEditJobsBtn = document.getElementById("closeEditJobsBtn");
-      var editJobsOverlay = document.getElementById("editJobsOverlay");
-      if (editJobsLink) {
-        editJobsLink.addEventListener("click", function(e) {
-          e.preventDefault();
-          document.body.classList.remove("menu-open");
-          openEditJobsPanel();
-        });
-      }
-      if (closeEditJobsBtn) closeEditJobsBtn.addEventListener("click", closeEditJobsPanel);
-      if (editJobsOverlay) editJobsOverlay.addEventListener("click", closeEditJobsPanel);
-
-            var refreshBtn = document.getElementById("refresh-page-btn");
+var refreshBtn = document.getElementById("refresh-page-btn");
       if (refreshBtn) {
         refreshBtn.addEventListener("click", function(){ window.location.reload(); });
       }
@@ -2116,10 +2023,6 @@ function waitForClockState(expectedState, triesLeft) {
       document.addEventListener("keydown", function(e){
         if (e.key === "Escape") {
           closeMenu();
-          var panel = document.getElementById("editJobsPanel");
-          var overlay = document.getElementById("editJobsOverlay");
-          if (panel) panel.classList.remove("open");
-          if (overlay) overlay.classList.remove("show");
         }
       });
     })();
