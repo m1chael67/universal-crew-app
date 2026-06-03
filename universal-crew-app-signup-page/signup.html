@@ -110,9 +110,9 @@ body{
     <h1>Create Account</h1>
 
     <form id="signup-form" onsubmit="return handleSignup(event)">
-      <input type="text" id="name" placeholder="Your Name" required>
-      <input type="password" id="pin1" placeholder="Enter 4 Digit PIN" maxlength="4" required>
-      <input type="password" id="pin2" placeholder="Confirm PIN" maxlength="4" required>
+      <input type="text" id="name" placeholder="Full Name" required>
+      <input type="password" id="pin1" placeholder="Enter 4 Digit PIN" inputmode="numeric" pattern="\d{4}" minlength="4" maxlength="4" autocomplete="off" required>
+      <input type="password" id="pin2" placeholder="Confirm PIN" inputmode="numeric" pattern="\d{4}" minlength="4" maxlength="4" autocomplete="off" required>
       <button type="submit">Create Account</button>
     </form>
     <div id="signup-message" class="signup-message">
@@ -124,6 +124,19 @@ body{
 <script>
 let existingPins = null;
 const SIGNUP_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyqrPU59_lmnqLF9_ehLmH3g86kWc20QUmaZ4rqPXCOh9NGsS-IU-6C39QnJqGBsv2j/exec";
+
+function forceFourDigitPinInput(input) {
+  if (!input) return;
+  input.addEventListener("input", function() {
+    this.value = this.value.replace(/\D/g, "").slice(0, 4);
+  });
+  input.addEventListener("paste", function(e) {
+    e.preventDefault();
+    const pasted = (e.clipboardData || window.clipboardData).getData("text") || "";
+    this.value = pasted.replace(/\D/g, "").slice(0, 4);
+  });
+}
+
 
 function fetchExistingPins() {
 fetch("https://m1chael67.github.io/universal-crew-app/index.html")
@@ -149,7 +162,11 @@ console.error("Failed to fetch index.html for PIN check", err);
 });
 }
 
-document.addEventListener("DOMContentLoaded", fetchExistingPins);
+document.addEventListener("DOMContentLoaded", function() {
+  fetchExistingPins();
+  forceFourDigitPinInput(document.getElementById("pin1"));
+  forceFourDigitPinInput(document.getElementById("pin2"));
+});
 
 function handleSignup(e) {
 e.preventDefault();
@@ -158,13 +175,18 @@ const name = document.getElementById('name').value;
 const pin1 = document.getElementById('pin1').value;
 const pin2 = document.getElementById('pin2').value;
 
+if (!/^\d{4}$/.test(pin1) || !/^\d{4}$/.test(pin2)) {
+alert("PIN must be 4 numbers.");
+return false;
+}
+
 if (pin1 !== pin2) {
 alert("PINs do not match.");
 return false;
 }
 
 if (existingPins && existingPins.indexOf(pin1) !== -1) {
-alert("That PIN is already in use.");
+alert("PIN unavailable.");
 return false;
 }
 
