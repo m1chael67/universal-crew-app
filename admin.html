@@ -389,7 +389,70 @@
 .global-side-menu a{display:block;padding:14px 12px;margin:10px 0;background:#f3f3f3;border-radius:14px;text-decoration:none;color:#111;font-weight:700;font-size:18px;}
 .global-side-menu a:hover{background:#eaeaea;}
 
-  </style>
+  
+/* ===== WIDE EMPLOYEE TABLE FIX ===== */
+.table-scroll{
+  width:100%;
+  overflow-x:auto;
+  overflow-y:hidden;
+  -webkit-overflow-scrolling:touch;
+}
+.history-table{
+  width:max-content !important;
+  min-width:100% !important;
+  table-layout:auto !important;
+  border-collapse:collapse;
+}
+.history-table th,
+.history-table td{
+  white-space:nowrap !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
+  min-width:92px;
+}
+.history-table th:first-child,
+.history-table td:first-child{
+  min-width:190px !important;
+  width:190px !important;
+  white-space:nowrap !important;
+  word-break:normal !important;
+}
+.history-table th:last-child,
+.history-table td:last-child{
+  min-width:90px;
+  font-weight:800;
+}
+@media (max-width: 640px){
+  .history-table th,
+  .history-table td{
+    min-width:88px;
+    padding:8px 8px;
+    font-size:13px;
+  }
+  .history-table th:first-child,
+  .history-table td:first-child{
+    min-width:170px !important;
+    width:170px !important;
+  }
+}
+
+  
+/* Employee divider cleanup */
+.history-table th,
+.history-table td{
+  border-right:1px solid #d9d9d9 !important;
+  text-align:center !important;
+}
+.history-table th:first-child,
+.history-table td:first-child{
+  text-align:left !important;
+}
+.history-table th:last-child,
+.history-table td:last-child{
+  border-right:none !important;
+}
+
+</style>
 </head>
 
 <body>
@@ -514,6 +577,17 @@
     const TIME_LOG_SHEET_ID = "1gm39kMipfpLKS2n8g9F4SYG9Do36M_5Lc6GOs-c6jCM";
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwDMoZjhy2IHA0PFEqSwd79cOteIBX-QhIVjLh8pXHnzm6frGjoO1FkS9_xrdIQh8M/exec";
     const EMPLOYEES = ["Michael", "Alan", "Joe", "Jeff", "Salim", "Ben Winograd", "Benjamin Kruger", "Ethan Cohen", "Jake Winograd"];
+    const EMPLOYEE_PAGES = {
+      "Michael": "64445533.html",
+      "Alan": "2555266.html",
+      "Joe": "566633.html",
+      "Jeff": "533333.html",
+      "Salim": "7777255546.html",
+      "Ben Winograd": "ben_winograd.html",
+      "Benjamin Kruger": "benjamin_kruger.html",
+      "Ethan Cohen": "ethan_cohen.html",
+      "Jake Winograd": "jake_winograd.html"
+    };
 
     // --- Pay period logic (unchanged) ---
     function getPayPeriodInfo(date) {
@@ -896,12 +970,8 @@ var now = new Date();
 
         row.addEventListener("click", function(e) {
           if (e.target && e.target.tagName && e.target.tagName.toLowerCase() === "button") return;
-
-          if (emp === "Michael") window.location.href = "64445533.html";
-          if (emp === "Alan")    window.location.href = "2555266.html";
-          if (emp === "Joe")     window.location.href = "566633.html";
-          if (emp === "Jeff")    window.location.href = "533333.html";
-          if (emp === "Salim")   window.location.href = "7777255546.html";
+          var page = EMPLOYEE_PAGES[emp];
+          if (page) window.location.href = page;
         });
 
         var left = document.createElement("div");
