@@ -739,23 +739,13 @@
 .job-timer-btn:disabled{opacity:.6;cursor:not-allowed;}
 @media (max-width:640px){.job-timer-row{align-items:flex-start;}}
 
+
+/* ===== NEW EMPLOYEE NO HAMBURGER ===== */
+.menu-btn,.menu-overlay,.side-menu{display:none!important;}
 </style>
 </head>
 <body>
-  <button id="menuBtn" class="menu-btn" type="button" aria-label="Menu">
-    <div class="menu-icon" aria-hidden="true">
-      <span></span><span></span><span></span>
-    </div>
-  </button>
-  <div id="menuOverlay" class="menu-overlay" aria-hidden="true"></div>
-  <nav id="sideMenu" class="side-menu" aria-label="Menu">
-    <h2>Menu</h2>
-    <a id="jobDataLink" href="jobdata.html?from=benjamin_kruger.html">Job Data</a>
-    <a id="tentsLink" href="tent.html?from=benjamin_kruger.html">Tents</a>
-    <a id="propaneLink" href="propane.html?from=benjamin_kruger.html">Propane</a>
-  </nav>
-
-  <div class="top-bar hours-panel" style="position: fixed; top: 0; right: 0; padding: 0.5rem; font-size: 12px; z-index: 1000;">
+<div class="top-bar hours-panel" style="position: fixed; top: 0; right: 0; padding: 0.5rem; font-size: 12px; z-index: 1000;">
     <div id="hours-box" class="hours-box">
       <button id="hours-toggle" class="hours-toggle" type="button">
         Hours this period: <span id="hour-counter">0</span> <span class="hours-arrow">▼</span>
@@ -989,6 +979,7 @@ function parseSheetDateTime(cell) {
 
     const FILTER_EMPLOYEE = "Benjamin Kruger";
     const currentEmployee = "Benjamin Kruger";
+    const EMPLOYEE_ALIASES = ["Benjamin Kruger", "Benjamin"];
 
 // Clock in / out + send to Apps Script + email
 
@@ -1759,9 +1750,12 @@ function waitForClockState(expectedState, triesLeft) {
         .then(function(res) {
           var jobs = (res.jobs || []).filter(function(job) {
             var raw = job.employees || [];
-            var emps = Array.isArray(raw) ? raw : String(raw || "").split(",");
+            var emps = Array.isArray(raw) ? raw : String(raw || "").split(/[,;|]/);
             emps = emps.map(function(x){ return String(x || "").trim().toLowerCase(); }).filter(Boolean);
-            return emps.indexOf(String(FILTER_EMPLOYEE || "").trim().toLowerCase()) !== -1;
+            var wanted = (typeof EMPLOYEE_ALIASES !== "undefined" && EMPLOYEE_ALIASES.length ? EMPLOYEE_ALIASES : [FILTER_EMPLOYEE])
+              .map(function(x){ return String(x || "").trim().toLowerCase(); })
+              .filter(Boolean);
+            return wanted.some(function(name){ return emps.indexOf(name) !== -1; });
           });
 
           var jobsArray = jobs.map(function(job) {
