@@ -24,7 +24,7 @@
     .data-toolbar{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;margin:0 0 14px 0;}.filter-btn{border:1px solid #e0e0e0;background:#fff;color:#111;border-radius:999px;padding:9px 13px;font-size:12px;font-weight:900;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.06);}.filter-btn.active{background:#111;color:#fff;border-color:#111;}
     .summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}.summary-card{background:#fff;border:1px solid #e6e6e6;border-radius:16px;padding:12px;box-shadow:0 6px 18px rgba(0,0,0,.06);}.summary-label{font-size:11px;font-weight:900;text-transform:uppercase;color:#666;letter-spacing:.3px;}.summary-value{font-size:22px;font-weight:900;margin-top:3px;}
     .data-card{background:#fff;border:1px solid #e7e7e7;border-radius:18px;padding:14px;margin:0 0 12px 0;box-shadow:0 7px 20px rgba(0,0,0,.07);border-left:5px solid #111;}.data-card.running{border-left-color:#f59e0b;}.data-card.complete{border-left-color:#1b7f35;}.data-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:10px;}.data-head h2{margin:0;font-size:21px;line-height:1.1;}.status-pill{display:inline-flex;align-items:center;border-radius:999px;padding:6px 10px;font-size:11px;font-weight:900;text-transform:uppercase;background:#f4f4f4;color:#111;white-space:nowrap;}.status-pill.running{background:#fff3d5;color:#7a4b00;}.status-pill.complete{background:#eaf8ee;color:#1b7f35;}.meta-grid{display:grid;gap:7px;background:#fafafa;border:1px solid #f0f0f0;border-radius:14px;padding:11px;}.meta-row{font-size:14px;line-height:1.35;}.meta-row strong{color:#111;}.empty-state{text-align:center;background:#fff;border:1px solid #e6e6e6;border-radius:18px;padding:24px;font-weight:800;color:#444;}.small-note{text-align:center;color:#666;font-size:12px;margin-top:-4px;margin-bottom:12px;}
-    .inventory-toggle{margin-top:10px;width:100%;border:1px solid #e0e0e0;background:#fff;border-radius:14px;padding:10px 12px;font-size:13px;font-weight:900;cursor:pointer;text-align:left;display:flex;justify-content:space-between;align-items:center;gap:10px;}.inventory-toggle:hover{background:#f7f7f7;}.inventory-panel{display:none;margin-top:8px;border:1px solid #eeeeee;background:#fcfcfc;border-radius:14px;padding:11px;}.inventory-panel.open{display:block;}.inventory-panel h3{margin:0 0 9px 0;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:.25px;}.inventory-list{list-style:none;margin:0;padding:0;display:grid;gap:7px;}.inventory-list li{font-size:14px;line-height:1.35;border-top:1px solid #eeeeee;padding-top:7px;}.inventory-list li:first-child{border-top:none;padding-top:0;}.inventory-note{display:block;color:#c62828;font-weight:700;margin-top:2px;}.inventory-missing{font-size:13px;color:#666;font-weight:700;}.timer-stack{display:grid;gap:10px;margin-top:10px;}.timer-subcard{border:1px solid #eeeeee;background:#fafafa;border-radius:14px;padding:11px;}.timer-subcard.running{background:#fffaf0;border-color:#f2d49b;}.timer-subcard.complete{background:#f4fff7;border-color:#ccebd5;}.timer-subcard.empty{opacity:.78;}.timer-subhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;}.timer-subhead strong{font-size:13px;text-transform:uppercase;letter-spacing:.25px;}.timer-meta{background:#fff;}
+    .inventory-toggle{margin-top:10px;width:100%;border:1px solid #e0e0e0;background:#fff;border-radius:14px;padding:10px 12px;font-size:13px;font-weight:900;cursor:pointer;text-align:left;display:flex;justify-content:space-between;align-items:center;gap:10px;}.inventory-toggle:hover{background:#f7f7f7;}.inventory-panel{display:none;margin-top:8px;border:1px solid #eeeeee;background:#fcfcfc;border-radius:14px;padding:11px;}.inventory-panel.open{display:block;}.inventory-panel h3{margin:0 0 9px 0;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:.25px;}.inventory-list{list-style:none;margin:0;padding:0;display:grid;gap:7px;}.inventory-list li{font-size:14px;line-height:1.35;border-top:1px solid #eeeeee;padding-top:7px;}.inventory-list li:first-child{border-top:none;padding-top:0;}.inventory-note{display:block;color:#c62828;font-weight:700;margin-top:2px;}.inventory-missing{font-size:13px;color:#666;font-weight:700;}
     @media(max-width:640px){.container{padding:12px;}.summary-grid{grid-template-columns:1fr;}.data-head{flex-direction:column;}.page-title-row{grid-template-columns:42px 1fr 42px;}.data-head h2{font-size:19px;}}
   </style>
 </head>
@@ -53,7 +53,8 @@
       <button type="button" class="filter-btn active" data-filter="all">All</button>
       <button type="button" class="filter-btn" data-filter="running">In Progress</button>
       <button type="button" class="filter-btn" data-filter="complete">Completed</button>
-      <button type="button" class="filter-btn" id="expand-all-inventory" data-expanded="false">Expand All Inventory</button>
+      <button type="button" class="filter-btn" data-filter="setup">Set-Ups</button>
+      <button type="button" class="filter-btn" data-filter="strike">Strikes</button>
     </div>
     <div class="summary-grid">
       <div class="summary-card"><div class="summary-label">Completed</div><div id="completed-count" class="summary-value">0</div></div>
@@ -64,7 +65,7 @@
   </div>
 
 <script>
-  const JOB_TIMER_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxOegSJyWw4JCH8B0u3ewgzu5v0XT4nOTwj0eNu0aZg5hhPrXVZ1z1S0vgYmX2mBk_h/exec";
+  const JOB_TIMER_WEBAPP_URL = "https://script.google.com/macros/s/AKfycby0_MMZuC--jxXhooKsbU5yoy3cSdKrPOo2zkLZgjfF6nZx90-1RWrmubk5Amy9mcSy/exec";
   const JOBS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxryknrt9pwA_lvmxbSs3Ww1KjIA3kbKkZwhGAD65dYhF_XF--bc8k0NvNiGFpSRuk/exec";
   let allTimers = [];
   let allJobs = [];
@@ -164,7 +165,6 @@
 
   function getJobBaseId(job) {
     if (!job) return "job";
-    if (job.JobBaseId) return job.JobBaseId;
     var parts = [job.Name, job.Address, dateKey(job.SetupDate), dateKey(job.StrikeDate)];
     return parts.map(slugifyJobPart).filter(Boolean).join("_") || "job";
   }
@@ -276,146 +276,39 @@
     document.getElementById("total-minutes").textContent = totalMinutes;
   }
 
-  function getGroupKeyForTimer(timer) {
-    var job = findJobForTimer(timer);
-    if (job) return getJobBaseId(job);
-
-    var id = String(timer.jobId || "");
-    id = id.replace(/_(set-up|setup|strike)_\d{4}-\d{2}-\d{2}$/i, "");
-    if (id) return id;
-
-    return slugifyJobPart((timer.jobName || "job") + " " + (timer.date || ""));
-  }
-
-  function getBestTimer(timers, kind) {
-    var matches = timers.filter(function(t) {
-      var type = typeText(t).toLowerCase();
-      if (kind === "setup") return type.includes("set") || type.includes("setup");
-      if (kind === "strike") return type.includes("strike");
-      return false;
-    });
-
-    if (!matches.length) return null;
-
-    matches.sort(function(a, b) {
-      var ar = isRunning(a) ? 1 : 0;
-      var br = isRunning(b) ? 1 : 0;
-      if (ar !== br) return br - ar;
-
-      var ac = isComplete(a) ? 1 : 0;
-      var bc = isComplete(b) ? 1 : 0;
-      if (ac !== bc) return bc - ac;
-
+  function renderData() {
+    updateSummary();
+    var list = document.getElementById("data-list");
+    var timers = allTimers.filter(timerPassesFilter).slice();
+    timers.sort(function(a,b){
       var da = parseDate(a.startTime || a.timestamp);
       var db = parseDate(b.startTime || b.timestamp);
       return (db ? db.getTime() : 0) - (da ? da.getTime() : 0);
     });
-
-    return matches[0];
-  }
-
-  function timerLineHtml(label, timer) {
-    if (!timer) {
-      return ''
-        + '<div class="timer-subcard empty">'
-        +   '<div class="timer-subhead"><strong>' + escapeHtml(label) + '</strong><span class="status-pill">No Record</span></div>'
-        +   '<div class="meta-row">No timer recorded yet.</div>'
-        + '</div>';
-    }
-
-    var complete = isComplete(timer);
-    var running = isRunning(timer);
-    var status = complete ? "Completed" : (running ? "In Progress" : "Started");
-    var statusClass = complete ? "complete" : (running ? "running" : "");
-    var duration = complete ? (timer.formattedDuration || formatDuration(timer.durationMinutes)) : liveDuration(timer.startTime);
-
-    return ''
-      + '<div class="timer-subcard ' + statusClass + '">'
-      +   '<div class="timer-subhead"><strong>' + escapeHtml(label) + '</strong><span class="status-pill ' + statusClass + '">' + status + '</span></div>'
-      +   '<div class="meta-grid timer-meta">'
-      +     '<div class="meta-row"><strong>Pressed By:</strong> ' + escapeHtml(timer.employee || "—") + '</div>'
-      +     '<div class="meta-row"><strong>Start:</strong> ' + escapeHtml(formatDateTime(timer.startTime)) + '</div>'
-      +     '<div class="meta-row"><strong>Stop:</strong> ' + escapeHtml(formatDateTime(timer.stopTime)) + '</div>'
-      +     '<div class="meta-row"><strong>Time:</strong> ' + escapeHtml(duration) + '</div>'
-      +   '</div>'
-      + '</div>';
-  }
-
-  function buildGroupedRecords(timers) {
-    var groupsMap = {};
-
-    timers.forEach(function(timer) {
-      var key = getGroupKeyForTimer(timer);
-      if (!groupsMap[key]) {
-        var job = findJobForTimer(timer);
-        groupsMap[key] = {
-          key: key,
-          job: job,
-          jobName: (job && job.Name) || timer.jobName || "Unnamed Job",
-          date: timer.date || (job && (job.SetupDate || job.StrikeDate)) || "",
-          timers: []
-        };
-      }
-      groupsMap[key].timers.push(timer);
-    });
-
-    return Object.keys(groupsMap).map(function(key) {
-      var group = groupsMap[key];
-      group.setupTimer = getBestTimer(group.timers, "setup");
-      group.strikeTimer = getBestTimer(group.timers, "strike");
-      group.running = group.timers.some(isRunning);
-      group.complete = group.timers.length > 0 && group.timers.every(isComplete);
-      group.latestTime = group.timers.reduce(function(latest, t) {
-        var d = parseDate(t.startTime || t.timestamp);
-        return Math.max(latest, d ? d.getTime() : 0);
-      }, 0);
-      return group;
-    }).sort(function(a, b) {
-      return b.latestTime - a.latestTime;
-    });
-  }
-
-  function groupPassesFilter(group) {
-    if (activeFilter === "all") return true;
-    if (activeFilter === "running") return group.running;
-    if (activeFilter === "complete") return group.complete;
-    if (activeFilter === "setup") return !!group.setupTimer;
-    if (activeFilter === "strike") return !!group.strikeTimer;
-    return true;
-  }
-
-  function inventoryHtmlForGroup(group, index) {
-    var timer = group.setupTimer || group.strikeTimer || group.timers[0];
-    return inventoryHtmlForTimer(timer, index);
-  }
-
-  function renderData() {
-    updateSummary();
-    var list = document.getElementById("data-list");
-    var grouped = buildGroupedRecords(allTimers).filter(groupPassesFilter);
-
-    if (!grouped.length) {
+    if (!timers.length) {
       list.innerHTML = '<div class="empty-state">No timed jobs found for this filter.</div>';
       return;
     }
-
-    list.innerHTML = grouped.map(function(group, index) {
-      var status = group.running ? "In Progress" : (group.complete ? "Completed" : "Started");
-      var statusClass = group.running ? "running" : (group.complete ? "complete" : "");
-      var dateLabel = group.date ? formatDateOnly(group.date) : "—";
-
+    list.innerHTML = timers.map(function(t, index){
+      var complete = isComplete(t);
+      var running = isRunning(t);
+      var status = complete ? "Completed" : (running ? "In Progress" : "Started");
+      var statusClass = complete ? "complete" : (running ? "running" : "");
+      var duration = complete ? (t.formattedDuration || formatDuration(t.durationMinutes)) : liveDuration(t.startTime);
       return ''
         + '<div class="data-card ' + statusClass + '">'
-        +   '<div class="data-head">'
-        +     '<div><h2>' + escapeHtml(group.jobName || "Unnamed Job") + '</h2>'
-        +     '<div class="meta-row"><strong>Date:</strong> ' + escapeHtml(dateLabel) + '</div></div>'
-        +     '<span class="status-pill ' + statusClass + '">' + status + '</span>'
+        +   '<div class="data-head"><div><h2>' + escapeHtml(t.jobName || "Unnamed Job") + '</h2></div><span class="status-pill ' + statusClass + '">' + status + '</span></div>'
+        +   '<div class="meta-grid">'
+        +     '<div class="meta-row"><strong>Type:</strong> ' + escapeHtml(t.type || "—") + '</div>'
+        +     '<div class="meta-row"><strong>Employee:</strong> ' + escapeHtml(t.employee || "—") + '</div>'
+        +     '<div class="meta-row"><strong>Date:</strong> ' + escapeHtml(formatDateOnly(t.date)) + '</div>'
+        +     '<div class="meta-row"><strong>Start:</strong> ' + escapeHtml(formatDateTime(t.startTime)) + '</div>'
+        +     '<div class="meta-row"><strong>Stop:</strong> ' + escapeHtml(formatDateTime(t.stopTime)) + '</div>'
+        +     '<div class="meta-row"><strong>Time:</strong> ' + escapeHtml(duration) + '</div>'
+        +     '<div class="meta-row"><strong>Job ID:</strong> ' + escapeHtml(t.jobId || "—") + '</div>'
+        +     '<div class="meta-row"><strong>Notes:</strong> ' + escapeHtml(t.notes || t.Notes || "—") + '</div>'
         +   '</div>'
-        +   '<div class="timer-stack">'
-        +     timerLineHtml("Set-Up", group.setupTimer)
-        +     timerLineHtml("Strike", group.strikeTimer)
-        +   '</div>'
-        +   inventoryHtmlForGroup(group, index)
+        +   inventoryHtmlForTimer(t, index)
         + '</div>';
     }).join('');
   }
@@ -463,31 +356,11 @@
       var arrow = btn.querySelector("span:last-child");
       if (arrow) arrow.textContent = panel.classList.contains("open") ? "▴" : "▾";
     });
-    var expandAllBtn = document.getElementById("expand-all-inventory");
-    if (expandAllBtn) {
-      expandAllBtn.addEventListener("click", function(){
-        var shouldExpand = this.getAttribute("data-expanded") !== "true";
-        document.querySelectorAll(".inventory-panel").forEach(function(panel){
-          panel.classList.toggle("open", shouldExpand);
-        });
-        document.querySelectorAll(".inventory-toggle").forEach(function(btn){
-          var arrow = btn.querySelector("span:last-child");
-          if (arrow) arrow.textContent = shouldExpand ? "▴" : "▾";
-        });
-        this.setAttribute("data-expanded", shouldExpand ? "true" : "false");
-        this.textContent = shouldExpand ? "Collapse All Inventory" : "Expand All Inventory";
-      });
-    }
-
-    document.querySelectorAll(".filter-btn[data-filter]").forEach(function(btn){
+    document.querySelectorAll(".filter-btn").forEach(function(btn){
       btn.addEventListener("click", function(){
         activeFilter = this.dataset.filter || "all";
-        document.querySelectorAll(".filter-btn[data-filter]").forEach(function(b){ b.classList.toggle("active", b === btn); });
+        document.querySelectorAll(".filter-btn").forEach(function(b){ b.classList.toggle("active", b === btn); });
         renderData();
-        if (expandAllBtn) {
-          expandAllBtn.setAttribute("data-expanded", "false");
-          expandAllBtn.textContent = "Expand All Inventory";
-        }
       });
     });
     var menuBtn = document.getElementById("menuBtn");
