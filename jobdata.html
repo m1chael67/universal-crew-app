@@ -107,6 +107,24 @@
     return value || "—";
   }
 
+
+  function getDurationMinutes(timer) {
+    if (!timer) return 0;
+
+    var raw = timer.durationMinutes;
+    if (raw !== "" && raw !== null && typeof raw !== "undefined" && !isNaN(Number(raw))) {
+      return Number(raw);
+    }
+
+    var start = parseDate(timer.startTime);
+    var stop = parseDate(timer.stopTime);
+    if (start && stop) {
+      return Math.max(0, Math.round((stop.getTime() - start.getTime()) / 60000));
+    }
+
+    return 0;
+  }
+
   function formatDuration(minutes) {
     minutes = Number(minutes || 0);
     var hrs = Math.floor(minutes / 60);
@@ -270,7 +288,7 @@
   function updateSummary() {
     var completed = allTimers.filter(isComplete).length;
     var running = allTimers.filter(isRunning).length;
-    var totalMinutes = allTimers.reduce(function(sum, t){ return sum + (isComplete(t) ? Number(t.durationMinutes || 0) : 0); }, 0);
+    var totalMinutes = allTimers.reduce(function(sum, t){ return sum + (isComplete(t) ? getDurationMinutes(t) : 0); }, 0);
     document.getElementById("completed-count").textContent = completed;
     document.getElementById("running-count").textContent = running;
     document.getElementById("total-minutes").textContent = totalMinutes;
@@ -314,6 +332,7 @@
     return matches[0];
   }
 
+  // Duration display must stay tied to Duration Minutes or calculated Start/Stop time. Do not replace with Notes.
   function timerLineHtml(label, timer) {
     if (!timer) {
       return ''
@@ -327,7 +346,7 @@
     var running = isRunning(timer);
     var status = complete ? "Completed" : (running ? "In Progress" : "Started");
     var statusClass = complete ? "complete" : (running ? "running" : "");
-    var duration = complete ? (timer.formattedDuration || formatDuration(timer.durationMinutes)) : liveDuration(timer.startTime);
+    var duration = complete ? formatDuration(getDurationMinutes(timer)) : liveDuration(timer.startTime);
 
     return ''
       + '<div class="timer-subcard ' + statusClass + '">'
