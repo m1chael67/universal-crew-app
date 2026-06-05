@@ -356,6 +356,7 @@
       +     '<div class="meta-row"><strong>Start:</strong> ' + escapeHtml(formatDateTime(timer.startTime)) + '</div>'
       +     '<div class="meta-row"><strong>Stop:</strong> ' + escapeHtml(formatDateTime(timer.stopTime)) + '</div>'
       +     '<div class="meta-row"><strong>Time:</strong> ' + escapeHtml(duration) + '</div>'
+      +     ((timer.notes || timer.Notes || timer.note) ? '<div class="meta-row"><strong>Notes:</strong> ' + escapeHtml(timer.notes || timer.Notes || timer.note) + '</div>' : '')
       +   '</div>'
       + '</div>';
   }
