@@ -27,7 +27,7 @@
     <div class="small-note">Performance dashboard from JobTimers + UniversalToDo inventory.</div>
     <div class="toolbar"><button type="button" class="filter-btn active" data-range="all">All Time</button><button type="button" class="filter-btn" data-range="30">Last 30 Days</button><button type="button" class="filter-btn" data-range="90">Last 90 Days</button><select id="tent-filter" class="select-control"><option value="">All Tents</option></select><select id="tracker-filter" class="select-control"><option value="">All Crew</option></select><select id="difficulty-filter" class="select-control"><option value="">All Difficulty</option><option value="simple">Simple</option><option value="standard">Standard</option><option value="complex">Complex</option></select><select id="view-mode" class="select-control"><option value="tent">Tent Jobs</option><option value="non-tent">Non-Tent Jobs</option><option value="all">All Jobs</option></select></div>
 <div class="summary-grid"><div class="summary-card"><div class="summary-label">Timed Jobs</div><div id="timed-count" class="summary-value">0</div><div class="summary-sub">Grouped by job</div></div><div class="summary-card"><div class="summary-label">Avg Weighted Setup</div><div id="avg-setup" class="summary-value">—</div><div class="summary-sub">Adjusted tent-only estimate</div></div><div class="summary-card"><div class="summary-label">Avg Weighted Strike</div><div id="avg-strike" class="summary-value">—</div><div class="summary-sub">Adjusted tent-only estimate</div></div><div class="summary-card"><div class="summary-label">Fastest Tracker</div><div id="best-tracker" class="summary-value">—</div><div class="summary-sub" id="best-tracker-sub">By avg completed timer</div></div></div>
-    <div class="two-col"><section class="section"><h2>Tent Time Comparison</h2><div class="table-scroll"><table><thead><tr><th>Tent</th><th class="num">Jobs</th><th class="num">Raw Setup</th><th class="num">Adj Setup</th><th class="num">Raw Strike</th><th class="num">Clean Setup</th><th class="num">Trend</th></tr></thead><tbody id="tent-body"></tbody></table></div></section><section class="section"><h2>Crew Efficiency <span class="pill">Sample size matters</span></h2><div class="table-scroll"><table><thead><tr><th>Crew</th><th class="num">Timers</th><th class="num">Avg Time</th><th class="num">Setup Avg</th><th class="num">Strike Avg</th></tr></thead><tbody id="tracker-body"></tbody></table></div></section></div>
+    <div class="two-col"><section class="section"><h2><span id="comparison-title">Tent Time Comparison</span></h2><div class="table-scroll"><table><thead><tr><th>Tent</th><th class="num">Jobs</th><th class="num">Raw Setup</th><th class="num">Adj Setup</th><th class="num">Raw Strike</th><th class="num">Clean Setup</th><th class="num">Trend</th></tr></thead><tbody id="tent-body"></tbody></table></div></section><section class="section"><h2>Crew Efficiency <span class="pill">Button Pressers</span></h2><div class="table-scroll"><table><thead><tr><th>Pressed Button</th><th class="num">Timers</th><th class="num">Avg Time</th><th class="num">Setup Avg</th><th class="num">Strike Avg</th></tr></thead><tbody id="tracker-body"></tbody></table></div></section></div>
     <section class="section"><h2>Improvement Trend <span class="pill">Newest vs Previous</span></h2><div class="table-scroll"><table><thead><tr><th>Group</th><th class="num">Newest 5 Avg</th><th class="num">Previous 5 Avg</th><th class="num">Change</th><th>Direction</th></tr></thead><tbody id="trend-body"></tbody></table></div></section>
     <section class="section"><h2>Outlier Alerts</h2><div id="outlier-list"></div></section>
     <section class="section"><h2>Most Recent Timed Jobs</h2><div id="recent-list"></div></section>
@@ -357,7 +357,7 @@ function filtered(){
   var rec=allRecords.slice(),days=activeRange==="all"?0:Number(activeRange);
   if(days){var cutoff=Date.now()-days*86400000;rec=rec.filter(function(r){return r.latestTime>=cutoff;});}
   var tent=document.getElementById("tent-filter").value;if(tent)rec=rec.filter(function(r){return r.tents.indexOf(tent)!==-1;});
-  var tr=document.getElementById("tracker-filter").value;if(tr)rec=rec.filter(function(r){return r.timers.some(function(t){return parseCrewNames(t).indexOf(tr)!==-1;});});
+  var tr=document.getElementById("tracker-filter").value;if(tr)rec=rec.filter(function(r){return r.timers.some(function(t){return String(t.employee||"")===tr;});});
   var diffEl=document.getElementById("difficulty-filter");
   var diff=diffEl?diffEl.value:"";
   if(diff)rec=rec.filter(function(r){return r.difficultyBucket===diff;});
@@ -484,15 +484,14 @@ function trackerStats(records){
   var map={};
   records.forEach(function(r){
     r.timers.filter(isComplete).forEach(function(t){
-      var names=parseCrewNames(t),m=getMin(t);
+      var e=String(t.employee||"Unknown");
+      var m=getMin(t);
       if(!m)return;
-      names.forEach(function(e){
-        if(!map[e])map[e]={employee:e,all:[],setup:[],strike:[]};
-        map[e].all.push(m);
-        var type=typeText(t).toLowerCase();
-        if(type.includes("strike"))map[e].strike.push(m);
-        else if(type.includes("set")||type.includes("setup"))map[e].setup.push(m);
-      });
+      if(!map[e])map[e]={employee:e,all:[],setup:[],strike:[]};
+      map[e].all.push(m);
+      var type=typeText(t).toLowerCase();
+      if(type.includes("strike"))map[e].strike.push(m);
+      else if(type.includes("set")||type.includes("setup"))map[e].setup.push(m);
     });
   });
 
@@ -533,7 +532,7 @@ function render(){
     document.getElementById("best-tracker-sub").textContent="By avg completed timer";
   }
 
-  renderTent(records);renderTracker(records);renderTrend(records);renderOutliers(records);renderWeekly(records);renderRecent(records);renderRevenue(records);
+  renderTent(records);renderTracker(records);renderTrend(records);renderRevenueSummary(records);renderOutliers(records);renderWeekly(records);renderRecent(records);renderRevenue(records);
 }
 
 function referencedJobsHtml(stat){
@@ -546,7 +545,24 @@ function referencedJobsHtml(stat){
 }
 
 function renderTent(records){
-  var stats=tentStats(records),body=document.getElementById("tent-body");
+  var viewEl=document.getElementById("view-mode");
+  var view=viewEl?viewEl.value:"tent";
+  var title=document.getElementById("comparison-title");
+  if(title) title.textContent = view==="non-tent" ? "Non-Tent Job Comparison" : "Tent Time Comparison";
+
+  var body=document.getElementById("tent-body");
+
+  if(view==="non-tent"){
+    if(!records.length){body.innerHTML='<tr><td colspan="8">No non-tent job data found.</td></tr>';return;}
+    var rows=records.slice().sort(function(a,b){return b.latestTime-a.latestTime;}).map(function(r){
+      var revHr=(r.totalManHours&&r.jobPrice)?(r.jobPrice/r.totalManHours):0;
+      return '<tr><td><strong>'+esc(r.jobName)+'</strong></td><td class="num">1</td><td class="num">'+(r.setupMinutes?fmtMin(Math.round(r.setupMinutes)):"—")+'</td><td class="num">'+(r.strikeMinutes?fmtMin(Math.round(r.strikeMinutes)):"—")+'</td><td class="num">'+(r.totalManHours?r.totalManHours.toFixed(2):"—")+'</td><td class="num">'+(r.jobPrice?moneyFmt(r.jobPrice):"—")+'</td><td class="num">'+(revHr?moneyFmt(revHr):"—")+'</td><td class="num"><span class="pill">Diff '+r.difficulty+'</span></td></tr>';
+    }).join("");
+    body.innerHTML=rows;
+    return;
+  }
+
+  var stats=tentStats(records);
   if(!stats.length){body.innerHTML='<tr><td colspan="8">No tent data found.</td></tr>';return}
   body.innerHTML=stats.map(function(s,idx){
     var trend=s.setupTrend?((s.setupTrend>0?"+":"-")+fmtMin(Math.round(Math.abs(s.setupTrend)))):"—";
@@ -555,6 +571,7 @@ function renderTent(records){
       + '<tr class="tent-jobs-detail" id="tent-detail-'+idx+'" style="display:none;"><td colspan="8">'+referencedJobsHtml(s)+'</td></tr>';
   }).join("")
 }
+
 function renderTracker(records){
   var stats=trackerStats(records),body=document.getElementById("tracker-body");
   if(!stats.length){body.innerHTML='<tr><td colspan="5">No completed timer data found.</td></tr>';return;}
@@ -587,6 +604,30 @@ function renderTrend(records){
     (strikeRows || '<tr><td colspan="5">Not enough strike trend data.</td></tr>');
 }
 function alertHtml(r,label,detail,cls){return '<div class="job-card"><div class="job-head"><h3>'+esc(r.jobName)+'</h3><span class="pill '+cls+'">'+esc(label)+'</span></div><div class="meta"><div><strong>Date:</strong> '+esc(fmtDate(r.date))+'</div><div><strong>Detail:</strong> '+esc(detail)+'</div><div><strong>Tents:</strong> '+esc(r.tents.join(", ")||"—")+'</div></div></div>';}
+
+
+function renderRevenueSummary(records){
+  var body=document.getElementById("revenue-summary-body");
+  if(!body)return;
+  var map={};
+  records.forEach(function(r){
+    var key;
+    if(revenueRange==="month") key=monthKey(r.date);
+    else if(revenueRange==="all") key="All Time";
+    else key=weekStart(r.date);
+    if(!key)return;
+    if(!map[key])map[key]={period:key,jobs:0,revenue:0,setupHrs:0,strikeHrs:0};
+    map[key].jobs+=1;
+    map[key].revenue+=r.jobPrice||0;
+    map[key].setupHrs+=r.setupManHours||0;
+    map[key].strikeHrs+=r.strikeManHours||0;
+  });
+  var rows=Object.keys(map).sort().reverse().map(function(k){
+    var w=map[k], total=w.setupHrs+w.strikeHrs, rpmh=total?w.revenue/total:0;
+    return '<tr><td><strong>'+esc(w.period)+'</strong></td><td class="num">'+w.jobs+'</td><td class="num">'+moneyFmt(w.revenue)+'</td><td class="num">'+total.toFixed(2)+'</td><td class="num">'+(rpmh?moneyFmt(rpmh):"—")+'</td><td class="num">'+w.setupHrs.toFixed(2)+'</td><td class="num">'+w.strikeHrs.toFixed(2)+'</td></tr>';
+  }).join("");
+  body.innerHTML=rows||'<tr><td colspan="7">No revenue/man-hour data yet.</td></tr>';
+}
 
 function renderOutliers(records){var allocs=allAllocations(records),cut=outlierCut(allocs.map(function(a){return a.adjustedSetup;})),out=allocs.filter(function(a){return a.adjustedSetup>cut;}).sort(function(a,b){return b.adjustedSetup-a.adjustedSetup;}).slice(0,8),running=records.flatMap(function(r){return r.timers.filter(isRunning).map(function(t){return{record:r,timer:t};});}).slice(0,6),miss=records.filter(function(r){return !r.inventory||!r.inventory.length;}).slice(0,6),html="";html+=out.map(function(a){return alertHtml(a.record,"Long Adjusted Setup",a.tent+" estimated at "+fmtMin(a.adjustedSetup),"bad");}).join("");html+=running.map(function(x){return alertHtml(x.record,"In Progress",typeText(x.timer)+" still running","warn");}).join("");html+=miss.map(function(r){return alertHtml(r,"Missing Inventory","Could not match this timer to inventory.","warn");}).join("");document.getElementById("outlier-list").innerHTML=html||'<div class="empty">No outliers found for this filter.</div>';}
 
