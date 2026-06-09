@@ -25,9 +25,9 @@
   <div class="container">
     <div class="page-title-row"><button id="back-btn" class="icon-action" type="button" aria-label="Back" title="Back">‹</button><h1>Job Scorecard</h1><button id="refresh-btn" class="icon-action" type="button" aria-label="Refresh" title="Refresh">↻</button></div>
     <div class="small-note">Performance dashboard from JobTimers + UniversalToDo inventory.</div>
-    <div class="toolbar"><button type="button" class="filter-btn active" data-range="all">All Time</button><button type="button" class="filter-btn" data-range="30">Last 30 Days</button><button type="button" class="filter-btn" data-range="90">Last 90 Days</button><select id="tent-filter" class="select-control"><option value="">All Tents</option></select><select id="tracker-filter" class="select-control"><option value="">All Button Pressers</option></select><select id="difficulty-filter" class="select-control"><option value="">All Difficulty</option><option value="simple">Simple</option><option value="standard">Standard</option><option value="complex">Complex</option></select></div>
+    <div class="toolbar"><button type="button" class="filter-btn active" data-range="all">All Time</button><button type="button" class="filter-btn" data-range="30">Last 30 Days</button><button type="button" class="filter-btn" data-range="90">Last 90 Days</button><select id="tent-filter" class="select-control"><option value="">All Tents</option></select><select id="tracker-filter" class="select-control"><option value="">All Crew</option></select><select id="difficulty-filter" class="select-control"><option value="">All Difficulty</option><option value="simple">Simple</option><option value="standard">Standard</option><option value="complex">Complex</option></select><select id="view-mode" class="select-control"><option value="tent">Tent Jobs</option><option value="non-tent">Non-Tent Jobs</option><option value="all">All Jobs</option></select></div>
 <div class="summary-grid"><div class="summary-card"><div class="summary-label">Timed Jobs</div><div id="timed-count" class="summary-value">0</div><div class="summary-sub">Grouped by job</div></div><div class="summary-card"><div class="summary-label">Avg Weighted Setup</div><div id="avg-setup" class="summary-value">—</div><div class="summary-sub">Adjusted tent-only estimate</div></div><div class="summary-card"><div class="summary-label">Avg Weighted Strike</div><div id="avg-strike" class="summary-value">—</div><div class="summary-sub">Adjusted tent-only estimate</div></div><div class="summary-card"><div class="summary-label">Fastest Tracker</div><div id="best-tracker" class="summary-value">—</div><div class="summary-sub" id="best-tracker-sub">By avg completed timer</div></div></div>
-    <div class="two-col"><section class="section"><h2>Tent Time Comparison</h2><div class="table-scroll"><table><thead><tr><th>Tent</th><th class="num">Jobs</th><th class="num">Raw Setup</th><th class="num">Adj Setup</th><th class="num">Raw Strike</th><th class="num">Clean Setup</th><th class="num">Trend</th></tr></thead><tbody id="tent-body"></tbody></table></div></section><section class="section"><h2>Button Presser Efficiency <span class="pill">Sample size matters</span></h2><div class="table-scroll"><table><thead><tr><th>Pressed By</th><th class="num">Timers</th><th class="num">Avg Time</th><th class="num">Setup Avg</th><th class="num">Strike Avg</th></tr></thead><tbody id="tracker-body"></tbody></table></div></section></div>
+    <div class="two-col"><section class="section"><h2>Tent Time Comparison</h2><div class="table-scroll"><table><thead><tr><th>Tent</th><th class="num">Jobs</th><th class="num">Raw Setup</th><th class="num">Adj Setup</th><th class="num">Raw Strike</th><th class="num">Clean Setup</th><th class="num">Trend</th></tr></thead><tbody id="tent-body"></tbody></table></div></section><section class="section"><h2>Crew Efficiency <span class="pill">Sample size matters</span></h2><div class="table-scroll"><table><thead><tr><th>Crew</th><th class="num">Timers</th><th class="num">Avg Time</th><th class="num">Setup Avg</th><th class="num">Strike Avg</th></tr></thead><tbody id="tracker-body"></tbody></table></div></section></div>
     <section class="section"><h2>Improvement Trend <span class="pill">Newest vs Previous</span></h2><div class="table-scroll"><table><thead><tr><th>Group</th><th class="num">Newest 5 Avg</th><th class="num">Previous 5 Avg</th><th class="num">Change</th><th>Direction</th></tr></thead><tbody id="trend-body"></tbody></table></div></section>
     <section class="section"><h2>Outlier Alerts</h2><div id="outlier-list"></div></section>
     <section class="section"><h2>Most Recent Timed Jobs</h2><div id="recent-list"></div></section>
@@ -42,6 +42,48 @@ function parseDate(v){if(!v)return null;if(v instanceof Date)return v;var d=new 
 function dateKey(d){return d?d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"):""}function slugify(v){return String(v||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,60)}function fmtMin(m){m=Number(m||0);var h=Math.floor(m/60),n=m%60;if(h&&n)return h+" hr "+n+" min";if(h)return h+" hr";return n+" min"}function fmtDate(v){var d=parseDate(v);return d?(d.getMonth()+1)+"/"+d.getDate()+"/"+d.getFullYear():(v||"—")}function esc(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;")}
 function isComplete(t){return String(t.completed||"").toUpperCase()==="YES"||String(t.action||"").toUpperCase()==="COMPLETE"||!!t.stopTime}function isRunning(t){return !isComplete(t)&&String(t.action||"").toUpperCase()==="START"}function typeText(t){return String(t.type||"")}function getMin(t){if(!t)return 0;var raw=t.durationMinutes;if(raw!==""&&raw!=null&&!isNaN(Number(raw)))return Number(raw);var a=parseDate(t.startTime),b=parseDate(t.stopTime);return a&&b?Math.max(0,Math.round((b-a)/60000)):0}function avg(a){a=a.filter(v=>Number(v)>0);return a.length?a.reduce((x,y)=>x+y,0)/a.length:0}
 function readPrice(job){var keys=["price","Price","total","Total","amount","Amount","revenue","Revenue","jobTotal","JobTotal","orderTotal","OrderTotal"];for(var k of keys){var v=job[k];if(v===""||v==null)continue;var n=Number(String(v).replace(/[^0-9.-]+/g,""));if(!isNaN(n)&&n>0)return n}return 0}
+
+
+function parseCrewNames(timer){
+  var raw = timer.crew || timer.Crew || timer.crewNames || timer.CrewNames || "";
+  if(!raw) raw = timer.employee || "";
+  return String(raw || "").split(/[,;|]/).map(function(x){return x.trim();}).filter(Boolean);
+}
+function crewCount(timer){
+  var names = parseCrewNames(timer);
+  if(names.length) return names.length;
+  var raw = timer.crewCount || timer.CrewCount || timer["Crew Count"] || "";
+  var n = Number(raw);
+  return (!isNaN(n) && n > 0) ? n : 1;
+}
+function parseMoney(value){
+  var n = Number(String(value || "").replace(/[^0-9.-]+/g,""));
+  return isNaN(n) ? 0 : n;
+}
+function parseTruckYards(value){
+  var s = String(value || "").toLowerCase().trim();
+  if(!s) return 0;
+  var n = Number((s.match(/-?\d+(\.\d+)?/) || ["0"])[0]);
+  if(isNaN(n) || n <= 0) return 0;
+  if(s.indexOf("ft") !== -1 || s.indexOf("feet") !== -1 || s.indexOf("foot") !== -1) return n / 3;
+  return n; // default is yards
+}
+function truckDistanceMinutes(yards, crewCountValue){
+  yards = Number(yards || 0);
+  crewCountValue = Number(crewCountValue || 1);
+  if(!yards) return 0;
+  // Best guess: long carries add about 0.20 min per yard to total job clock time,
+  // with slight crew scaling because more people make more carrying trips possible but also more walking overall.
+  return Math.round(yards * 0.20 * Math.sqrt(Math.max(1, crewCountValue)));
+}
+function weekStart(dateValue){
+  var d = parseDate(dateValue);
+  if(!d) return "";
+  var day = d.getDay();
+  var start = new Date(d.getFullYear(), d.getMonth(), d.getDate() - day); // Sunday
+  return dateKey(start);
+}
+function moneyFmt(n){ return "$" + Math.round(Number(n || 0)).toLocaleString(); }
 
 function normalizeInventory(items){
   return (items || []).map(function(item){
@@ -309,16 +351,17 @@ function difficulty(r){
   return Math.max(1, Math.round(score));
 }
 
-function buildRecords(){var map={};allTimers.forEach(t=>{var k=groupKey(t),j=findJob(t);if(!map[k])map[k]={key:k,job:j,jobName:(j&&j.Name)||t.jobName||"Unnamed Job",date:t.date||(j&&(j.SetupDate||j.StrikeDate))||"",timers:[],tents:j?tents(j):[],inventory:j?j.inventory||[]:[],revenue:j?j.revenue||0:0};map[k].timers.push(t)});return Object.keys(map).map(k=>{var r=map[k];r.setupTimers=r.timers.filter(t=>{var x=typeText(t).toLowerCase();return x.includes("set")||x.includes("setup")});r.strikeTimers=r.timers.filter(t=>typeText(t).toLowerCase().includes("strike"));r.completedSetup=r.setupTimers.filter(isComplete);r.completedStrike=r.strikeTimers.filter(isComplete);r.setupMinutes=r.completedSetup.reduce((s,t)=>s+getMin(t),0);r.strikeMinutes=r.completedStrike.reduce((s,t)=>s+getMin(t),0);r.totalMinutes=r.setupMinutes+r.strikeMinutes;r.nonTentMinutes=estimateNonTentMinutes(r);r.running=r.timers.some(isRunning);r.latestTime=r.timers.reduce((latest,t)=>{var d=parseDate(t.startTime||t.timestamp);return Math.max(latest,d?d.getTime():0)},0);r.nonTentMinutes=estimateNonTentMinutes(r);r.nonTentStrikeMinutes=estimateNonTentStrikeMinutes(r);r.adjustedSetupPool=Math.max(0,(r.setupMinutes||0)-r.nonTentMinutes);r.adjustedStrikePool=Math.max(0,(r.strikeMinutes||0)-r.nonTentStrikeMinutes);r.difficulty=difficulty(r);r.difficultyBucket=difficultyBucket(r.difficulty);return r}).sort((a,b)=>b.latestTime-a.latestTime)}
+function buildRecords(){var map={};allTimers.forEach(t=>{var k=groupKey(t),j=findJob(t);if(!map[k])map[k]={key:k,job:j,jobName:(j&&j.Name)||t.jobName||"Unnamed Job",date:t.date||(j&&(j.SetupDate||j.StrikeDate))||"",timers:[],tents:j?tents(j):[],inventory:j?j.inventory||[]:[],revenue:j?j.revenue||0:0};map[k].timers.push(t)});return Object.keys(map).map(k=>{var r=map[k];r.setupTimers=r.timers.filter(t=>{var x=typeText(t).toLowerCase();return x.includes("set")||x.includes("setup")});r.strikeTimers=r.timers.filter(t=>typeText(t).toLowerCase().includes("strike"));r.completedSetup=r.setupTimers.filter(isComplete);r.completedStrike=r.strikeTimers.filter(isComplete);r.setupMinutes=r.completedSetup.reduce((s,t)=>s+getMin(t),0);r.strikeMinutes=r.completedStrike.reduce((s,t)=>s+getMin(t),0);r.totalMinutes=r.setupMinutes+r.strikeMinutes;r.nonTentMinutes=estimateNonTentMinutes(r);r.running=r.timers.some(isRunning);r.latestTime=r.timers.reduce((latest,t)=>{var d=parseDate(t.startTime||t.timestamp);return Math.max(latest,d?d.getTime():0)},0);var setupInfoTimer=r.completedSetup[0]||null;var strikeInfoTimer=r.completedStrike[0]||null;var infoTimer=setupInfoTimer||strikeInfoTimer||r.timers[0]||{};r.jobPrice=parseMoney((setupInfoTimer&&(setupInfoTimer.jobPrice||setupInfoTimer.JobPrice||setupInfoTimer["Job Price"]))||(strikeInfoTimer&&(strikeInfoTimer.jobPrice||strikeInfoTimer.JobPrice||strikeInfoTimer["Job Price"]))||infoTimer.jobPrice||infoTimer.JobPrice||infoTimer["Job Price"]);r.truckYards=parseTruckYards((setupInfoTimer&&(setupInfoTimer.truckDistance||setupInfoTimer.TruckDistance||setupInfoTimer["Truck Distance"]))||(strikeInfoTimer&&(strikeInfoTimer.truckDistance||strikeInfoTimer.TruckDistance||strikeInfoTimer["Truck Distance"]))||infoTimer.truckDistance||infoTimer.TruckDistance||infoTimer["Truck Distance"]);r.setupCrewAvg=avg(r.completedSetup.map(crewCount))||1;r.strikeCrewAvg=avg(r.completedStrike.map(crewCount))||1;r.setupManHours=r.completedSetup.reduce(function(s,t){return s+(getMin(t)*crewCount(t)/60);},0);r.strikeManHours=r.completedStrike.reduce(function(s,t){return s+(getMin(t)*crewCount(t)/60);},0);r.totalManHours=r.setupManHours+r.strikeManHours;r.nonTentMinutes=estimateNonTentMinutes(r)+truckDistanceMinutes(r.truckYards,r.setupCrewAvg);r.nonTentStrikeMinutes=estimateNonTentStrikeMinutes(r)+Math.round(truckDistanceMinutes(r.truckYards,r.strikeCrewAvg)*0.75);r.adjustedSetupPool=Math.max(0,(r.setupMinutes||0)-r.nonTentMinutes);r.adjustedStrikePool=Math.max(0,(r.strikeMinutes||0)-r.nonTentStrikeMinutes);r.difficulty=difficulty(r);r.difficultyBucket=difficultyBucket(r.difficulty);return r}).sort((a,b)=>b.latestTime-a.latestTime)}
 
 function filtered(){
   var rec=allRecords.slice(),days=activeRange==="all"?0:Number(activeRange);
   if(days){var cutoff=Date.now()-days*86400000;rec=rec.filter(function(r){return r.latestTime>=cutoff;});}
   var tent=document.getElementById("tent-filter").value;if(tent)rec=rec.filter(function(r){return r.tents.indexOf(tent)!==-1;});
-  var tr=document.getElementById("tracker-filter").value;if(tr)rec=rec.filter(function(r){return r.timers.some(function(t){return String(t.employee||"")===tr;});});
+  var tr=document.getElementById("tracker-filter").value;if(tr)rec=rec.filter(function(r){return r.timers.some(function(t){return parseCrewNames(t).indexOf(tr)!==-1;});});
   var diffEl=document.getElementById("difficulty-filter");
   var diff=diffEl?diffEl.value:"";
   if(diff)rec=rec.filter(function(r){return r.difficultyBucket===diff;});
+  var viewEl=document.getElementById("view-mode");var view=viewEl?viewEl.value:"tent";if(view==="tent")rec=rec.filter(function(r){return r.tents&&r.tents.length;});if(view==="non-tent")rec=rec.filter(function(r){return !r.tents||!r.tents.length;});
   return rec;
 }
 
@@ -441,13 +484,15 @@ function trackerStats(records){
   var map={};
   records.forEach(function(r){
     r.timers.filter(isComplete).forEach(function(t){
-      var e=String(t.employee||"Unknown"),m=getMin(t);
+      var names=parseCrewNames(t),m=getMin(t);
       if(!m)return;
-      if(!map[e])map[e]={employee:e,all:[],setup:[],strike:[]};
-      map[e].all.push(m);
-      var type=typeText(t).toLowerCase();
-      if(type.includes("strike"))map[e].strike.push(m);
-      else if(type.includes("set")||type.includes("setup"))map[e].setup.push(m);
+      names.forEach(function(e){
+        if(!map[e])map[e]={employee:e,all:[],setup:[],strike:[]};
+        map[e].all.push(m);
+        var type=typeText(t).toLowerCase();
+        if(type.includes("strike"))map[e].strike.push(m);
+        else if(type.includes("set")||type.includes("setup"))map[e].setup.push(m);
+      });
     });
   });
 
@@ -462,7 +507,6 @@ function trackerStats(records){
       lowSample:s.all.length < 3
     };
   }).sort(function(a,b){
-    // Put meaningful samples first. One-off records are still shown, but after 3+ timer samples.
     if(a.lowSample !== b.lowSample) return a.lowSample ? 1 : -1;
     return a.avg-b.avg;
   });
@@ -489,7 +533,7 @@ function render(){
     document.getElementById("best-tracker-sub").textContent="By avg completed timer";
   }
 
-  renderTent(records);renderTracker(records);renderTrend(records);renderOutliers(records);renderRecent(records);renderRevenue(records);
+  renderTent(records);renderTracker(records);renderTrend(records);renderOutliers(records);renderWeekly(records);renderRecent(records);renderRevenue(records);
 }
 
 function referencedJobsHtml(stat){
@@ -546,12 +590,33 @@ function alertHtml(r,label,detail,cls){return '<div class="job-card"><div class=
 
 function renderOutliers(records){var allocs=allAllocations(records),cut=outlierCut(allocs.map(function(a){return a.adjustedSetup;})),out=allocs.filter(function(a){return a.adjustedSetup>cut;}).sort(function(a,b){return b.adjustedSetup-a.adjustedSetup;}).slice(0,8),running=records.flatMap(function(r){return r.timers.filter(isRunning).map(function(t){return{record:r,timer:t};});}).slice(0,6),miss=records.filter(function(r){return !r.inventory||!r.inventory.length;}).slice(0,6),html="";html+=out.map(function(a){return alertHtml(a.record,"Long Adjusted Setup",a.tent+" estimated at "+fmtMin(a.adjustedSetup),"bad");}).join("");html+=running.map(function(x){return alertHtml(x.record,"In Progress",typeText(x.timer)+" still running","warn");}).join("");html+=miss.map(function(r){return alertHtml(r,"Missing Inventory","Could not match this timer to inventory.","warn");}).join("");document.getElementById("outlier-list").innerHTML=html||'<div class="empty">No outliers found for this filter.</div>';}
 
-function renderRecent(records){var rows=records.slice(0,12),list=document.getElementById("recent-list");if(!rows.length){list.innerHTML='<div class="empty">No timed jobs found.</div>';return;}list.innerHTML=rows.map(function(r){var setup=r.setupMinutes?fmtMin(r.setupMinutes):"—",strike=r.strikeMinutes?fmtMin(r.strikeMinutes):"—",trackers=Array.from(new Set(r.timers.map(function(t){return t.employee||"";}).filter(Boolean))).join(", ")||"—",inv=(r.inventory||[]).slice(0,8).map(function(i){var n=i.inventory||i.item||i.name||"Item",q=i.quantity||i.qty||"";return '<span class="inventory-pill">'+esc(n+(q?" × "+q:""))+'</span>';}).join("");return '<div class="job-card"><div class="job-head"><h3>'+esc(r.jobName)+'</h3><span class="pill">Difficulty '+r.difficulty+'</span></div><div class="meta"><div><strong>Date:</strong> '+esc(fmtDate(r.date))+'</div><div><strong>Setup:</strong> '+setup+' &nbsp; <strong>Strike:</strong> '+strike+' &nbsp; <strong>Non-tent est:</strong> '+fmtMin(r.nonTentMinutes||0)+'</div><div><strong>Button Pressers:</strong> '+esc(trackers)+'</div><div><strong>Tents:</strong> '+esc(r.tents.join(", ")||"—")+'</div></div>'+(inv?'<div class="inventory-list">'+inv+'</div>':'')+'</div>';}).join("");}
+
+function renderWeekly(records){
+  var body=document.getElementById("weekly-body");
+  if(!body)return;
+  var map={};
+  records.forEach(function(r){
+    var wk=weekStart(r.date);
+    if(!wk)return;
+    if(!map[wk])map[wk]={week:wk,jobs:0,revenue:0,setupHrs:0,strikeHrs:0};
+    map[wk].jobs+=1;
+    map[wk].revenue+=r.jobPrice||0;
+    map[wk].setupHrs+=r.setupManHours||0;
+    map[wk].strikeHrs+=r.strikeManHours||0;
+  });
+  var rows=Object.keys(map).sort().reverse().map(function(k){
+    var w=map[k], total=w.setupHrs+w.strikeHrs, rpmh=total?w.revenue/total:0;
+    return '<tr><td><strong>'+esc(w.week)+'</strong></td><td class="num">'+w.jobs+'</td><td class="num">'+moneyFmt(w.revenue)+'</td><td class="num">'+total.toFixed(2)+'</td><td class="num">'+(rpmh?moneyFmt(rpmh):"—")+'</td><td class="num">'+w.setupHrs.toFixed(2)+'</td><td class="num">'+w.strikeHrs.toFixed(2)+'</td></tr>';
+  }).join("");
+  body.innerHTML=rows||'<tr><td colspan="7">No weekly revenue/man-hour data yet.</td></tr>';
+}
+
+function renderRecent(records){var rows=records.slice(0,12),list=document.getElementById("recent-list");if(!rows.length){list.innerHTML='<div class="empty">No timed jobs found.</div>';return;}list.innerHTML=rows.map(function(r){var setup=r.setupMinutes?fmtMin(r.setupMinutes):"—",strike=r.strikeMinutes?fmtMin(r.strikeMinutes):"—",trackers=Array.from(new Set(r.timers.map(function(t){return t.employee||"";}).filter(Boolean))).join(", ")||"—",inv=(r.inventory||[]).slice(0,8).map(function(i){var n=i.inventory||i.item||i.name||"Item",q=i.quantity||i.qty||"";return '<span class="inventory-pill">'+esc(n+(q?" × "+q:""))+'</span>';}).join("");return '<div class="job-card"><div class="job-head"><h3>'+esc(r.jobName)+'</h3><span class="pill">Difficulty '+r.difficulty+'</span></div><div class="meta"><div><strong>Date:</strong> '+esc(fmtDate(r.date))+'</div><div><strong>Setup:</strong> '+setup+' &nbsp; <strong>Strike:</strong> '+strike+' &nbsp; <strong>Non-tent est:</strong> '+fmtMin(r.nonTentMinutes||0)+'</div><div><strong>Crew:</strong> '+esc(trackers)+'</div><div><strong>Tents:</strong> '+esc(r.tents.join(", ")||"—")+'</div></div>'+(inv?'<div class="inventory-list">'+inv+'</div>':'')+'</div>';}).join("");}
 
 function renderRevenue(records){var rows=records.filter(r=>r.revenue&&r.totalMinutes).sort((a,b)=>(b.revenue/(b.totalMinutes/60))-(a.revenue/(a.totalMinutes/60))).slice(0,20),sec=document.getElementById("revenue-section");if(!rows.length){sec.style.display="none";return}sec.style.display="block";document.getElementById("revenue-body").innerHTML=rows.map(r=>{var ph=r.revenue/(r.totalMinutes/60);return '<tr><td><strong>'+esc(r.jobName)+'</strong></td><td class="num">$'+r.revenue.toFixed(2)+'</td><td class="num">'+fmtMin(r.totalMinutes)+'</td><td class="num">$'+ph.toFixed(2)+'/hr</td><td>'+esc(r.tents.join(", ")||"—")+'</td></tr>'}).join("")}
-function populateFilters(){var tentSet=new Set(),trackerSet=new Set();allRecords.forEach(r=>{r.tents.forEach(t=>tentSet.add(t));r.timers.forEach(t=>{if(t.employee)trackerSet.add(t.employee)})});document.getElementById("tent-filter").innerHTML='<option value="">All Tents</option>'+Array.from(tentSet).sort().map(t=>'<option value="'+esc(t)+'">'+esc(t)+'</option>').join("");document.getElementById("tracker-filter").innerHTML='<option value="">All Button Pressers</option>'+Array.from(trackerSet).sort().map(t=>'<option value="'+esc(t)+'">'+esc(t)+'</option>').join("")}
+function populateFilters(){var tentSet=new Set(),trackerSet=new Set();allRecords.forEach(r=>{r.tents.forEach(t=>tentSet.add(t));r.timers.forEach(t=>{if(t.employee)trackerSet.add(t.employee)})});document.getElementById("tent-filter").innerHTML='<option value="">All Tents</option>'+Array.from(tentSet).sort().map(t=>'<option value="'+esc(t)+'">'+esc(t)+'</option>').join("");document.getElementById("tracker-filter").innerHTML='<option value="">All Crew</option>'+Array.from(trackerSet).sort().map(t=>'<option value="'+esc(t)+'">'+esc(t)+'</option>').join("")}
 function loadData(){document.getElementById("recent-list").innerHTML='<div class="empty">Loading scorecard...</div>';Promise.all([jsonp(JOB_TIMER_WEBAPP_URL,{action:"getJobTimers"},20000),jsonp(JOBS_WEBAPP_URL,{action:"listJobs"},20000).catch(e=>{console.warn("Jobs feed failed",e);return{jobs:[]}})]).then(res=>{var timerRes=res[0],jobsRes=res[1];if(!timerRes||timerRes.success===false)throw new Error(timerRes&&timerRes.error?timerRes.error:"Failed to load timer data.");allTimers=timerRes.timers||[];allJobs=normalizeJobs(jobsRes.jobs||[]);allRecords=buildRecords();populateFilters();render()}).catch(err=>{console.error(err);document.getElementById("recent-list").innerHTML='<div class="empty">Failed to load scorecard data.</div>'})}
-document.addEventListener("DOMContentLoaded",function(){document.getElementById("back-btn").addEventListener("click",()=>window.location.href="jobdata.html");document.getElementById("refresh-btn").addEventListener("click",loadData);document.querySelectorAll(".filter-btn[data-range]").forEach(btn=>btn.addEventListener("click",function(){activeRange=this.dataset.range||"all";document.querySelectorAll(".filter-btn[data-range]").forEach(b=>b.classList.toggle("active",b===btn));render()}));document.getElementById("tent-filter").addEventListener("change",render);document.getElementById("tracker-filter").addEventListener("change",render);var diffFilter=document.getElementById("difficulty-filter");if(diffFilter)diffFilter.addEventListener("change",render);var tentBody=document.getElementById("tent-body");if(tentBody)tentBody.addEventListener("click",function(e){var row=e.target.closest?e.target.closest(".tent-stat-row"):null;if(!row)return;var id="tent-detail-"+row.getAttribute("data-tent-row");var detail=document.getElementById(id);if(detail)detail.style.display=detail.style.display==="none"?"table-row":"none";});var menuBtn=document.getElementById("menuBtn"),menuOverlay=document.getElementById("menuOverlay");function closeMenu(){document.body.classList.remove("menu-open")}if(menuBtn)menuBtn.addEventListener("click",()=>document.body.classList.toggle("menu-open"));if(menuOverlay)menuOverlay.addEventListener("click",closeMenu);document.addEventListener("keydown",e=>{if(e.key==="Escape")closeMenu()});loadData()});if('serviceWorker'in navigator){navigator.serviceWorker.register('/universal-crew-app/service-worker.js')}
+document.addEventListener("DOMContentLoaded",function(){document.getElementById("back-btn").addEventListener("click",()=>window.location.href="jobdata.html");document.getElementById("refresh-btn").addEventListener("click",loadData);document.querySelectorAll(".filter-btn[data-range]").forEach(btn=>btn.addEventListener("click",function(){activeRange=this.dataset.range||"all";document.querySelectorAll(".filter-btn[data-range]").forEach(b=>b.classList.toggle("active",b===btn));render()}));document.getElementById("tent-filter").addEventListener("change",render);document.getElementById("tracker-filter").addEventListener("change",render);var viewMode=document.getElementById("view-mode");if(viewMode)viewMode.addEventListener("change",render);var diffFilter=document.getElementById("difficulty-filter");if(diffFilter)diffFilter.addEventListener("change",render);var tentBody=document.getElementById("tent-body");if(tentBody)tentBody.addEventListener("click",function(e){var row=e.target.closest?e.target.closest(".tent-stat-row"):null;if(!row)return;var id="tent-detail-"+row.getAttribute("data-tent-row");var detail=document.getElementById(id);if(detail)detail.style.display=detail.style.display==="none"?"table-row":"none";});var menuBtn=document.getElementById("menuBtn"),menuOverlay=document.getElementById("menuOverlay");function closeMenu(){document.body.classList.remove("menu-open")}if(menuBtn)menuBtn.addEventListener("click",()=>document.body.classList.toggle("menu-open"));if(menuOverlay)menuOverlay.addEventListener("click",closeMenu);document.addEventListener("keydown",e=>{if(e.key==="Escape")closeMenu()});loadData()});if('serviceWorker'in navigator){navigator.serviceWorker.register('/universal-crew-app/service-worker.js')}
 </script>
 </body>
 </html>
