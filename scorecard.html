@@ -566,6 +566,20 @@ function trackerStats(records){
   });
 }
 
+
+function safeCall(fn, name){
+  try { fn(); }
+  catch(err) { console.error(name + " failed", err); }
+}
+function renderScorecardSections(records){
+  safeCall(function(){ renderTent(records); }, "Tent comparison");
+  safeCall(function(){ renderTracker(records); }, "Crew efficiency");
+  safeCall(function(){ renderTrend(records); }, "Improvement trend");
+  safeCall(function(){ renderRevenuePerformance(records); }, "Revenue performance");
+  safeCall(function(){ renderOutliers(records); }, "Outlier alerts");
+  safeCall(function(){ renderRecent(records); }, "Most recent jobs");
+  safeCall(function(){ renderRevenue(records); }, "Legacy revenue");
+}
 function render(){
   var records=filtered();
   var allocations=allTentAllocations(records);
@@ -587,7 +601,7 @@ function render(){
     document.getElementById("best-tracker-sub").textContent="By avg completed timer";
   }
 
-  renderTent(records);renderTracker(records);renderTrend(records);renderRevenuePerformance(records);renderOutliers(records);renderWeekly(records);renderRecent(records);renderRevenue(records);
+  renderScorecardSections(records);
 }
 
 function referencedJobsHtml(stat){
@@ -662,6 +676,45 @@ function alertHtml(r,label,detail,cls){return '<div class="job-card"><div class=
 
 
 
+
+function getRecordPrice(record){
+  if(record && record.jobPrice) return Number(record.jobPrice) || 0;
+  var setup = record && record.completedSetup && record.completedSetup[0];
+  var strike = record && record.completedStrike && record.completedStrike[0];
+  var t = setup || strike || (record && record.timers && record.timers[0]) || {};
+  if(typeof timerJobPriceValue === "function") return parseMoney(timerJobPriceValue(t));
+  return parseMoney(t.jobPrice || t.JobPrice || t["Job Price"] || t.price || t.Price || "");
+}
+
+function getRecordManHours(record){
+  if(record && record.totalManHours) return Number(record.totalManHours) || 0;
+  var setup = record && record.completedSetup ? record.completedSetup.reduce(function(s,t){ return s + (getMin(t) * (typeof crewCountFromTimer === "function" ? crewCountFromTimer(t) : (typeof crewCount === "function" ? crewCount(t) : 1)) / 60); },0) : 0;
+  var strike = record && record.completedStrike ? record.completedStrike.reduce(function(s,t){ return s + (getMin(t) * (typeof crewCountFromTimer === "function" ? crewCountFromTimer(t) : (typeof crewCount === "function" ? crewCount(t) : 1)) / 60); },0) : 0;
+  return setup + strike;
+}
+
+function getRecordSetupHours(record){
+  if(record && record.setupManHours) return Number(record.setupManHours) || 0;
+  return record && record.completedSetup ? record.completedSetup.reduce(function(s,t){ return s + (getMin(t) * (typeof crewCountFromTimer === "function" ? crewCountFromTimer(t) : (typeof crewCount === "function" ? crewCount(t) : 1)) / 60); },0) : 0;
+}
+
+function getRecordStrikeHours(record){
+  if(record && record.strikeManHours) return Number(record.strikeManHours) || 0;
+  return record && record.completedStrike ? record.completedStrike.reduce(function(s,t){ return s + (getMin(t) * (typeof crewCountFromTimer === "function" ? crewCountFromTimer(t) : (typeof crewCount === "function" ? crewCount(t) : 1)) / 60); },0) : 0;
+}
+
+function getRecordCrewList(record){
+  var set = {};
+  (record.timers || []).forEach(function(t){
+    var crew = [];
+    if(typeof splitCrewNamesFromTimer === "function") crew = splitCrewNamesFromTimer(t);
+    else if(typeof parseCrewNames === "function") crew = parseCrewNames(t);
+    if(!crew.length && t.employee) crew = [t.employee];
+    crew.forEach(function(n){ if(n) set[n] = true; });
+  });
+  return Object.keys(set);
+}
+
 function revMetricRow(label, jobs, revenue, manHours, setupHrs, strikeHrs, extra){
   var rpmh = manHours ? revenue / manHours : 0;
   return '<tr>'
@@ -680,9 +733,9 @@ function renderRevenuePerformance(records){
   var head = document.getElementById("revenue-head");
   if(!body || !head) return;
 
-  var pricedRecords = records.filter(function(r){ return r.jobPrice && r.totalManHours; });
-  var totalRevenue = pricedRecords.reduce(function(s,r){ return s + (r.jobPrice || 0); }, 0);
-  var totalHours = pricedRecords.reduce(function(s,r){ return s + (r.totalManHours || 0); }, 0);
+  var pricedRecords = (records || []).filter(function(r){ return getRecordPrice(r) > 0; });
+  var totalRevenue = pricedRecords.reduce(function(s,r){ return s + getRecordPrice(r); }, 0);
+  var totalHours = pricedRecords.reduce(function(s,r){ return s + getRecordManHours(r); }, 0);
 
   var totalEl = document.getElementById("rev-total");
   var hrsEl = document.getElementById("rev-manhours");
@@ -691,44 +744,42 @@ function renderRevenuePerformance(records){
   if(hrsEl) hrsEl.textContent = totalHours.toFixed(2);
   if(perEl) perEl.textContent = totalHours ? moneyFmt(totalRevenue / totalHours) : "—";
 
-  head.innerHTML = '<tr><th>' + (
-    revenueView === "job" ? "Job" :
+  var label = revenueView === "job" ? "Job" :
     revenueView === "day" ? "Day" :
     revenueView === "week" ? "Week" :
-    revenueView === "month" ? "Month" : "Crew / Button Presser"
-  ) + '</th><th class="num">Jobs</th><th class="num">Revenue</th><th class="num">Man-Hours</th><th class="num">Rev / Man-Hr</th><th class="num">Setup Hrs</th><th class="num">Strike Hrs</th></tr>';
+    revenueView === "month" ? "Month" : "Crew";
+
+  head.innerHTML = '<tr><th>' + label + '</th><th class="num">Jobs</th><th class="num">Revenue</th><th class="num">Man-Hours</th><th class="num">Rev / Man-Hr</th><th class="num">Setup Hrs</th><th class="num">Strike Hrs</th></tr>';
 
   if(!pricedRecords.length){
-    body.innerHTML = '<tr><td colspan="7">No priced jobs found yet. Check that Job Price is filled in JobTimers and returned by the web app.</td></tr>';
+    body.innerHTML = '<tr><td colspan="7">No priced jobs found yet.</td></tr>';
     return;
   }
 
   if(revenueView === "job"){
     body.innerHTML = pricedRecords.slice().sort(function(a,b){
-      var ap = a.totalManHours ? a.jobPrice / a.totalManHours : 0;
-      var bp = b.totalManHours ? b.jobPrice / b.totalManHours : 0;
+      var ap = getRecordManHours(a) ? getRecordPrice(a) / getRecordManHours(a) : 0;
+      var bp = getRecordManHours(b) ? getRecordPrice(b) / getRecordManHours(b) : 0;
       return bp - ap;
     }).map(function(r){
-      var crew = recordCrewList(r).join(", ") || "—";
-      return revMetricRow(r.jobName, 1, r.jobPrice || 0, r.totalManHours || 0, r.setupManHours || 0, r.strikeManHours || 0, crew);
+      var crew = getRecordCrewList(r).join(", ") || "—";
+      return revMetricRow(r.jobName || "Unnamed Job", 1, getRecordPrice(r), getRecordManHours(r), getRecordSetupHours(r), getRecordStrikeHours(r), crew);
     }).join("");
     return;
   }
 
   var map = {};
-
   if(revenueView === "crew"){
     pricedRecords.forEach(function(r){
-      var crew = recordCrewList(r);
+      var crew = getRecordCrewList(r);
       if(!crew.length) crew = ["Unknown"];
-      var shareRevenue = (r.jobPrice || 0) / crew.length;
+      var shareRevenue = getRecordPrice(r) / crew.length;
       crew.forEach(function(name){
         if(!map[name]) map[name] = { label:name, jobs:0, revenue:0, setup:0, strike:0 };
         map[name].jobs += 1;
         map[name].revenue += shareRevenue;
-        // This attributes the whole job's man-hours to the crew member pool proportionally.
-        map[name].setup += (r.setupManHours || 0) / crew.length;
-        map[name].strike += (r.strikeManHours || 0) / crew.length;
+        map[name].setup += getRecordSetupHours(r) / crew.length;
+        map[name].strike += getRecordStrikeHours(r) / crew.length;
       });
     });
   } else {
@@ -737,9 +788,9 @@ function renderRevenuePerformance(records){
       if(!key) key = "Unknown";
       if(!map[key]) map[key] = { label:key, jobs:0, revenue:0, setup:0, strike:0 };
       map[key].jobs += 1;
-      map[key].revenue += r.jobPrice || 0;
-      map[key].setup += r.setupManHours || 0;
-      map[key].strike += r.strikeManHours || 0;
+      map[key].revenue += getRecordPrice(r);
+      map[key].setup += getRecordSetupHours(r);
+      map[key].strike += getRecordStrikeHours(r);
     });
   }
 
@@ -777,6 +828,17 @@ function renderRecent(records){var rows=records.slice(0,12),list=document.getEle
 function renderRevenue(records){var rows=records.filter(r=>r.revenue&&r.totalMinutes).sort((a,b)=>(b.revenue/(b.totalMinutes/60))-(a.revenue/(a.totalMinutes/60))).slice(0,20),sec=document.getElementById("revenue-section");if(!rows.length){sec.style.display="none";return}sec.style.display="block";document.getElementById("revenue-body").innerHTML=rows.map(r=>{var ph=r.revenue/(r.totalMinutes/60);return '<tr><td><strong>'+esc(r.jobName)+'</strong></td><td class="num">$'+r.revenue.toFixed(2)+'</td><td class="num">'+fmtMin(r.totalMinutes)+'</td><td class="num">$'+ph.toFixed(2)+'/hr</td><td>'+esc(r.tents.join(", ")||"—")+'</td></tr>'}).join("")}
 function populateFilters(){var tentSet=new Set(),trackerSet=new Set();allRecords.forEach(r=>{r.tents.forEach(t=>tentSet.add(t));r.timers.forEach(t=>{if(t.employee)trackerSet.add(t.employee)})});document.getElementById("tent-filter").innerHTML='<option value="">All Tents</option>'+Array.from(tentSet).sort().map(t=>'<option value="'+esc(t)+'">'+esc(t)+'</option>').join("");document.getElementById("tracker-filter").innerHTML='<option value="">All Crew</option>'+Array.from(trackerSet).sort().map(t=>'<option value="'+esc(t)+'">'+esc(t)+'</option>').join("")}
 function loadData(){document.getElementById("recent-list").innerHTML='<div class="empty">Loading scorecard...</div>';Promise.all([jsonp(JOB_TIMER_WEBAPP_URL,{action:"getJobTimers"},20000),jsonp(JOBS_WEBAPP_URL,{action:"listJobs"},20000).catch(e=>{console.warn("Jobs feed failed",e);return{jobs:[]}})]).then(res=>{var timerRes=res[0],jobsRes=res[1];if(!timerRes||timerRes.success===false)throw new Error(timerRes&&timerRes.error?timerRes.error:"Failed to load timer data.");allTimers=timerRes.timers||[];allJobs=normalizeJobs(jobsRes.jobs||[]);allRecords=buildRecords();populateFilters();render()}).catch(err=>{console.error(err);document.getElementById("recent-list").innerHTML='<div class="empty">Failed to load scorecard data.</div>'})}
+
+document.addEventListener("click", function(e){
+  var revBtn = e.target.closest ? e.target.closest(".filter-btn[data-revenue-view]") : null;
+  if(!revBtn) return;
+  revenueView = revBtn.getAttribute("data-revenue-view") || "job";
+  document.querySelectorAll(".filter-btn[data-revenue-view]").forEach(function(b){
+    b.classList.toggle("active", b === revBtn);
+  });
+  render();
+});
+
 document.addEventListener("DOMContentLoaded",function(){document.getElementById("back-btn").addEventListener("click",()=>window.location.href="jobdata.html");document.getElementById("refresh-btn").addEventListener("click",loadData);document.querySelectorAll(".filter-btn[data-range]").forEach(btn=>btn.addEventListener("click",function(){activeRange=this.dataset.range||"all";document.querySelectorAll(".filter-btn[data-range]").forEach(b=>b.classList.toggle("active",b===btn));render()}));document.getElementById("tent-filter").addEventListener("change",render);document.getElementById("tracker-filter").addEventListener("change",render);var viewMode=document.getElementById("view-mode");if(viewMode)viewMode.addEventListener("change",render);var diffFilter=document.getElementById("difficulty-filter");if(diffFilter)diffFilter.addEventListener("change",render);var tentBody=document.getElementById("tent-body");if(tentBody)tentBody.addEventListener("click",function(e){var row=e.target.closest?e.target.closest(".tent-stat-row"):null;if(!row)return;var id="tent-detail-"+row.getAttribute("data-tent-row");var detail=document.getElementById(id);if(detail)detail.style.display=detail.style.display==="none"?"table-row":"none";});var menuBtn=document.getElementById("menuBtn"),menuOverlay=document.getElementById("menuOverlay");function closeMenu(){document.body.classList.remove("menu-open")}if(menuBtn)menuBtn.addEventListener("click",()=>document.body.classList.toggle("menu-open"));if(menuOverlay)menuOverlay.addEventListener("click",closeMenu);document.addEventListener("keydown",e=>{if(e.key==="Escape")closeMenu()});loadData()});if('serviceWorker'in navigator){navigator.serviceWorker.register('/universal-crew-app/service-worker.js')}
 </script>
 </body>
