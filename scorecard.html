@@ -29,7 +29,7 @@
 <div class="summary-grid"><div class="summary-card"><div class="summary-label">Timed Jobs</div><div id="timed-count" class="summary-value">0</div><div class="summary-sub">Grouped by job</div></div><div class="summary-card"><div class="summary-label">Avg Weighted Setup</div><div id="avg-setup" class="summary-value">—</div><div class="summary-sub">Adjusted tent-only estimate</div></div><div class="summary-card"><div class="summary-label">Avg Weighted Strike</div><div id="avg-strike" class="summary-value">—</div><div class="summary-sub">Adjusted tent-only estimate</div></div><div class="summary-card"><div class="summary-label">Fastest Tracker</div><div id="best-tracker" class="summary-value">—</div><div class="summary-sub" id="best-tracker-sub">By avg completed timer</div></div></div>
     <div class="two-col"><section class="section"><h2><span id="comparison-title">Tent Time Comparison</span></h2><div class="table-scroll"><table><thead><tr><th>Tent</th><th class="num">Jobs</th><th class="num">Raw Setup</th><th class="num">Adj Setup</th><th class="num">Raw Strike</th><th class="num">Clean Setup</th><th class="num">Trend</th></tr></thead><tbody id="tent-body"></tbody></table></div></section><section class="section"><h2>Crew Efficiency <span class="pill">Button Pressers</span></h2><div class="table-scroll"><table><thead><tr><th>Pressed Button</th><th class="num">Timers</th><th class="num">Avg Time</th><th class="num">Setup Avg</th><th class="num">Strike Avg</th></tr></thead><tbody id="tracker-body"></tbody></table></div></section></div>
     <section class="section"><h2>Improvement Trend <span class="pill">Newest vs Previous</span></h2><div class="table-scroll"><table><thead><tr><th>Group</th><th class="num">Newest 5 Avg</th><th class="num">Previous 5 Avg</th><th class="num">Change</th><th>Direction</th></tr></thead><tbody id="trend-body"></tbody></table></div></section>
-    <section class="section"><h2>Outlier Alerts</h2><div id="outlier-list"></div></section>
+    <section class="section" id="revenue-performance-section"><h2>Revenue Performance <span class="pill">Price vs Man-Hours</span></h2><div class="toolbar" style="justify-content:flex-start;margin-bottom:10px;"><button type="button" class="filter-btn active" data-revenue-view="job">Per Job</button><button type="button" class="filter-btn" data-revenue-view="day">Per Day</button><button type="button" class="filter-btn" data-revenue-view="week">Per Week</button><button type="button" class="filter-btn" data-revenue-view="month">Per Month</button><button type="button" class="filter-btn" data-revenue-view="crew">By Crew</button></div><div class="summary-grid" style="margin-bottom:10px;"><div class="summary-card"><div class="summary-label">Revenue Shown</div><div id="rev-total" class="summary-value">$0</div></div><div class="summary-card"><div class="summary-label">Man-Hours</div><div id="rev-manhours" class="summary-value">0</div></div><div class="summary-card"><div class="summary-label">Revenue / Man-Hr</div><div id="rev-per-hour" class="summary-value">—</div></div></div><div class="table-scroll"><table><thead id="revenue-head"></thead><tbody id="revenue-performance-body"></tbody></table></div></section><section class="section"><h2>Outlier Alerts</h2><div id="outlier-list"></div></section>
     <section class="section"><h2>Most Recent Timed Jobs</h2><div id="recent-list"></div></section>
     <section class="section" id="revenue-section" style="display:none"><h2>Revenue / Profit Preview</h2><div class="table-scroll"><table><thead><tr><th>Job</th><th class="num">Revenue</th><th class="num">Total Time</th><th class="num">Revenue / Hour</th><th>Tents</th></tr></thead><tbody id="revenue-body"></tbody></table></div></section>
   </div>
@@ -67,6 +67,34 @@ function timerJobPriceValue(timer){
 }
 function timerTruckDistanceValue(timer){
   return readAny(timer, ["truckDistance","TruckDistance","Truck Distance","distance","Distance"]);
+}
+
+
+function splitCrewNamesFromTimer(timer){
+  var raw = timer.crew || timer.Crew || timer.crewNames || timer.CrewNames || "";
+  return String(raw || "").split(/[,;|]/).map(function(x){return x.trim();}).filter(Boolean);
+}
+function buttonPresserName(timer){
+  return String(timer.employee || "Unknown");
+}
+function crewCountFromTimer(timer){
+  var names = splitCrewNamesFromTimer(timer);
+  if(names.length) return names.length;
+  var raw = timer.crewCount || timer.CrewCount || timer["Crew Count"] || "";
+  var n = Number(raw);
+  return (!isNaN(n) && n > 0) ? n : 1;
+}
+function recordCrewList(record){
+  var set = {};
+  (record.timers || []).forEach(function(t){
+    splitCrewNamesFromTimer(t).forEach(function(n){ set[n] = true; });
+    if(!splitCrewNamesFromTimer(t).length && t.employee) set[t.employee] = true;
+  });
+  return Object.keys(set);
+}
+function dayKey(dateValue){
+  var d = parseDate(dateValue);
+  return d ? dateKey(d) : "";
 }
 
 function parseCrewNames(timer){
@@ -559,7 +587,7 @@ function render(){
     document.getElementById("best-tracker-sub").textContent="By avg completed timer";
   }
 
-  renderTent(records);renderTracker(records);renderTrend(records);renderRevenueSummary(records);renderOutliers(records);renderWeekly(records);renderRecent(records);renderRevenue(records);
+  renderTent(records);renderTracker(records);renderTrend(records);renderRevenuePerformance(records);renderOutliers(records);renderWeekly(records);renderRecent(records);renderRevenue(records);
 }
 
 function referencedJobsHtml(stat){
@@ -633,34 +661,92 @@ function renderTrend(records){
 function alertHtml(r,label,detail,cls){return '<div class="job-card"><div class="job-head"><h3>'+esc(r.jobName)+'</h3><span class="pill '+cls+'">'+esc(label)+'</span></div><div class="meta"><div><strong>Date:</strong> '+esc(fmtDate(r.date))+'</div><div><strong>Detail:</strong> '+esc(detail)+'</div><div><strong>Tents:</strong> '+esc(r.tents.join(", ")||"—")+'</div><div><strong>Price:</strong> '+(r.jobPrice?moneyFmt(r.jobPrice):"—")+' &nbsp; <strong>Truck Distance:</strong> '+(r.truckYards?r.truckYards+" yd":"—")+'</div></div></div>';}
 
 
-function renderRevenueSummary(records){
-  var body=document.getElementById("revenue-summary-body");
-  if(!body)return;
 
-  var map={};
-  var missingPrice = 0;
+function revMetricRow(label, jobs, revenue, manHours, setupHrs, strikeHrs, extra){
+  var rpmh = manHours ? revenue / manHours : 0;
+  return '<tr>'
+    + '<td><strong>' + esc(label) + '</strong>' + (extra ? '<br><span class="inventory-missing">' + esc(extra) + '</span>' : '') + '</td>'
+    + '<td class="num">' + jobs + '</td>'
+    + '<td class="num">' + moneyFmt(revenue) + '</td>'
+    + '<td class="num">' + manHours.toFixed(2) + '</td>'
+    + '<td class="num">' + (rpmh ? moneyFmt(rpmh) : "—") + '</td>'
+    + '<td class="num">' + setupHrs.toFixed(2) + '</td>'
+    + '<td class="num">' + strikeHrs.toFixed(2) + '</td>'
+    + '</tr>';
+}
 
-  records.forEach(function(r){
-    if(!r.jobPrice) missingPrice++;
-    var key;
-    if(revenueRange==="month") key=monthKey(r.date);
-    else if(revenueRange==="all") key="All Time";
-    else key=weekStart(r.date);
-    if(!key)return;
-    if(!map[key])map[key]={period:key,jobs:0,revenue:0,setupHrs:0,strikeHrs:0,missing:0};
-    map[key].jobs+=1;
-    map[key].revenue+=r.jobPrice||0;
-    map[key].setupHrs+=r.setupManHours||0;
-    map[key].strikeHrs+=r.strikeManHours||0;
-    if(!r.jobPrice) map[key].missing+=1;
-  });
+function renderRevenuePerformance(records){
+  var body = document.getElementById("revenue-performance-body");
+  var head = document.getElementById("revenue-head");
+  if(!body || !head) return;
 
-  var rows=Object.keys(map).sort().reverse().map(function(k){
-    var w=map[k], total=w.setupHrs+w.strikeHrs, rpmh=total?w.revenue/total:0;
-    return '<tr><td><strong>'+esc(w.period)+'</strong>'+(w.missing?'<br><span class="inventory-missing">'+w.missing+' missing price</span>':'')+'</td><td class="num">'+w.jobs+'</td><td class="num">'+moneyFmt(w.revenue)+'</td><td class="num">'+total.toFixed(2)+'</td><td class="num">'+(rpmh?moneyFmt(rpmh):"—")+'</td><td class="num">'+w.setupHrs.toFixed(2)+'</td><td class="num">'+w.strikeHrs.toFixed(2)+'</td></tr>';
+  var pricedRecords = records.filter(function(r){ return r.jobPrice && r.totalManHours; });
+  var totalRevenue = pricedRecords.reduce(function(s,r){ return s + (r.jobPrice || 0); }, 0);
+  var totalHours = pricedRecords.reduce(function(s,r){ return s + (r.totalManHours || 0); }, 0);
+
+  var totalEl = document.getElementById("rev-total");
+  var hrsEl = document.getElementById("rev-manhours");
+  var perEl = document.getElementById("rev-per-hour");
+  if(totalEl) totalEl.textContent = moneyFmt(totalRevenue);
+  if(hrsEl) hrsEl.textContent = totalHours.toFixed(2);
+  if(perEl) perEl.textContent = totalHours ? moneyFmt(totalRevenue / totalHours) : "—";
+
+  head.innerHTML = '<tr><th>' + (
+    revenueView === "job" ? "Job" :
+    revenueView === "day" ? "Day" :
+    revenueView === "week" ? "Week" :
+    revenueView === "month" ? "Month" : "Crew / Button Presser"
+  ) + '</th><th class="num">Jobs</th><th class="num">Revenue</th><th class="num">Man-Hours</th><th class="num">Rev / Man-Hr</th><th class="num">Setup Hrs</th><th class="num">Strike Hrs</th></tr>';
+
+  if(!pricedRecords.length){
+    body.innerHTML = '<tr><td colspan="7">No priced jobs found yet. Check that Job Price is filled in JobTimers and returned by the web app.</td></tr>';
+    return;
+  }
+
+  if(revenueView === "job"){
+    body.innerHTML = pricedRecords.slice().sort(function(a,b){
+      var ap = a.totalManHours ? a.jobPrice / a.totalManHours : 0;
+      var bp = b.totalManHours ? b.jobPrice / b.totalManHours : 0;
+      return bp - ap;
+    }).map(function(r){
+      var crew = recordCrewList(r).join(", ") || "—";
+      return revMetricRow(r.jobName, 1, r.jobPrice || 0, r.totalManHours || 0, r.setupManHours || 0, r.strikeManHours || 0, crew);
+    }).join("");
+    return;
+  }
+
+  var map = {};
+
+  if(revenueView === "crew"){
+    pricedRecords.forEach(function(r){
+      var crew = recordCrewList(r);
+      if(!crew.length) crew = ["Unknown"];
+      var shareRevenue = (r.jobPrice || 0) / crew.length;
+      crew.forEach(function(name){
+        if(!map[name]) map[name] = { label:name, jobs:0, revenue:0, setup:0, strike:0 };
+        map[name].jobs += 1;
+        map[name].revenue += shareRevenue;
+        // This attributes the whole job's man-hours to the crew member pool proportionally.
+        map[name].setup += (r.setupManHours || 0) / crew.length;
+        map[name].strike += (r.strikeManHours || 0) / crew.length;
+      });
+    });
+  } else {
+    pricedRecords.forEach(function(r){
+      var key = revenueView === "day" ? dayKey(r.date) : (revenueView === "month" ? monthKey(r.date) : weekStart(r.date));
+      if(!key) key = "Unknown";
+      if(!map[key]) map[key] = { label:key, jobs:0, revenue:0, setup:0, strike:0 };
+      map[key].jobs += 1;
+      map[key].revenue += r.jobPrice || 0;
+      map[key].setup += r.setupManHours || 0;
+      map[key].strike += r.strikeManHours || 0;
+    });
+  }
+
+  body.innerHTML = Object.keys(map).sort().reverse().map(function(k){
+    var x = map[k], mh = x.setup + x.strike;
+    return revMetricRow(x.label, x.jobs, x.revenue, mh, x.setup, x.strike, "");
   }).join("");
-
-  body.innerHTML=rows||'<tr><td colspan="7">No revenue/man-hour data yet. Check that JobTimers is returning Job Price.</td></tr>';
 }
 
 function renderOutliers(records){var allocs=allAllocations(records),cut=outlierCut(allocs.map(function(a){return a.adjustedSetup;})),out=allocs.filter(function(a){return a.adjustedSetup>cut;}).sort(function(a,b){return b.adjustedSetup-a.adjustedSetup;}).slice(0,8),running=records.flatMap(function(r){return r.timers.filter(isRunning).map(function(t){return{record:r,timer:t};});}).slice(0,6),miss=records.filter(function(r){return !r.inventory||!r.inventory.length;}).slice(0,6),html="";html+=out.map(function(a){return alertHtml(a.record,"Long Adjusted Setup",a.tent+" estimated at "+fmtMin(a.adjustedSetup),"bad");}).join("");html+=running.map(function(x){return alertHtml(x.record,"In Progress",typeText(x.timer)+" still running","warn");}).join("");html+=miss.map(function(r){return alertHtml(r,"Missing Inventory","Could not match this timer to inventory.","warn");}).join("");document.getElementById("outlier-list").innerHTML=html||'<div class="empty">No outliers found for this filter.</div>';}
