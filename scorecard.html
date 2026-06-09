@@ -150,17 +150,86 @@ function findJob(t){
   }) || null;
 }
 
+function cleanTentSize(raw){
+  var m = String(raw || "").match(/(\d{1,3})\s*[xX×]\s*(\d{1,3})/);
+  if (!m) return "";
+  var a = Number(m[1]);
+  var b = Number(m[2]);
+  if (!a || !b) return "";
+  return a + "x" + b;
+}
+
+function isTentInventoryText(text){
+  var s = String(text || "").toLowerCase();
+
+  // Direct tent words/types
+  if (s.includes("tent")) return true;
+  if (s.includes("frame")) return true;
+  if (s.includes("pole")) return true;
+  if (s.includes("west coast")) return true;
+  if (s.includes("century")) return true;
+  if (s.includes("sailcloth")) return true;
+  if (s.includes("high peak")) return true;
+  if (/\bhp\b/.test(s)) return true;
+
+  // Tent part language from inventory names
+  if (s.includes("top") && /\d{1,3}\s*[xX×]\s*\d{1,3}/.test(s)) return true;
+  if (s.includes("leg") && /\d{1,3}\s*[xX×]\s*\d{1,3}/.test(s)) return true;
+  if (s.includes("rafter") && /\d{1,3}\s*[xX×]\s*\d{1,3}/.test(s)) return true;
+  if (s.includes("upright") && /\d{1,3}\s*[xX×]\s*\d{1,3}/.test(s)) return true;
+
+  return false;
+}
+
+function getInventoryText(item){
+  return [
+    item.inventory, item.Inventory,
+    item.item, item.Item,
+    item.name, item.Name,
+    item.description, item.Description,
+    item.category, item.Category,
+    item.type, item.Type
+  ].filter(Boolean).join(" ");
+}
+
 function tents(job){
-  var out = [];
-  (job && job.inventory || []).forEach(function(i){
-    var name = String(i.inventory || i.item || i.name || "");
-    var low = name.toLowerCase();
-    if (low.indexOf("tent") === -1 && low.indexOf("frame") === -1 && low.indexOf("pole") === -1) return;
-    (name.match(/\b\d{1,3}\s*[xX]\s*\d{1,3}\b/g) || []).forEach(function(m){
-      out.push(m.replace(/\s+/g,"").toLowerCase());
-    });
+  var found = [];
+  var items = (job && job.inventory) ? job.inventory : [];
+
+  items.forEach(function(item){
+    var txt = getInventoryText(item);
+    if (!txt) return;
+
+    var sizeMatches = txt.match(/\b\d{1,3}\s*[xX×]\s*\d{1,3}\b/g) || [];
+
+    // Best case: item clearly says tent/frame/pole/etc.
+    if (isTentInventoryText(txt)) {
+      sizeMatches.forEach(function(m){
+        var size = cleanTentSize(m);
+        if (size) found.push(size);
+      });
+    }
   });
-  return Array.from(new Set(out));
+
+  // Fallback: if no tent keyword matched, use larger size patterns that are likely tents.
+  // This helps when inventory item names are just "20x40" or "40x60 Top".
+  if (!found.length) {
+    items.forEach(function(item){
+      var txt = getInventoryText(item);
+      (txt.match(/\b\d{1,3}\s*[xX×]\s*\d{1,3}\b/g) || []).forEach(function(m){
+        var size = cleanTentSize(m);
+        if (!size) return;
+        var parts = size.split("x").map(Number);
+        var area = parts[0] * parts[1];
+        if (area >= 100) found.push(size);
+      });
+    });
+  }
+
+  return Array.from(new Set(found)).sort(function(a,b){
+    var aa = a.split("x").map(Number), bb = b.split("x").map(Number);
+    return (aa[0]*aa[1]) - (bb[0]*bb[1]);
+  });
 }
 
 function groupKey(t){
