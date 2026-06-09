@@ -27,7 +27,7 @@
     <div class="small-note">Performance dashboard from JobTimers + UniversalToDo inventory.</div>
     <div class="toolbar"><button type="button" class="filter-btn active" data-range="all">All Time</button><button type="button" class="filter-btn" data-range="30">Last 30 Days</button><button type="button" class="filter-btn" data-range="90">Last 90 Days</button><select id="tent-filter" class="select-control"><option value="">All Tents</option></select><select id="tracker-filter" class="select-control"><option value="">All Button Pressers</option></select><select id="difficulty-filter" class="select-control"><option value="">All Difficulty</option><option value="simple">Simple</option><option value="standard">Standard</option><option value="complex">Complex</option></select></div>
 <div class="summary-grid"><div class="summary-card"><div class="summary-label">Timed Jobs</div><div id="timed-count" class="summary-value">0</div><div class="summary-sub">Grouped by job</div></div><div class="summary-card"><div class="summary-label">Avg Set-Up</div><div id="avg-setup" class="summary-value">—</div><div class="summary-sub">Completed setup timers</div></div><div class="summary-card"><div class="summary-label">Avg Strike</div><div id="avg-strike" class="summary-value">—</div><div class="summary-sub">Completed strike timers</div></div><div class="summary-card"><div class="summary-label">Fastest Tracker</div><div id="best-tracker" class="summary-value">—</div><div class="summary-sub" id="best-tracker-sub">By avg completed timer</div></div></div>
-    <div class="two-col"><section class="section"><h2>Tent Time Comparison</h2><div class="table-scroll"><table><thead><tr><th>Tent</th><th class="num">Jobs</th><th class="num">Raw Setup</th><th class="num">Adj Setup</th><th class="num">Raw Strike</th><th class="num">Clean Setup</th><th class="num">Trend</th></tr></thead><tbody id="tent-body"></tbody></table></div></section><section class="section"><h2>Button Presser Efficiency</h2><div class="table-scroll"><table><thead><tr><th>Pressed By</th><th class="num">Timers</th><th class="num">Avg Time</th><th class="num">Setup Avg</th><th class="num">Strike Avg</th></tr></thead><tbody id="tracker-body"></tbody></table></div></section></div>
+    <div class="two-col"><section class="section"><h2>Tent Time Comparison</h2><div class="table-scroll"><table><thead><tr><th>Tent</th><th class="num">Jobs</th><th class="num">Raw Setup</th><th class="num">Adj Setup</th><th class="num">Raw Strike</th><th class="num">Clean Setup</th><th class="num">Trend</th></tr></thead><tbody id="tent-body"></tbody></table></div></section><section class="section"><h2>Button Presser Efficiency <span class="pill">Sample size matters</span></h2><div class="table-scroll"><table><thead><tr><th>Pressed By</th><th class="num">Timers</th><th class="num">Avg Time</th><th class="num">Setup Avg</th><th class="num">Strike Avg</th></tr></thead><tbody id="tracker-body"></tbody></table></div></section></div>
     <section class="section"><h2>Improvement Trend <span class="pill">Newest vs Previous</span></h2><div class="table-scroll"><table><thead><tr><th>Group</th><th class="num">Newest 5 Avg</th><th class="num">Previous 5 Avg</th><th class="num">Change</th><th>Direction</th></tr></thead><tbody id="trend-body"></tbody></table></div></section>
     <section class="section"><h2>Outlier Alerts</h2><div id="outlier-list"></div></section>
     <section class="section"><h2>Most Recent Timed Jobs</h2><div id="recent-list"></div></section>
@@ -362,7 +362,36 @@ function tentStats(records){
   }).sort(function(a,b){return tentArea(a.tent)-tentArea(b.tent);});
 }
 
-function trackerStats(records){var map={};records.forEach(function(r){r.timers.filter(isComplete).forEach(function(t){var e=String(t.employee||"Unknown"),m=getMin(t);if(!m)return;if(!map[e])map[e]={employee:e,all:[],setup:[],strike:[]};map[e].all.push(m);var type=typeText(t).toLowerCase();if(type.includes("strike"))map[e].strike.push(m);else if(type.includes("set")||type.includes("setup"))map[e].setup.push(m);});});return Object.keys(map).map(function(e){var s=map[e];return{employee:e,count:s.all.length,avg:avg(s.all),setupAvg:avg(s.setup),strikeAvg:avg(s.strike)};}).sort(function(a,b){return a.avg-b.avg;});}
+function trackerStats(records){
+  var map={};
+  records.forEach(function(r){
+    r.timers.filter(isComplete).forEach(function(t){
+      var e=String(t.employee||"Unknown"),m=getMin(t);
+      if(!m)return;
+      if(!map[e])map[e]={employee:e,all:[],setup:[],strike:[]};
+      map[e].all.push(m);
+      var type=typeText(t).toLowerCase();
+      if(type.includes("strike"))map[e].strike.push(m);
+      else if(type.includes("set")||type.includes("setup"))map[e].setup.push(m);
+    });
+  });
+
+  return Object.keys(map).map(function(e){
+    var s=map[e];
+    return {
+      employee:e,
+      count:s.all.length,
+      avg:avg(s.all),
+      setupAvg:avg(s.setup),
+      strikeAvg:avg(s.strike),
+      lowSample:s.all.length < 3
+    };
+  }).sort(function(a,b){
+    // Put meaningful samples first. One-off records are still shown, but after 3+ timer samples.
+    if(a.lowSample !== b.lowSample) return a.lowSample ? 1 : -1;
+    return a.avg-b.avg;
+  });
+}
 
 function render(){
   var records=filtered(),setup=records.flatMap(function(r){return r.completedSetup.map(getMin);}),strike=records.flatMap(function(r){return r.completedStrike.map(getMin);}),ts=trackerStats(records);
@@ -392,7 +421,14 @@ function renderTent(records){
   }).join("");
 }
 
-function renderTracker(records){var stats=trackerStats(records),body=document.getElementById("tracker-body");if(!stats.length){body.innerHTML='<tr><td colspan="5">No completed timer data found.</td></tr>';return;}body.innerHTML=stats.map(function(s){return '<tr><td><strong>'+esc(s.employee)+'</strong></td><td class="num">'+s.count+'</td><td class="num">'+fmtMin(Math.round(s.avg))+'</td><td class="num">'+(s.setupAvg?fmtMin(Math.round(s.setupAvg)):"—")+'</td><td class="num">'+(s.strikeAvg?fmtMin(Math.round(s.strikeAvg)):"—")+'</td></tr>';}).join("");}
+function renderTracker(records){
+  var stats=trackerStats(records),body=document.getElementById("tracker-body");
+  if(!stats.length){body.innerHTML='<tr><td colspan="5">No completed timer data found.</td></tr>';return;}
+  body.innerHTML=stats.map(function(s){
+    var name=esc(s.employee)+(s.lowSample?' <span class="pill warn">Low sample</span>':'');
+    return '<tr><td><strong>'+name+'</strong></td><td class="num">'+s.count+'</td><td class="num">'+fmtMin(Math.round(s.avg))+'</td><td class="num">'+(s.setupAvg?fmtMin(Math.round(s.setupAvg)):"—")+'</td><td class="num">'+(s.strikeAvg?fmtMin(Math.round(s.strikeAvg)):"—")+'</td></tr>';
+  }).join("");
+}
 
 function renderTrend(records){var rows=tentStats(records).filter(function(s){return s.allocs.length>=6;}).slice(0,12),body=document.getElementById("trend-body");if(!rows.length){body.innerHTML='<tr><td colspan="5">Need more repeated timed jobs before trend data is useful.</td></tr>';return;}body.innerHTML=rows.map(function(s){var sorted=s.allocs.slice().sort(function(a,b){return a.latestTime-b.latestTime;});var newest=avg(sorted.slice(-5).map(function(a){return a.adjustedSetup;})),prev=avg(sorted.slice(-10,-5).map(function(a){return a.adjustedSetup;})),change=newest-prev,dir=change<0?"Improving":change>0?"Getting Slower":"Flat",cls=change<0?"good":change>0?"bad":"";return '<tr><td><strong>'+esc(s.tent)+'</strong></td><td class="num">'+fmtMin(Math.round(newest))+'</td><td class="num">'+fmtMin(Math.round(prev))+'</td><td class="num">'+(change<0?"-":"+")+fmtMin(Math.round(Math.abs(change)))+'</td><td><span class="pill '+cls+'">'+dir+'</span></td></tr>';}).join("");}
 
