@@ -309,7 +309,7 @@ function difficulty(r){
   return Math.max(1, Math.round(score));
 }
 
-function buildRecords(){var map={};allTimers.forEach(t=>{var k=groupKey(t),j=findJob(t);if(!map[k])map[k]={key:k,job:j,jobName:(j&&j.Name)||t.jobName||"Unnamed Job",date:t.date||(j&&(j.SetupDate||j.StrikeDate))||"",timers:[],tents:j?tents(j):[],inventory:j?j.inventory||[]:[],revenue:j?j.revenue||0:0};map[k].timers.push(t)});return Object.keys(map).map(k=>{var r=map[k];r.setupTimers=r.timers.filter(t=>{var x=typeText(t).toLowerCase();return x.includes("set")||x.includes("setup")});r.strikeTimers=r.timers.filter(t=>typeText(t).toLowerCase().includes("strike"));r.completedSetup=r.setupTimers.filter(isComplete);r.completedStrike=r.strikeTimers.filter(isComplete);r.setupMinutes=r.completedSetup.reduce((s,t)=>s+getMin(t),0);r.strikeMinutes=r.completedStrike.reduce((s,t)=>s+getMin(t),0);r.totalMinutes=r.setupMinutes+r.strikeMinutes;r.nonTentMinutes=estimateNonTentMinutes(r);r.running=r.timers.some(isRunning);r.latestTime=r.timers.reduce((latest,t)=>{var d=parseDate(t.startTime||t.timestamp);return Math.max(latest,d?d.getTime():0)},0);r.difficulty=difficulty(r);r.difficultyBucket=difficultyBucket(r.difficulty);return r}).sort((a,b)=>b.latestTime-a.latestTime)}
+function buildRecords(){var map={};allTimers.forEach(t=>{var k=groupKey(t),j=findJob(t);if(!map[k])map[k]={key:k,job:j,jobName:(j&&j.Name)||t.jobName||"Unnamed Job",date:t.date||(j&&(j.SetupDate||j.StrikeDate))||"",timers:[],tents:j?tents(j):[],inventory:j?j.inventory||[]:[],revenue:j?j.revenue||0:0};map[k].timers.push(t)});return Object.keys(map).map(k=>{var r=map[k];r.setupTimers=r.timers.filter(t=>{var x=typeText(t).toLowerCase();return x.includes("set")||x.includes("setup")});r.strikeTimers=r.timers.filter(t=>typeText(t).toLowerCase().includes("strike"));r.completedSetup=r.setupTimers.filter(isComplete);r.completedStrike=r.strikeTimers.filter(isComplete);r.setupMinutes=r.completedSetup.reduce((s,t)=>s+getMin(t),0);r.strikeMinutes=r.completedStrike.reduce((s,t)=>s+getMin(t),0);r.totalMinutes=r.setupMinutes+r.strikeMinutes;r.nonTentMinutes=estimateNonTentMinutes(r);r.running=r.timers.some(isRunning);r.latestTime=r.timers.reduce((latest,t)=>{var d=parseDate(t.startTime||t.timestamp);return Math.max(latest,d?d.getTime():0)},0);r.nonTentMinutes=estimateNonTentMinutes(r);r.nonTentStrikeMinutes=estimateNonTentStrikeMinutes(r);r.adjustedSetupPool=Math.max(0,(r.setupMinutes||0)-r.nonTentMinutes);r.adjustedStrikePool=Math.max(0,(r.strikeMinutes||0)-r.nonTentStrikeMinutes);r.difficulty=difficulty(r);r.difficultyBucket=difficultyBucket(r.difficulty);return r}).sort((a,b)=>b.latestTime-a.latestTime)}
 
 function filtered(){
   var rec=allRecords.slice(),days=activeRange==="all"?0:Number(activeRange);
@@ -359,13 +359,20 @@ function tentAllocations(record){
   var totalWeight=record.tents.reduce(function(s,t){return s+tentWeight(t);},0)||1;
   var clean=record.tents.length===1 && (record.nonTentMinutes||0)<=Math.max(20,(record.setupMinutes||0)*0.25);
 
+  var setupPool = (typeof record.adjustedSetupPool === "number") ? record.adjustedSetupPool : Math.max(0,(record.setupMinutes||0)-(record.nonTentMinutes||0));
+  var strikePool = (typeof record.adjustedStrikePool === "number") ? record.adjustedStrikePool : Math.max(0,(record.strikeMinutes||0)-(record.nonTentStrikeMinutes||0));
+
+  // Safety fallback: if adjustment wipes out everything, show weighted raw instead of blank.
+  if(!setupPool && record.setupMinutes) setupPool = record.setupMinutes;
+  if(!strikePool && record.strikeMinutes) strikePool = record.strikeMinutes;
+
   return record.tents.map(function(tent){
     var share=tentWeight(tent)/totalWeight;
     return {
       tent:tent,
       record:record,
-      setup:record.adjustedSetupPool ? record.adjustedSetupPool*share : 0,
-      strike:record.adjustedStrikePool ? record.adjustedStrikePool*share : 0,
+      setup:setupPool ? setupPool*share : 0,
+      strike:strikePool ? strikePool*share : 0,
       rawSetup:record.setupMinutes||0,
       rawStrike:record.strikeMinutes||0,
       clean:clean,
@@ -466,11 +473,13 @@ function render(){
   var allocations=allTentAllocations(records);
   var setupWeighted=allocations.map(function(a){return a.setup;}).filter(Boolean);
   var strikeWeighted=allocations.map(function(a){return a.strike;}).filter(Boolean);
+  var rawSetup=records.flatMap(function(r){return r.completedSetup.map(getMin);});
+  var rawStrike=records.flatMap(function(r){return r.completedStrike.map(getMin);});
   var ts=trackerStats(records);
 
   document.getElementById("timed-count").textContent=records.length;
-  document.getElementById("avg-setup").textContent=setupWeighted.length?fmtMin(Math.round(avg(setupWeighted))):"—";
-  document.getElementById("avg-strike").textContent=strikeWeighted.length?fmtMin(Math.round(avg(strikeWeighted))):"—";
+  document.getElementById("avg-setup").textContent=setupWeighted.length?fmtMin(Math.round(avg(setupWeighted))):(rawSetup.length?fmtMin(Math.round(avg(rawSetup))):"—");
+  document.getElementById("avg-strike").textContent=strikeWeighted.length?fmtMin(Math.round(avg(strikeWeighted))):(rawStrike.length?fmtMin(Math.round(avg(rawStrike))):"—");
 
   if(ts.length){
     document.getElementById("best-tracker").textContent=ts[0].employee;
@@ -482,6 +491,7 @@ function render(){
 
   renderTent(records);renderTracker(records);renderTrend(records);renderOutliers(records);renderRecent(records);renderRevenue(records);
 }
+
 function referencedJobsHtml(stat){
   var rows=stat.jobs.slice().sort(function(a,b){return b.latestTime-a.latestTime;});
   if(!rows.length)return '<div class="tent-job-thumbs"><div class="empty">No referenced jobs found.</div></div>';
@@ -511,7 +521,7 @@ function renderTracker(records){
 }
 
 function renderTrend(records){
-  var rows=tentStats(records).filter(function(s){return s.allocs.length>=6;}).slice(0,12);
+  var rows=tentStats(records).filter(function(s){return s.allocs.length>=2;}).slice(0,12);
   var body=document.getElementById("trend-body");
   if(!rows.length){body.innerHTML='<tr><td colspan="5">Need more repeated timed jobs before trend data is useful.</td></tr>';return}
 
