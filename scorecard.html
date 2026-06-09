@@ -34,7 +34,7 @@
     <section class="section" id="revenue-section" style="display:none"><h2>Revenue / Profit Preview</h2><div class="table-scroll"><table><thead><tr><th>Job</th><th class="num">Revenue</th><th class="num">Total Time</th><th class="num">Revenue / Hour</th><th>Tents</th></tr></thead><tbody id="revenue-body"></tbody></table></div></section>
   </div>
 <script>
-const JOB_TIMER_WEBAPP_URL="https://script.google.com/macros/s/AKfycbxOegSJyWw4JCH8B0u3ewgzu5v0XT4nOTwj0eNu0aZg5hhPrXVZ1z1S0vgYmX2mBk_h/exec";
+const JOB_TIMER_WEBAPP_URL="https://script.google.com/macros/s/AKfycbzV5xxE0yR1FoJpnMTLPT-75RRBewfulWjJgX62-QxvRdyQashGLWSHcea-qVXk2QXH/exec";
 const JOBS_WEBAPP_URL="https://script.google.com/macros/s/AKfycbxryknrt9pwA_lvmxbSs3Ww1KjIA3kbKkZwhGAD65dYhF_XF--bc8k0NvNiGFpSRuk/exec";
 let allTimers=[],allJobs=[],allRecords=[],activeRange="all";
 function jsonp(url,params,timeoutMs){timeoutMs=timeoutMs||15000;return new Promise(function(resolve,reject){var cb="cb_"+Math.random().toString(16).slice(2),u=new URL(url);Object.keys(params||{}).forEach(k=>u.searchParams.set(k,params[k]));u.searchParams.set("callback",cb);var done=false,s=document.createElement("script"),timer=setTimeout(()=>{if(done)return;done=true;cleanup();reject(new Error("JSONP request failed."))},timeoutMs);function cleanup(){clearTimeout(timer);s.remove();try{delete window[cb]}catch(_){}}window[cb]=data=>{if(done)return;done=true;cleanup();resolve(data)};s.onerror=()=>{if(done)return;done=true;cleanup();reject(new Error("JSONP request failed."))};s.src=u.toString();document.body.appendChild(s)})}
