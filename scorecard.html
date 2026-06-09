@@ -167,12 +167,7 @@ function isKnownLinenOrNonTent(text){
     s.includes("runner") ||
     s.includes("overlay") ||
     s.includes("spandex") ||
-    s.includes("skirt") ||
-    s.includes("90x") ||
-    s.includes("108x") ||
-    s.includes("120x") ||
-    s.includes("132x") ||
-    s.includes("156");
+    s.includes("skirt");
 }
 
 function isTentInventoryText(text){
@@ -219,8 +214,8 @@ function tents(job){
       var parts = size.split("x").map(Number);
       var area = parts[0] * parts[1];
 
-      // Reject linen/tablecloth-like dimensions and tiny/non-tent dimensions.
-      if (area < 100 || parts[0] > 80 || parts[1] > 120) return;
+      // Reject tiny/non-tent dimensions. Linen/tablecloths are rejected by item text above.
+      if (area < 100) return;
 
       found.push(size);
     });
