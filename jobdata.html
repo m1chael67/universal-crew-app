@@ -33,7 +33,6 @@
   <div id="menuOverlay" class="menu-overlay" aria-hidden="true"></div>
   <nav id="sideMenu" class="side-menu" aria-label="Menu">
     <h2>Menu</h2>
-    <a href="jobs.html">Jobs</a>
     <a href="admin.html?from=jobdata.html">Admin</a>
     <a href="jobedit.html?from=jobdata.html">Edit Jobs</a>
     <a href="scorecard.html?from=jobdata.html">Scorecard</a>
@@ -65,7 +64,7 @@
   </div>
 
 <script>
-  const JOB_TIMER_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzV5xxE0yR1FoJpnMTLPT-75RRBewfulWjJgX62-QxvRdyQashGLWSHcea-qVXk2QXH/exec";
+  const JOB_TIMER_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxOegSJyWw4JCH8B0u3ewgzu5v0XT4nOTwj0eNu0aZg5hhPrXVZ1z1S0vgYmX2mBk_h/exec";
   const JOBS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxryknrt9pwA_lvmxbSs3Ww1KjIA3kbKkZwhGAD65dYhF_XF--bc8k0NvNiGFpSRuk/exec";
   let allTimers = [];
   let allJobs = [];
@@ -145,26 +144,6 @@
   function isComplete(t) { return String(t.completed || "").toUpperCase() === "YES" || String(t.action || "").toUpperCase() === "COMPLETE" || !!t.stopTime; }
   function isRunning(t) { return !isComplete(t) && String(t.action || "").toUpperCase() === "START"; }
   function typeText(t) { return String(t.type || ""); }
-
-  function timerCrew(timer) {
-    return timer.crew || timer.Crew || timer.crewNames || timer.CrewNames || "";
-  }
-
-  function timerTruckDistance(timer) {
-    return timer.truckDistance || timer.TruckDistance || timer["Truck Distance"] || "";
-  }
-
-  function timerJobPrice(timer) {
-    return timer.jobPrice || timer.JobPrice || timer["Job Price"] || "";
-  }
-
-  function formatPrice(value) {
-    if (value === "" || value === null || typeof value === "undefined") return "";
-    var n = Number(String(value).replace(/[^0-9.-]+/g, ""));
-    if (isNaN(n) || n <= 0) return String(value);
-    return "$" + n.toLocaleString(undefined, { maximumFractionDigits: 2 });
-  }
-
 
   function sameDay(a, b) {
     return a && b && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
@@ -377,9 +356,6 @@
       +     '<div class="meta-row"><strong>Start:</strong> ' + escapeHtml(formatDateTime(timer.startTime)) + '</div>'
       +     '<div class="meta-row"><strong>Stop:</strong> ' + escapeHtml(formatDateTime(timer.stopTime)) + '</div>'
       +     '<div class="meta-row"><strong>Time:</strong> ' + escapeHtml(duration) + '</div>'
-      +     (timerCrew(timer) ? '<div class="meta-row"><strong>Crew:</strong> ' + escapeHtml(timerCrew(timer)) + '</div>' : '')
-      +     (timerTruckDistance(timer) ? '<div class="meta-row"><strong>Truck Distance:</strong> ' + escapeHtml(timerTruckDistance(timer)) + '</div>' : '')
-      +     (timerJobPrice(timer) ? '<div class="meta-row"><strong>Job Price:</strong> ' + escapeHtml(formatPrice(timerJobPrice(timer))) + '</div>' : '')
       +     ((timer.notes || timer.Notes || timer.note) ? '<div class="meta-row"><strong>Notes:</strong> ' + escapeHtml(timer.notes || timer.Notes || timer.note) + '</div>' : '')
       +   '</div>'
       + '</div>';
