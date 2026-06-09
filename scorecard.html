@@ -26,7 +26,7 @@
     <div class="page-title-row"><button id="back-btn" class="icon-action" type="button" aria-label="Back" title="Back">‹</button><h1>Job Scorecard</h1><button id="refresh-btn" class="icon-action" type="button" aria-label="Refresh" title="Refresh">↻</button></div>
     <div class="small-note">Performance dashboard from JobTimers + UniversalToDo inventory.</div>
     <div class="toolbar"><button type="button" class="filter-btn active" data-range="all">All Time</button><button type="button" class="filter-btn" data-range="30">Last 30 Days</button><button type="button" class="filter-btn" data-range="90">Last 90 Days</button><select id="tent-filter" class="select-control"><option value="">All Tents</option></select><select id="tracker-filter" class="select-control"><option value="">All Button Pressers</option></select><select id="difficulty-filter" class="select-control"><option value="">All Difficulty</option><option value="simple">Simple</option><option value="standard">Standard</option><option value="complex">Complex</option></select></div>
-<div class="summary-grid"><div class="summary-card"><div class="summary-label">Timed Jobs</div><div id="timed-count" class="summary-value">0</div><div class="summary-sub">Grouped by job</div></div><div class="summary-card"><div class="summary-label">Avg Set-Up</div><div id="avg-setup" class="summary-value">—</div><div class="summary-sub">Completed setup timers</div></div><div class="summary-card"><div class="summary-label">Avg Strike</div><div id="avg-strike" class="summary-value">—</div><div class="summary-sub">Completed strike timers</div></div><div class="summary-card"><div class="summary-label">Fastest Tracker</div><div id="best-tracker" class="summary-value">—</div><div class="summary-sub" id="best-tracker-sub">By avg completed timer</div></div></div>
+<div class="summary-grid"><div class="summary-card"><div class="summary-label">Timed Jobs</div><div id="timed-count" class="summary-value">0</div><div class="summary-sub">Grouped by job</div></div><div class="summary-card"><div class="summary-label">Avg Weighted Setup</div><div id="avg-setup" class="summary-value">—</div><div class="summary-sub">Adjusted tent-only estimate</div></div><div class="summary-card"><div class="summary-label">Avg Weighted Strike</div><div id="avg-strike" class="summary-value">—</div><div class="summary-sub">Adjusted tent-only estimate</div></div><div class="summary-card"><div class="summary-label">Fastest Tracker</div><div id="best-tracker" class="summary-value">—</div><div class="summary-sub" id="best-tracker-sub">By avg completed timer</div></div></div>
     <div class="two-col"><section class="section"><h2>Tent Time Comparison</h2><div class="table-scroll"><table><thead><tr><th>Tent</th><th class="num">Jobs</th><th class="num">Raw Setup</th><th class="num">Adj Setup</th><th class="num">Raw Strike</th><th class="num">Clean Setup</th><th class="num">Trend</th></tr></thead><tbody id="tent-body"></tbody></table></div></section><section class="section"><h2>Button Presser Efficiency <span class="pill">Sample size matters</span></h2><div class="table-scroll"><table><thead><tr><th>Pressed By</th><th class="num">Timers</th><th class="num">Avg Time</th><th class="num">Setup Avg</th><th class="num">Strike Avg</th></tr></thead><tbody id="tracker-body"></tbody></table></div></section></div>
     <section class="section"><h2>Improvement Trend <span class="pill">Newest vs Previous</span></h2><div class="table-scroll"><table><thead><tr><th>Group</th><th class="num">Newest 5 Avg</th><th class="num">Previous 5 Avg</th><th class="num">Change</th><th>Direction</th></tr></thead><tbody id="trend-body"></tbody></table></div></section>
     <section class="section"><h2>Outlier Alerts</h2><div id="outlier-list"></div></section>
@@ -264,6 +264,26 @@ function difficultyBucket(score) {
   return "complex";
 }
 
+
+function estimateNonTentStrikeMinutes(record) {
+  // Strike non-tent handling is usually faster than setup, so use about 70% of setup non-tent estimate.
+  return Math.round((record.nonTentMinutes || estimateNonTentMinutes(record)) * 0.7);
+}
+
+function getCrewCount(timer) {
+  var raw = timer.crewCount || timer.CrewCount || timer["Crew Count"] || timer.crew_count || "";
+  var n = Number(raw);
+  if (!isNaN(n) && n > 0) return n;
+
+  var crew = timer.crew || timer.Crew || timer.crewNames || timer.CrewNames || "";
+  if (crew) {
+    var names = String(crew).split(/[,;|]/).map(function(x){ return x.trim(); }).filter(Boolean);
+    if (names.length) return names.length;
+  }
+
+  return 1;
+}
+
 function groupKey(t){
   var j = findJob(t);
   if (j) return baseId(j);
@@ -334,34 +354,82 @@ function outlierCut(values){
   return q3 + 1.5*(q3-q1);
 }
 
+function tentAllocations(record){
+  if(!record.tents.length)return [];
+  var totalWeight=record.tents.reduce(function(s,t){return s+tentWeight(t);},0)||1;
+  var clean=record.tents.length===1 && (record.nonTentMinutes||0)<=Math.max(20,(record.setupMinutes||0)*0.25);
+
+  return record.tents.map(function(tent){
+    var share=tentWeight(tent)/totalWeight;
+    return {
+      tent:tent,
+      record:record,
+      setup:record.adjustedSetupPool ? record.adjustedSetupPool*share : 0,
+      strike:record.adjustedStrikePool ? record.adjustedStrikePool*share : 0,
+      rawSetup:record.setupMinutes||0,
+      rawStrike:record.strikeMinutes||0,
+      clean:clean,
+      latestTime:record.latestTime
+    };
+  });
+}
+
+function allTentAllocations(records){
+  return records.flatMap(tentAllocations);
+}
+
+function outlierCut(values){
+  values=(values||[]).map(Number).filter(function(v){return v>0&&!isNaN(v);}).sort(function(a,b){return a-b;});
+  if(values.length<4)return Infinity;
+  var q1=values[Math.floor((values.length-1)*0.25)];
+  var q3=values[Math.floor((values.length-1)*0.75)];
+  return q3 + 1.5*(q3-q1);
+}
+
+function confidenceLabel(count){
+  if(count>=15)return '<span class="pill good">High</span>';
+  if(count>=5)return '<span class="pill warn">Medium</span>';
+  return '<span class="pill bad">Low</span>';
+}
+
 function tentStats(records){
   var map={};
-  allAllocations(records).forEach(function(a){
-    if(!map[a.tent]) map[a.tent]={tent:a.tent,allocs:[],jobs:[],setup:[],strike:[]};
+  allTentAllocations(records).forEach(function(a){
+    if(!map[a.tent])map[a.tent]={tent:a.tent,jobs:[],allocs:[],setup:[],strike:[],rawSetup:[],rawStrike:[]};
     map[a.tent].allocs.push(a);
-    if(map[a.tent].jobs.indexOf(a.record)===-1) map[a.tent].jobs.push(a.record);
-    if(a.rawSetup) map[a.tent].setup.push(a.rawSetup);
-    if(a.rawStrike) map[a.tent].strike.push(a.rawStrike);
+    if(map[a.tent].jobs.indexOf(a.record)===-1)map[a.tent].jobs.push(a.record);
+    if(a.setup)map[a.tent].setup.push(a.setup);
+    if(a.strike)map[a.tent].strike.push(a.strike);
+    if(a.rawSetup)map[a.tent].rawSetup.push(a.rawSetup);
+    if(a.rawStrike)map[a.tent].rawStrike.push(a.rawStrike);
   });
 
   return Object.keys(map).map(function(k){
     var s=map[k];
-    var cut=outlierCut(s.allocs.map(function(a){return a.adjustedSetup;}));
-    var normal=s.allocs.filter(function(a){return a.adjustedSetup<=cut;});
-    var clean=normal.filter(function(a){return a.clean;});
-    var sorted=normal.slice().sort(function(a,b){return a.latestTime-b.latestTime;});
-    var newest=avg(sorted.slice(-5).map(function(a){return a.adjustedSetup;}));
-    var prev=avg(sorted.slice(-10,-5).map(function(a){return a.adjustedSetup;}));
-    s.rawSetup=avg(s.setup);
-    s.rawStrike=avg(s.strike);
-    s.adjustedSetup=avg(normal.map(function(a){return a.adjustedSetup;}));
-    s.cleanSetup=avg(clean.map(function(a){return a.adjustedSetup;}));
-    s.outliers=s.allocs.length-normal.length;
-    s.trend=newest&&prev?newest-prev:0;
+    var setupCut=outlierCut(s.setup);
+    var strikeCut=outlierCut(s.strike);
+    var normalSetup=s.allocs.filter(function(a){return !a.setup || a.setup<=setupCut;});
+    var normalStrike=s.allocs.filter(function(a){return !a.strike || a.strike<=strikeCut;});
+    var clean=s.allocs.filter(function(a){return a.clean && a.setup && a.setup<=setupCut;});
+    var setupSorted=normalSetup.filter(function(a){return a.setup;}).sort(function(a,b){return a.latestTime-b.latestTime;});
+    var strikeSorted=normalStrike.filter(function(a){return a.strike;}).sort(function(a,b){return a.latestTime-b.latestTime;});
+
+    var setupNewest=avg(setupSorted.slice(-5).map(function(a){return a.setup;}));
+    var setupPrev=avg(setupSorted.slice(-10,-5).map(function(a){return a.setup;}));
+    var strikeNewest=avg(strikeSorted.slice(-5).map(function(a){return a.strike;}));
+    var strikePrev=avg(strikeSorted.slice(-10,-5).map(function(a){return a.strike;}));
+
+    s.avgSetup=avg(normalSetup.map(function(a){return a.setup;}));
+    s.avgStrike=avg(normalStrike.map(function(a){return a.strike;}));
+    s.rawSetupAvg=avg(s.rawSetup);
+    s.rawStrikeAvg=avg(s.rawStrike);
+    s.cleanSetup=avg(clean.map(function(a){return a.setup;}));
+    s.outliers=s.allocs.length-normalSetup.length;
+    s.setupTrend=setupNewest&&setupPrev?setupNewest-setupPrev:0;
+    s.strikeTrend=strikeNewest&&strikePrev?strikeNewest-strikePrev:0;
     return s;
   }).sort(function(a,b){return tentArea(a.tent)-tentArea(b.tent);});
 }
-
 function trackerStats(records){
   var map={};
   records.forEach(function(r){
@@ -394,33 +462,45 @@ function trackerStats(records){
 }
 
 function render(){
-  var records=filtered(),setup=records.flatMap(function(r){return r.completedSetup.map(getMin);}),strike=records.flatMap(function(r){return r.completedStrike.map(getMin);}),ts=trackerStats(records);
+  var records=filtered();
+  var allocations=allTentAllocations(records);
+  var setupWeighted=allocations.map(function(a){return a.setup;}).filter(Boolean);
+  var strikeWeighted=allocations.map(function(a){return a.strike;}).filter(Boolean);
+  var ts=trackerStats(records);
+
   document.getElementById("timed-count").textContent=records.length;
-  document.getElementById("avg-setup").textContent=setup.length?fmtMin(Math.round(avg(setup))):"—";
-  document.getElementById("avg-strike").textContent=strike.length?fmtMin(Math.round(avg(strike))):"—";
-  if(ts.length){document.getElementById("best-tracker").textContent=ts[0].employee;document.getElementById("best-tracker-sub").textContent=fmtMin(Math.round(ts[0].avg))+" avg across "+ts[0].count+" timers";}else{document.getElementById("best-tracker").textContent="—";document.getElementById("best-tracker-sub").textContent="By avg completed timer";}
+  document.getElementById("avg-setup").textContent=setupWeighted.length?fmtMin(Math.round(avg(setupWeighted))):"—";
+  document.getElementById("avg-strike").textContent=strikeWeighted.length?fmtMin(Math.round(avg(strikeWeighted))):"—";
+
+  if(ts.length){
+    document.getElementById("best-tracker").textContent=ts[0].employee;
+    document.getElementById("best-tracker-sub").textContent=fmtMin(Math.round(ts[0].avg))+" avg across "+ts[0].count+" timers";
+  }else{
+    document.getElementById("best-tracker").textContent="—";
+    document.getElementById("best-tracker-sub").textContent="By avg completed timer";
+  }
+
   renderTent(records);renderTracker(records);renderTrend(records);renderOutliers(records);renderRecent(records);renderRevenue(records);
 }
-
 function referencedJobsHtml(stat){
   var rows=stat.jobs.slice().sort(function(a,b){return b.latestTime-a.latestTime;});
   if(!rows.length)return '<div class="tent-job-thumbs"><div class="empty">No referenced jobs found.</div></div>';
   return '<div class="tent-job-thumbs">'+rows.map(function(r){
     var inv=(r.inventory||[]).slice(0,8).map(function(i){var n=i.inventory||i.item||i.name||"Item",q=i.quantity||i.qty||"";return '<span>'+esc(n+(q?" × "+q:""))+'</span>';}).join("");
-    return '<div class="thumb-card"><div class="thumb-head"><div class="thumb-title">'+esc(r.jobName)+'</div><span class="pill">Diff '+r.difficulty+'</span></div><div class="thumb-meta"><div><strong>Date:</strong> '+esc(fmtDate(r.date))+'</div><div><strong>Setup:</strong> '+(r.setupMinutes?fmtMin(r.setupMinutes):"—")+' &nbsp; <strong>Strike:</strong> '+(r.strikeMinutes?fmtMin(r.strikeMinutes):"—")+'</div><div><strong>Tents:</strong> '+esc(r.tents.join(", ")||"—")+'</div><div><strong>Non-tent est:</strong> '+(r.nonTentMinutes?fmtMin(r.nonTentMinutes):"0 min")+'</div></div>'+(inv?'<div class="thumb-inventory">'+inv+'</div>':'')+'</div>';
+    return '<div class="thumb-card"><div class="thumb-head"><div class="thumb-title">'+esc(r.jobName)+'</div><span class="pill">Diff '+r.difficulty+'</span></div><div class="thumb-meta"><div><strong>Date:</strong> '+esc(fmtDate(r.date))+'</div><div><strong>Raw Setup:</strong> '+(r.setupMinutes?fmtMin(r.setupMinutes):"—")+' &nbsp; <strong>Raw Strike:</strong> '+(r.strikeMinutes?fmtMin(r.strikeMinutes):"—")+'</div><div><strong>Tents:</strong> '+esc(r.tents.join(", ")||"—")+'</div><div><strong>Non-tent est:</strong> '+(r.nonTentMinutes?fmtMin(r.nonTentMinutes):"0 min")+'</div></div>'+(inv?'<div class="thumb-inventory">'+inv+'</div>':'')+'</div>';
   }).join("")+'</div>';
 }
 
 function renderTent(records){
   var stats=tentStats(records),body=document.getElementById("tent-body");
-  if(!stats.length){body.innerHTML='<tr><td colspan="7">No tent data found.</td></tr>';return;}
+  if(!stats.length){body.innerHTML='<tr><td colspan="8">No tent data found.</td></tr>';return}
   body.innerHTML=stats.map(function(s,idx){
-    var trend=s.trend?((s.trend>0?"+":"-")+fmtMin(Math.round(Math.abs(s.trend)))):"—",cls=s.trend<0?"good":s.trend>0?"bad":"";
-    return '<tr class="tent-stat-row" data-tent-row="'+idx+'"><td><strong>'+esc(s.tent)+'</strong></td><td class="num">'+s.jobs.length+'</td><td class="num">'+(s.rawSetup?fmtMin(Math.round(s.rawSetup)):"—")+'</td><td class="num">'+(s.adjustedSetup?fmtMin(Math.round(s.adjustedSetup)):"—")+'</td><td class="num">'+(s.rawStrike?fmtMin(Math.round(s.rawStrike)):"—")+'</td><td class="num">'+(s.cleanSetup?fmtMin(Math.round(s.cleanSetup)):"—")+'</td><td class="num"><span class="pill '+cls+'">'+esc(trend)+'</span></td></tr>'
-      + '<tr class="tent-jobs-detail" id="tent-detail-'+idx+'" style="display:none;"><td colspan="7">'+referencedJobsHtml(s)+'</td></tr>';
-  }).join("");
+    var trend=s.setupTrend?((s.setupTrend>0?"+":"-")+fmtMin(Math.round(Math.abs(s.setupTrend)))):"—";
+    var cls=s.setupTrend<0?"good":s.setupTrend>0?"bad":"";
+    return '<tr class="tent-stat-row" data-tent-row="'+idx+'"><td><strong>'+esc(s.tent)+'</strong></td><td class="num">'+s.jobs.length+'</td><td class="num">'+(s.avgSetup?fmtMin(Math.round(s.avgSetup)):"—")+'</td><td class="num">'+(s.avgStrike?fmtMin(Math.round(s.avgStrike)):"—")+'</td><td class="num">'+(s.cleanSetup?fmtMin(Math.round(s.cleanSetup)):"—")+'</td><td class="num">'+(s.rawSetupAvg?fmtMin(Math.round(s.rawSetupAvg)):"—")+'</td><td class="num">'+confidenceLabel(s.jobs.length)+'</td><td class="num"><span class="pill '+cls+'">'+esc(trend)+'</span></td></tr>'
+      + '<tr class="tent-jobs-detail" id="tent-detail-'+idx+'" style="display:none;"><td colspan="8">'+referencedJobsHtml(s)+'</td></tr>';
+  }).join("")
 }
-
 function renderTracker(records){
   var stats=trackerStats(records),body=document.getElementById("tracker-body");
   if(!stats.length){body.innerHTML='<tr><td colspan="5">No completed timer data found.</td></tr>';return;}
@@ -430,8 +510,28 @@ function renderTracker(records){
   }).join("");
 }
 
-function renderTrend(records){var rows=tentStats(records).filter(function(s){return s.allocs.length>=6;}).slice(0,12),body=document.getElementById("trend-body");if(!rows.length){body.innerHTML='<tr><td colspan="5">Need more repeated timed jobs before trend data is useful.</td></tr>';return;}body.innerHTML=rows.map(function(s){var sorted=s.allocs.slice().sort(function(a,b){return a.latestTime-b.latestTime;});var newest=avg(sorted.slice(-5).map(function(a){return a.adjustedSetup;})),prev=avg(sorted.slice(-10,-5).map(function(a){return a.adjustedSetup;})),change=newest-prev,dir=change<0?"Improving":change>0?"Getting Slower":"Flat",cls=change<0?"good":change>0?"bad":"";return '<tr><td><strong>'+esc(s.tent)+'</strong></td><td class="num">'+fmtMin(Math.round(newest))+'</td><td class="num">'+fmtMin(Math.round(prev))+'</td><td class="num">'+(change<0?"-":"+")+fmtMin(Math.round(Math.abs(change)))+'</td><td><span class="pill '+cls+'">'+dir+'</span></td></tr>';}).join("");}
+function renderTrend(records){
+  var rows=tentStats(records).filter(function(s){return s.allocs.length>=6;}).slice(0,12);
+  var body=document.getElementById("trend-body");
+  if(!rows.length){body.innerHTML='<tr><td colspan="5">Need more repeated timed jobs before trend data is useful.</td></tr>';return}
 
+  function rowHtml(s,kind){
+    var change=kind==="setup"?s.setupTrend:s.strikeTrend;
+    if(!change)return "";
+    var dir=change<0?"Improving":change>0?"Getting Slower":"Flat";
+    var cls=change<0?"good":change>0?"bad":"";
+    return '<tr><td><strong>'+esc(s.tent)+'</strong></td><td class="num">'+(kind==="setup"?(s.avgSetup?fmtMin(Math.round(s.avgSetup)):"—"):(s.avgStrike?fmtMin(Math.round(s.avgStrike)):"—"))+'</td><td class="num">'+(change<0?"-":"+")+fmtMin(Math.round(Math.abs(change)))+'</td><td><span class="pill '+cls+'">'+dir+'</span></td><td class="num">'+confidenceLabel(s.jobs.length)+'</td></tr>';
+  }
+
+  var setupRows=rows.map(function(s){return rowHtml(s,"setup");}).filter(Boolean).join("");
+  var strikeRows=rows.map(function(s){return rowHtml(s,"strike");}).filter(Boolean).join("");
+
+  body.innerHTML =
+    '<tr><th colspan="5" class="trend-subhead">Setup Trend</th></tr>' +
+    (setupRows || '<tr><td colspan="5">Not enough setup trend data.</td></tr>') +
+    '<tr><th colspan="5" class="trend-subhead">Strike Trend</th></tr>' +
+    (strikeRows || '<tr><td colspan="5">Not enough strike trend data.</td></tr>');
+}
 function alertHtml(r,label,detail,cls){return '<div class="job-card"><div class="job-head"><h3>'+esc(r.jobName)+'</h3><span class="pill '+cls+'">'+esc(label)+'</span></div><div class="meta"><div><strong>Date:</strong> '+esc(fmtDate(r.date))+'</div><div><strong>Detail:</strong> '+esc(detail)+'</div><div><strong>Tents:</strong> '+esc(r.tents.join(", ")||"—")+'</div></div></div>';}
 
 function renderOutliers(records){var allocs=allAllocations(records),cut=outlierCut(allocs.map(function(a){return a.adjustedSetup;})),out=allocs.filter(function(a){return a.adjustedSetup>cut;}).sort(function(a,b){return b.adjustedSetup-a.adjustedSetup;}).slice(0,8),running=records.flatMap(function(r){return r.timers.filter(isRunning).map(function(t){return{record:r,timer:t};});}).slice(0,6),miss=records.filter(function(r){return !r.inventory||!r.inventory.length;}).slice(0,6),html="";html+=out.map(function(a){return alertHtml(a.record,"Long Adjusted Setup",a.tent+" estimated at "+fmtMin(a.adjustedSetup),"bad");}).join("");html+=running.map(function(x){return alertHtml(x.record,"In Progress",typeText(x.timer)+" still running","warn");}).join("");html+=miss.map(function(r){return alertHtml(r,"Missing Inventory","Could not match this timer to inventory.","warn");}).join("");document.getElementById("outlier-list").innerHTML=html||'<div class="empty">No outliers found for this filter.</div>';}
