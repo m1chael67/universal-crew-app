@@ -44,6 +44,31 @@ function isComplete(t){return String(t.completed||"").toUpperCase()==="YES"||Str
 function readPrice(job){var keys=["price","Price","total","Total","amount","Amount","revenue","Revenue","jobTotal","JobTotal","orderTotal","OrderTotal"];for(var k of keys){var v=job[k];if(v===""||v==null)continue;var n=Number(String(v).replace(/[^0-9.-]+/g,""));if(!isNaN(n)&&n>0)return n}return 0}
 
 
+
+function readAny(obj, names){
+  obj = obj || {};
+  for(var i=0;i<names.length;i++){
+    var k = names[i];
+    if(obj[k] !== "" && obj[k] !== null && typeof obj[k] !== "undefined") return obj[k];
+  }
+  // Case/space-insensitive fallback
+  var wanted = names.map(function(n){ return String(n).toLowerCase().replace(/[^a-z0-9]/g,""); });
+  var keys = Object.keys(obj);
+  for(var j=0;j<keys.length;j++){
+    var norm = String(keys[j]).toLowerCase().replace(/[^a-z0-9]/g,"");
+    if(wanted.indexOf(norm) !== -1 && obj[keys[j]] !== "" && obj[keys[j]] !== null && typeof obj[keys[j]] !== "undefined") {
+      return obj[keys[j]];
+    }
+  }
+  return "";
+}
+function timerJobPriceValue(timer){
+  return readAny(timer, ["jobPrice","JobPrice","Job Price","price","Price","revenue","Revenue","total","Total"]);
+}
+function timerTruckDistanceValue(timer){
+  return readAny(timer, ["truckDistance","TruckDistance","Truck Distance","distance","Distance"]);
+}
+
 function parseCrewNames(timer){
   var raw = timer.crew || timer.Crew || timer.crewNames || timer.CrewNames || "";
   if(!raw) raw = timer.employee || "";
@@ -57,7 +82,8 @@ function crewCount(timer){
   return (!isNaN(n) && n > 0) ? n : 1;
 }
 function parseMoney(value){
-  var n = Number(String(value || "").replace(/[^0-9.-]+/g,""));
+  if(value === "" || value === null || typeof value === "undefined") return 0;
+  var n = Number(String(value).replace(/[^0-9.-]+/g,""));
   return isNaN(n) ? 0 : n;
 }
 function parseTruckYards(value){
@@ -351,7 +377,8 @@ function difficulty(r){
   return Math.max(1, Math.round(score));
 }
 
-function buildRecords(){var map={};allTimers.forEach(t=>{var k=groupKey(t),j=findJob(t);if(!map[k])map[k]={key:k,job:j,jobName:(j&&j.Name)||t.jobName||"Unnamed Job",date:t.date||(j&&(j.SetupDate||j.StrikeDate))||"",timers:[],tents:j?tents(j):[],inventory:j?j.inventory||[]:[],revenue:j?j.revenue||0:0};map[k].timers.push(t)});return Object.keys(map).map(k=>{var r=map[k];r.setupTimers=r.timers.filter(t=>{var x=typeText(t).toLowerCase();return x.includes("set")||x.includes("setup")});r.strikeTimers=r.timers.filter(t=>typeText(t).toLowerCase().includes("strike"));r.completedSetup=r.setupTimers.filter(isComplete);r.completedStrike=r.strikeTimers.filter(isComplete);r.setupMinutes=r.completedSetup.reduce((s,t)=>s+getMin(t),0);r.strikeMinutes=r.completedStrike.reduce((s,t)=>s+getMin(t),0);r.totalMinutes=r.setupMinutes+r.strikeMinutes;r.nonTentMinutes=estimateNonTentMinutes(r);r.running=r.timers.some(isRunning);r.latestTime=r.timers.reduce((latest,t)=>{var d=parseDate(t.startTime||t.timestamp);return Math.max(latest,d?d.getTime():0)},0);var setupInfoTimer=r.completedSetup[0]||null;var strikeInfoTimer=r.completedStrike[0]||null;var infoTimer=setupInfoTimer||strikeInfoTimer||r.timers[0]||{};r.jobPrice=parseMoney((setupInfoTimer&&(setupInfoTimer.jobPrice||setupInfoTimer.JobPrice||setupInfoTimer["Job Price"]))||(strikeInfoTimer&&(strikeInfoTimer.jobPrice||strikeInfoTimer.JobPrice||strikeInfoTimer["Job Price"]))||infoTimer.jobPrice||infoTimer.JobPrice||infoTimer["Job Price"]);r.truckYards=parseTruckYards((setupInfoTimer&&(setupInfoTimer.truckDistance||setupInfoTimer.TruckDistance||setupInfoTimer["Truck Distance"]))||(strikeInfoTimer&&(strikeInfoTimer.truckDistance||strikeInfoTimer.TruckDistance||strikeInfoTimer["Truck Distance"]))||infoTimer.truckDistance||infoTimer.TruckDistance||infoTimer["Truck Distance"]);r.setupCrewAvg=avg(r.completedSetup.map(crewCount))||1;r.strikeCrewAvg=avg(r.completedStrike.map(crewCount))||1;r.setupManHours=r.completedSetup.reduce(function(s,t){return s+(getMin(t)*crewCount(t)/60);},0);r.strikeManHours=r.completedStrike.reduce(function(s,t){return s+(getMin(t)*crewCount(t)/60);},0);r.totalManHours=r.setupManHours+r.strikeManHours;r.nonTentMinutes=estimateNonTentMinutes(r)+truckDistanceMinutes(r.truckYards,r.setupCrewAvg);r.nonTentStrikeMinutes=estimateNonTentStrikeMinutes(r)+Math.round(truckDistanceMinutes(r.truckYards,r.strikeCrewAvg)*0.75);r.adjustedSetupPool=Math.max(0,(r.setupMinutes||0)-r.nonTentMinutes);r.adjustedStrikePool=Math.max(0,(r.strikeMinutes||0)-r.nonTentStrikeMinutes);r.difficulty=difficulty(r);r.difficultyBucket=difficultyBucket(r.difficulty);return r}).sort((a,b)=>b.latestTime-a.latestTime)}
+function buildRecords(){var map={};allTimers.forEach(t=>{var k=groupKey(t),j=findJob(t);if(!map[k])map[k]={key:k,job:j,jobName:(j&&j.Name)||t.jobName||"Unnamed Job",date:t.date||(j&&(j.SetupDate||j.StrikeDate))||"",timers:[],tents:j?tents(j):[],inventory:j?j.inventory||[]:[],revenue:j?j.revenue||0:0};map[k].timers.push(t)});return Object.keys(map).map(k=>{var r=map[k];r.setupTimers=r.timers.filter(t=>{var x=typeText(t).toLowerCase();return x.includes("set")||x.includes("setup")});r.strikeTimers=r.timers.filter(t=>typeText(t).toLowerCase().includes("strike"));r.completedSetup=r.setupTimers.filter(isComplete);r.completedStrike=r.strikeTimers.filter(isComplete);r.setupMinutes=r.completedSetup.reduce((s,t)=>s+getMin(t),0);r.strikeMinutes=r.completedStrike.reduce((s,t)=>s+getMin(t),0);r.totalMinutes=r.setupMinutes+r.strikeMinutes;r.nonTentMinutes=estimateNonTentMinutes(r);r.running=r.timers.some(isRunning);r.latestTime=r.timers.reduce((latest,t)=>{var d=parseDate(t.startTime||t.timestamp);return Math.max(latest,d?d.getTime():0)},0);var setupInfoTimer=r.completedSetup[0]||null;var strikeInfoTimer=r.completedStrike[0]||null;var infoTimer=setupInfoTimer||strikeInfoTimer||r.timers[0]||{};r.jobPrice=parseMoney((setupInfoTimer&&timerJobPriceValue(setupInfoTimer))||(strikeInfoTimer&&timerJobPriceValue(strikeInfoTimer))||timerJobPriceValue(infoTimer));
+r.truckYards=parseTruckYards((setupInfoTimer&&timerTruckDistanceValue(setupInfoTimer))||(strikeInfoTimer&&timerTruckDistanceValue(strikeInfoTimer))||timerTruckDistanceValue(infoTimer));r.setupCrewAvg=avg(r.completedSetup.map(crewCount))||1;r.strikeCrewAvg=avg(r.completedStrike.map(crewCount))||1;r.setupManHours=r.completedSetup.reduce(function(s,t){return s+(getMin(t)*crewCount(t)/60);},0);r.strikeManHours=r.completedStrike.reduce(function(s,t){return s+(getMin(t)*crewCount(t)/60);},0);r.totalManHours=r.setupManHours+r.strikeManHours;r.nonTentMinutes=estimateNonTentMinutes(r)+truckDistanceMinutes(r.truckYards,r.setupCrewAvg);r.nonTentStrikeMinutes=estimateNonTentStrikeMinutes(r)+Math.round(truckDistanceMinutes(r.truckYards,r.strikeCrewAvg)*0.75);r.adjustedSetupPool=Math.max(0,(r.setupMinutes||0)-r.nonTentMinutes);r.adjustedStrikePool=Math.max(0,(r.strikeMinutes||0)-r.nonTentStrikeMinutes);r.difficulty=difficulty(r);r.difficultyBucket=difficultyBucket(r.difficulty);return r}).sort((a,b)=>b.latestTime-a.latestTime)}
 
 function filtered(){
   var rec=allRecords.slice(),days=activeRange==="all"?0:Number(activeRange);
@@ -540,7 +567,7 @@ function referencedJobsHtml(stat){
   if(!rows.length)return '<div class="tent-job-thumbs"><div class="empty">No referenced jobs found.</div></div>';
   return '<div class="tent-job-thumbs">'+rows.map(function(r){
     var inv=(r.inventory||[]).slice(0,8).map(function(i){var n=i.inventory||i.item||i.name||"Item",q=i.quantity||i.qty||"";return '<span>'+esc(n+(q?" × "+q:""))+'</span>';}).join("");
-    return '<div class="thumb-card"><div class="thumb-head"><div class="thumb-title">'+esc(r.jobName)+'</div><span class="pill">Diff '+r.difficulty+'</span></div><div class="thumb-meta"><div><strong>Date:</strong> '+esc(fmtDate(r.date))+'</div><div><strong>Raw Setup:</strong> '+(r.setupMinutes?fmtMin(r.setupMinutes):"—")+' &nbsp; <strong>Raw Strike:</strong> '+(r.strikeMinutes?fmtMin(r.strikeMinutes):"—")+'</div><div><strong>Tents:</strong> '+esc(r.tents.join(", ")||"—")+'</div><div><strong>Non-tent est:</strong> '+(r.nonTentMinutes?fmtMin(r.nonTentMinutes):"0 min")+'</div></div>'+(inv?'<div class="thumb-inventory">'+inv+'</div>':'')+'</div>';
+    return '<div class="thumb-card"><div class="thumb-head"><div class="thumb-title">'+esc(r.jobName)+'</div><span class="pill">Diff '+r.difficulty+'</span></div><div class="thumb-meta"><div><strong>Date:</strong> '+esc(fmtDate(r.date))+'</div><div><strong>Raw Setup:</strong> '+(r.setupMinutes?fmtMin(r.setupMinutes):"—")+' &nbsp; <strong>Raw Strike:</strong> '+(r.strikeMinutes?fmtMin(r.strikeMinutes):"—")+'</div><div><strong>Tents:</strong> '+esc(r.tents.join(", ")||"—")+'</div><div><strong>Price:</strong> '+(r.jobPrice?moneyFmt(r.jobPrice):"—")+' &nbsp; <strong>Truck Distance:</strong> '+(r.truckYards?r.truckYards+" yd":"—")+'</div><div><strong>Non-tent est:</strong> '+(r.nonTentMinutes?fmtMin(r.nonTentMinutes):"0 min")+'</div></div>'+(inv?'<div class="thumb-inventory">'+inv+'</div>':'')+'</div>';
   }).join("")+'</div>';
 }
 
@@ -603,30 +630,37 @@ function renderTrend(records){
     '<tr><th colspan="5" class="trend-subhead">Strike Trend</th></tr>' +
     (strikeRows || '<tr><td colspan="5">Not enough strike trend data.</td></tr>');
 }
-function alertHtml(r,label,detail,cls){return '<div class="job-card"><div class="job-head"><h3>'+esc(r.jobName)+'</h3><span class="pill '+cls+'">'+esc(label)+'</span></div><div class="meta"><div><strong>Date:</strong> '+esc(fmtDate(r.date))+'</div><div><strong>Detail:</strong> '+esc(detail)+'</div><div><strong>Tents:</strong> '+esc(r.tents.join(", ")||"—")+'</div></div></div>';}
+function alertHtml(r,label,detail,cls){return '<div class="job-card"><div class="job-head"><h3>'+esc(r.jobName)+'</h3><span class="pill '+cls+'">'+esc(label)+'</span></div><div class="meta"><div><strong>Date:</strong> '+esc(fmtDate(r.date))+'</div><div><strong>Detail:</strong> '+esc(detail)+'</div><div><strong>Tents:</strong> '+esc(r.tents.join(", ")||"—")+'</div><div><strong>Price:</strong> '+(r.jobPrice?moneyFmt(r.jobPrice):"—")+' &nbsp; <strong>Truck Distance:</strong> '+(r.truckYards?r.truckYards+" yd":"—")+'</div></div></div>';}
 
 
 function renderRevenueSummary(records){
   var body=document.getElementById("revenue-summary-body");
   if(!body)return;
+
   var map={};
+  var missingPrice = 0;
+
   records.forEach(function(r){
+    if(!r.jobPrice) missingPrice++;
     var key;
     if(revenueRange==="month") key=monthKey(r.date);
     else if(revenueRange==="all") key="All Time";
     else key=weekStart(r.date);
     if(!key)return;
-    if(!map[key])map[key]={period:key,jobs:0,revenue:0,setupHrs:0,strikeHrs:0};
+    if(!map[key])map[key]={period:key,jobs:0,revenue:0,setupHrs:0,strikeHrs:0,missing:0};
     map[key].jobs+=1;
     map[key].revenue+=r.jobPrice||0;
     map[key].setupHrs+=r.setupManHours||0;
     map[key].strikeHrs+=r.strikeManHours||0;
+    if(!r.jobPrice) map[key].missing+=1;
   });
+
   var rows=Object.keys(map).sort().reverse().map(function(k){
     var w=map[k], total=w.setupHrs+w.strikeHrs, rpmh=total?w.revenue/total:0;
-    return '<tr><td><strong>'+esc(w.period)+'</strong></td><td class="num">'+w.jobs+'</td><td class="num">'+moneyFmt(w.revenue)+'</td><td class="num">'+total.toFixed(2)+'</td><td class="num">'+(rpmh?moneyFmt(rpmh):"—")+'</td><td class="num">'+w.setupHrs.toFixed(2)+'</td><td class="num">'+w.strikeHrs.toFixed(2)+'</td></tr>';
+    return '<tr><td><strong>'+esc(w.period)+'</strong>'+(w.missing?'<br><span class="inventory-missing">'+w.missing+' missing price</span>':'')+'</td><td class="num">'+w.jobs+'</td><td class="num">'+moneyFmt(w.revenue)+'</td><td class="num">'+total.toFixed(2)+'</td><td class="num">'+(rpmh?moneyFmt(rpmh):"—")+'</td><td class="num">'+w.setupHrs.toFixed(2)+'</td><td class="num">'+w.strikeHrs.toFixed(2)+'</td></tr>';
   }).join("");
-  body.innerHTML=rows||'<tr><td colspan="7">No revenue/man-hour data yet.</td></tr>';
+
+  body.innerHTML=rows||'<tr><td colspan="7">No revenue/man-hour data yet. Check that JobTimers is returning Job Price.</td></tr>';
 }
 
 function renderOutliers(records){var allocs=allAllocations(records),cut=outlierCut(allocs.map(function(a){return a.adjustedSetup;})),out=allocs.filter(function(a){return a.adjustedSetup>cut;}).sort(function(a,b){return b.adjustedSetup-a.adjustedSetup;}).slice(0,8),running=records.flatMap(function(r){return r.timers.filter(isRunning).map(function(t){return{record:r,timer:t};});}).slice(0,6),miss=records.filter(function(r){return !r.inventory||!r.inventory.length;}).slice(0,6),html="";html+=out.map(function(a){return alertHtml(a.record,"Long Adjusted Setup",a.tent+" estimated at "+fmtMin(a.adjustedSetup),"bad");}).join("");html+=running.map(function(x){return alertHtml(x.record,"In Progress",typeText(x.timer)+" still running","warn");}).join("");html+=miss.map(function(r){return alertHtml(r,"Missing Inventory","Could not match this timer to inventory.","warn");}).join("");document.getElementById("outlier-list").innerHTML=html||'<div class="empty">No outliers found for this filter.</div>';}
@@ -652,7 +686,7 @@ function renderWeekly(records){
   body.innerHTML=rows||'<tr><td colspan="7">No weekly revenue/man-hour data yet.</td></tr>';
 }
 
-function renderRecent(records){var rows=records.slice(0,12),list=document.getElementById("recent-list");if(!rows.length){list.innerHTML='<div class="empty">No timed jobs found.</div>';return;}list.innerHTML=rows.map(function(r){var setup=r.setupMinutes?fmtMin(r.setupMinutes):"—",strike=r.strikeMinutes?fmtMin(r.strikeMinutes):"—",trackers=Array.from(new Set(r.timers.map(function(t){return t.employee||"";}).filter(Boolean))).join(", ")||"—",inv=(r.inventory||[]).slice(0,8).map(function(i){var n=i.inventory||i.item||i.name||"Item",q=i.quantity||i.qty||"";return '<span class="inventory-pill">'+esc(n+(q?" × "+q:""))+'</span>';}).join("");return '<div class="job-card"><div class="job-head"><h3>'+esc(r.jobName)+'</h3><span class="pill">Difficulty '+r.difficulty+'</span></div><div class="meta"><div><strong>Date:</strong> '+esc(fmtDate(r.date))+'</div><div><strong>Setup:</strong> '+setup+' &nbsp; <strong>Strike:</strong> '+strike+' &nbsp; <strong>Non-tent est:</strong> '+fmtMin(r.nonTentMinutes||0)+'</div><div><strong>Crew:</strong> '+esc(trackers)+'</div><div><strong>Tents:</strong> '+esc(r.tents.join(", ")||"—")+'</div></div>'+(inv?'<div class="inventory-list">'+inv+'</div>':'')+'</div>';}).join("");}
+function renderRecent(records){var rows=records.slice(0,12),list=document.getElementById("recent-list");if(!rows.length){list.innerHTML='<div class="empty">No timed jobs found.</div>';return;}list.innerHTML=rows.map(function(r){var setup=r.setupMinutes?fmtMin(r.setupMinutes):"—",strike=r.strikeMinutes?fmtMin(r.strikeMinutes):"—",trackers=Array.from(new Set(r.timers.map(function(t){return t.employee||"";}).filter(Boolean))).join(", ")||"—",inv=(r.inventory||[]).slice(0,8).map(function(i){var n=i.inventory||i.item||i.name||"Item",q=i.quantity||i.qty||"";return '<span class="inventory-pill">'+esc(n+(q?" × "+q:""))+'</span>';}).join("");return '<div class="job-card"><div class="job-head"><h3>'+esc(r.jobName)+'</h3><span class="pill">Difficulty '+r.difficulty+'</span></div><div class="meta"><div><strong>Date:</strong> '+esc(fmtDate(r.date))+'</div><div><strong>Setup:</strong> '+setup+' &nbsp; <strong>Strike:</strong> '+strike+' &nbsp; <strong>Non-tent est:</strong> '+fmtMin(r.nonTentMinutes||0)+'</div><div><strong>Crew:</strong> '+esc(trackers)+'</div><div><strong>Tents:</strong> '+esc(r.tents.join(", ")||"—")+'</div><div><strong>Price:</strong> '+(r.jobPrice?moneyFmt(r.jobPrice):"—")+' &nbsp; <strong>Truck Distance:</strong> '+(r.truckYards?r.truckYards+" yd":"—")+'</div></div>'+(inv?'<div class="inventory-list">'+inv+'</div>':'')+'</div>';}).join("");}
 
 function renderRevenue(records){var rows=records.filter(r=>r.revenue&&r.totalMinutes).sort((a,b)=>(b.revenue/(b.totalMinutes/60))-(a.revenue/(a.totalMinutes/60))).slice(0,20),sec=document.getElementById("revenue-section");if(!rows.length){sec.style.display="none";return}sec.style.display="block";document.getElementById("revenue-body").innerHTML=rows.map(r=>{var ph=r.revenue/(r.totalMinutes/60);return '<tr><td><strong>'+esc(r.jobName)+'</strong></td><td class="num">$'+r.revenue.toFixed(2)+'</td><td class="num">'+fmtMin(r.totalMinutes)+'</td><td class="num">$'+ph.toFixed(2)+'/hr</td><td>'+esc(r.tents.join(", ")||"—")+'</td></tr>'}).join("")}
 function populateFilters(){var tentSet=new Set(),trackerSet=new Set();allRecords.forEach(r=>{r.tents.forEach(t=>tentSet.add(t));r.timers.forEach(t=>{if(t.employee)trackerSet.add(t.employee)})});document.getElementById("tent-filter").innerHTML='<option value="">All Tents</option>'+Array.from(tentSet).sort().map(t=>'<option value="'+esc(t)+'">'+esc(t)+'</option>').join("");document.getElementById("tracker-filter").innerHTML='<option value="">All Crew</option>'+Array.from(trackerSet).sort().map(t=>'<option value="'+esc(t)+'">'+esc(t)+'</option>').join("")}
