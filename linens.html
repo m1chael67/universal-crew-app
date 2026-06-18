@@ -557,7 +557,7 @@
   </main>
 
   <script>
-    const API_URL = 'https://script.google.com/macros/s/AKfycbwjUJ0Lm4roxRgeh0wds0-omveEp3Y0nwJrlHRjXDdx7XHPAa7551O2A_vcD52gjxs/exec';
+    const API_URL = 'https://script.google.com/macros/s/AKfycbyMvzUpw45ZzteIbpfLrXcnVaeSuVrohk06uOgFq-yh8XZlxusDtzL2Hv1l0WGzeao/exec';
 
     let dashboard = { inventory: [], needs: [], transactions: [] };
     let checkedJobKeys = new Set();
@@ -704,7 +704,7 @@
           dashboard.needs = needsRes.needs || [];
           dashboard.totals = needsRes.totals || [];
         } catch (needsErr) {
-          warning.textContent = 'Inventory loaded, but job linen needs did not load. This usually means the Jobs spreadsheet ID in Apps Script is missing/wrong, the Jobs Sheet2 tab name does not match, or the web app needs to be redeployed after changes.';
+          warning.textContent = 'Inventory loaded, but job linen needs did not load. Error: ' + needsErr.message;
           warning.style.display = 'block';
         }
 
