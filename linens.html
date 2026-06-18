@@ -30,12 +30,7 @@
     header {
       max-width: 1180px;
       margin: 0 auto;
-      padding: 18px 16px 4px 60px;
-    }
-
-    .topbar {
-      display: block;
-      position: relative;
+      padding: 18px 16px 4px 64px;
     }
 
     h1 {
@@ -197,6 +192,18 @@
     .hint {
       color: var(--muted);
       font-size: 13px;
+    }
+
+    .api-warning {
+      display: none;
+      border: 1px solid #fde68a;
+      background: #fffbeb;
+      color: #92400e;
+      border-radius: 12px;
+      padding: 10px 12px;
+      margin-bottom: 14px;
+      font-size: 13px;
+      font-weight: bold;
     }
 
     .shortage-box {
@@ -409,15 +416,15 @@
   </style>
 </head>
 <body>
+  <button class="hamburger" onclick="toggleMenu()">☰</button>
+  <nav id="menu" class="menu"></nav>
+
   <header>
-    <div class="topbar">
-      <button class="hamburger" onclick="toggleMenu()">☰</button>
-      <h1>Linens</h1>
-      <nav id="menu" class="menu"></nav>
-    </div>
+    <h1>Linens</h1>
   </header>
 
   <main id="app">
+    <div id="apiWarning" class="api-warning"></div>
     <section class="controls">
       <div>
         <label for="daysAhead">Show Jobs</label>
@@ -653,7 +660,7 @@
         const script = document.createElement('script');
         const timeout = setTimeout(() => {
           cleanup();
-          reject(new Error('Web app did not respond. Check deployment access and Apps Script errors.'));
+          reject(new Error('Web app did not respond with JSONP. The Apps Script may be throwing an error before it can run the callback, or it may need to be redeployed.'));
         }, 15000);
 
         function cleanup() {
@@ -672,7 +679,7 @@
         script.src = API_URL + '?' + new URLSearchParams(allParams).toString();
         script.onerror = () => {
           cleanup();
-          reject(new Error('Could not reach linen web app.'));
+          reject(new Error('Could not reach linen web app. Make sure the deployment is public and the /exec link is current.'));
         };
         document.body.appendChild(script);
       });
@@ -680,14 +687,34 @@
 
     async function loadDashboard() {
       const app = document.getElementById('app');
+      const warning = document.getElementById('apiWarning');
       app.classList.add('loading');
+      warning.style.display = 'none';
+      warning.textContent = '';
+
       try {
         const daysAhead = document.getElementById('daysAhead').value;
-        dashboard = await api({ action: 'getDashboard', daysAhead });
+
+        // Load inventory first so the page still works even if the Jobs Sheet link is not wired correctly yet.
+        const invRes = await api({ action: 'getInventory' });
+        dashboard = { inventory: invRes.inventory || [], needs: [], transactions: [] };
+
+        try {
+          const needsRes = await api({ action: 'getLinenNeeds', daysAhead });
+          dashboard.needs = needsRes.needs || [];
+          dashboard.totals = needsRes.totals || [];
+        } catch (needsErr) {
+          warning.textContent = 'Inventory loaded, but job linen needs did not load. This usually means the Jobs spreadsheet ID in Apps Script is missing/wrong, the Jobs Sheet2 tab name does not match, or the web app needs to be redeployed after changes.';
+          warning.style.display = 'block';
+        }
+
         autoCheckTodayTomorrow();
         renderAll();
       } catch (err) {
-        alert('Could not load linens: ' + err.message);
+        warning.textContent = 'Could not load linen inventory. Check that the Apps Script deployment access is set to Anyone, then redeploy the web app. Error: ' + err.message;
+        warning.style.display = 'block';
+        dashboard = { inventory: [], needs: [], transactions: [] };
+        renderAll();
       } finally {
         app.classList.remove('loading');
       }
