@@ -472,6 +472,44 @@
 .timeoff-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
 .timeoff-note{width:100%;min-height:42px;border:1px solid #ddd;border-radius:10px;padding:8px;font:inherit;box-sizing:border-box;margin-top:10px;}
 .timeoff-empty{font-size:13px;color:#666;padding:10px 0;}
+.timeoff-reminder-panel{
+  margin-top:1.25rem;
+  padding:12px;
+  border:1px solid #f0c36a;
+  border-radius:14px;
+  background:#fff9ea;
+  box-shadow:0 2px 10px rgba(0,0,0,0.04);
+  display:none;
+}
+.timeoff-reminder-panel.show{display:block;}
+.timeoff-reminder-title{
+  font-size:13px;
+  font-weight:900;
+  color:#8a5a00;
+  margin:0 0 8px 0;
+  text-transform:uppercase;
+  letter-spacing:.25px;
+}
+.timeoff-reminder-list{display:grid;gap:6px;}
+.timeoff-reminder-item{font-size:13px;color:#222;line-height:1.35;}
+.emp-row.timeoff-active{
+  border-color:#e2aaaa;
+  background:#fff3f3;
+  box-shadow:0 0 0 3px rgba(226,58,58,0.12), 0 0 16px rgba(226,58,58,0.25);
+}
+.timeoff-active-pill{
+  display:inline-flex;
+  align-items:center;
+  padding:2px 8px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:900;
+  border:1px solid #e2aaaa;
+  background:#fff0f0;
+  color:#8b1f1f;
+  white-space:nowrap;
+}
+
 details.timeoff-older{margin-top:12px;border-top:1px solid #e0e0e0;padding-top:12px;}
 .timeoff-older-summary{cursor:pointer;font-weight:700;font-size:13px;padding:8px 10px;border:1px solid #e6e6e6;border-radius:10px;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,0.04);list-style:none;user-select:none;display:block;text-align:center;margin-bottom:10px;}
 details.timeoff-older > summary::-webkit-details-marker{display:none;}
@@ -599,14 +637,14 @@ details.timeoff-older > summary::-webkit-details-marker{display:none;}
       <div id="timeoff-admin-status" class="mini"></div>
     </div>
 
+    <div class="timeoff-reminder-panel" id="timeoff-reminder-panel">
+      <div class="timeoff-reminder-title">Upcoming Time Off</div>
+      <div class="timeoff-reminder-list" id="timeoff-reminder-list"></div>
+    </div>
+
     <!-- NEW: Quick Clock Panel -->
     <div class="quick-panel" id="quick-clock">
       <h2>Quick Clock In/Out</h2>
-      <p class="sub">
-        This uses the same Apps Script endpoint and writes normal <code>clock_in</code>/<code>clock_out</code> events
-        to the Time Log for the <strong>current</strong> pay period. Buttons automatically flip based on current state.
-      </p>
-
       <div class="emp-list" id="emp-list"></div>
 
       <div id="quick-status" class="mini"></div>
@@ -631,7 +669,7 @@ details.timeoff-older > summary::-webkit-details-marker{display:none;}
       "Benjamin Kruger": "benjamin_kruger.html",
       "Ethan Cohen": "ethan_cohen.html",
       "Jake Winograd": "jake_winograd.html",
-      "Dino": "344466.html",
+      "Dino": "dino.html",
       "Bobby Kline": "bobby_kline.html"
     };
 
@@ -1117,6 +1155,20 @@ var now = new Date();
           btn.textContent = "Clock In";
         }
       }
+
+      var row = document.getElementById("emp-row-" + emp);
+      var meta = row ? row.querySelector(".emp-meta") : null;
+      var existing = row ? row.querySelector(".timeoff-active-pill") : null;
+      if (existing) existing.remove();
+
+      var activeReq = getActiveTimeOffForEmployee(emp);
+      if (row) row.classList.toggle("timeoff-active", !!activeReq);
+      if (meta && activeReq) {
+        var offPill = document.createElement("span");
+        offPill.className = "timeoff-active-pill";
+        offPill.textContent = buildActiveOffText(activeReq);
+        meta.appendChild(offPill);
+      }
     }
 
     function refreshQuickPanel() {
@@ -1142,6 +1194,7 @@ var now = new Date();
     // --- Auto-refresh with countdown ---
     var REFRESH_EVERY_MS = 20000; // 20s
     var countdownMs = REFRESH_EVERY_MS;
+    var approvedTimeOffRequests = [];
 
     // ===== TIME OFF REQUEST ADMIN =====
     function timeOffJsonp(params, timeoutMs) {
@@ -1171,18 +1224,103 @@ var now = new Date();
       var t = Date.parse(s);
       return isNaN(t) ? null : new Date(t);
     }
-    function formatTimeOffDate(value) { var d=parseTimeOffDate(value); if(!d) return value || ""; return (d.getMonth()+1)+"/"+d.getDate()+"/"+String(d.getFullYear()).slice(-2); }
+    function weekdayName(d) {
+      return d ? ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][d.getDay()] : "";
+    }
+    function shortWeekdayName(d) {
+      return d ? ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d.getDay()] : "";
+    }
+    function sameLocalDay(a,b) {
+      return !!(a && b && a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate());
+    }
+    function addDays(d, days) {
+      var copy = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 12, 0, 0);
+      copy.setDate(copy.getDate() + days);
+      return copy;
+    }
+    function startOfLocalDay(d) {
+      return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 12, 0, 0);
+    }
+    function formatTimeOffDate(value) {
+      var d=parseTimeOffDate(value);
+      if(!d) return value || "";
+      return (d.getMonth()+1)+"/"+d.getDate()+"/"+String(d.getFullYear()).slice(-2);
+    }
+    function formatTimeOffDateWithWeekday(value) {
+      var d=parseTimeOffDate(value);
+      if(!d) return value || "";
+      return weekdayName(d) + " " + formatTimeOffDate(value);
+    }
     function escapeHtml(value) { return String(value == null ? "" : value).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 
     function getTimeOffDateText(req) {
-      if (req.RequestType === "Hours") return formatTimeOffDate(req.RequestDate);
-      return formatTimeOffDate(req.StartDate) + (req.EndDate && req.EndDate !== req.StartDate ? " - " + formatTimeOffDate(req.EndDate) : "");
+      if (req.RequestType === "Hours") return formatTimeOffDateWithWeekday(req.RequestDate);
+      var start = formatTimeOffDateWithWeekday(req.StartDate);
+      var end = formatTimeOffDateWithWeekday(req.EndDate);
+      return start + (req.EndDate && req.EndDate !== req.StartDate ? " - " + end : "");
+    }
+
+    function getTimeOffStartDate(req) {
+      return req.RequestType === "Hours" ? parseTimeOffDate(req.RequestDate) : parseTimeOffDate(req.StartDate);
+    }
+    function getTimeOffEndDate(req) {
+      return req.RequestType === "Hours" ? parseTimeOffDate(req.RequestDate) : parseTimeOffDate(req.EndDate || req.StartDate);
+    }
+    function getActiveTimeOffForEmployee(emp) {
+      var today = startOfLocalDay(new Date());
+      return approvedTimeOffRequests.find(function(req) {
+        if (String(req.Employee || "") !== emp) return false;
+        var start = getTimeOffStartDate(req);
+        var end = getTimeOffEndDate(req);
+        if (!start || !end) return false;
+        return today.getTime() >= startOfLocalDay(start).getTime() && today.getTime() <= startOfLocalDay(end).getTime();
+      }) || null;
+    }
+    function buildActiveOffText(req) {
+      if (!req) return "";
+      if (req.RequestType === "Hours") {
+        if (req.HoursType === "Late Start") return "Late Start Until " + (req.EndTime || "");
+        if (req.HoursType === "Early Leave") return "Early Leave At " + (req.StartTime || "");
+        if (req.HoursType === "Partial Day") return (req.StartTime || "") + " - " + (req.EndTime || "");
+        return "OFF TODAY";
+      }
+      var end = getTimeOffEndDate(req);
+      if (end && !sameLocalDay(end, new Date())) return "OFF UNTIL " + formatTimeOffDate(end);
+      return "OFF TODAY";
+    }
+    function renderUpcomingTimeOffReminders(requests) {
+      var panel = document.getElementById("timeoff-reminder-panel");
+      var list = document.getElementById("timeoff-reminder-list");
+      if (!panel || !list) return;
+      list.innerHTML = "";
+      var today = startOfLocalDay(new Date());
+      var sevenDays = addDays(today, 7);
+      var upcoming = (requests || []).filter(function(req) {
+        if (String(req.Status || "") !== "Approved") return false;
+        var start = getTimeOffStartDate(req);
+        if (!start) return false;
+        var startDay = startOfLocalDay(start);
+        return startDay.getTime() > today.getTime() && startDay.getTime() <= sevenDays.getTime();
+      }).sort(function(a,b){
+        return getTimeOffStartDate(a).getTime() - getTimeOffStartDate(b).getTime();
+      });
+      if (!upcoming.length) {
+        panel.classList.remove("show");
+        return;
+      }
+      upcoming.forEach(function(req) {
+        var item = document.createElement("div");
+        item.className = "timeoff-reminder-item";
+        item.textContent = (req.Employee || "Employee") + " is approved off " + getTimeOffDateText(req) + ".";
+        list.appendChild(item);
+      });
+      panel.classList.add("show");
     }
 
     function renderTimeOffRequestCard(req, isOlder) {
       var status = String(req.Status || "Pending");
       var cls = status.toLowerCase();
-      var submitted = formatTimeOffDate(req.SubmittedAt);
+      var submitted = formatTimeOffDateWithWeekday(req.SubmittedAt);
       var reasonText = req.Reason === "Other" ? (req.OtherReason || "Other") : (req.Reason || "");
       var card = document.createElement("div");
       card.className = "timeoff-request-card";
@@ -1203,7 +1341,7 @@ var now = new Date();
             '<div><strong>Time:</strong> ' + escapeHtml(req.StartTime || '') + (req.EndTime ? ' - ' + escapeHtml(req.EndTime) : '') + '</div>' +
             '<div><strong>Reason:</strong> ' + escapeHtml(reasonText) + '</div>' +
             '<div><strong>Status:</strong> ' + escapeHtml(status) + '</div>' +
-            '<div><strong>Decision:</strong> ' + escapeHtml(req.AdminDecisionAt ? formatTimeOffDate(req.AdminDecisionAt) : '') + '</div>' +
+            '<div><strong>Decision:</strong> ' + escapeHtml(req.AdminDecisionAt ? formatTimeOffDateWithWeekday(req.AdminDecisionAt) : '') + '</div>' +
           '</div>' +
           (status === 'Pending' ? '<textarea class="timeoff-note" placeholder="Optional admin note"></textarea><div class="timeoff-actions"><button type="button" class="btn primary timeoff-approve">Approve</button><button type="button" class="btn warn timeoff-deny">Deny</button></div>' : '') +
         '</div>';
@@ -1230,6 +1368,8 @@ var now = new Date();
       var pending = [], older = [];
       (requests || []).forEach(function(req){ String(req.Status || "Pending") === "Pending" ? pending.push(req) : older.push(req); });
       function bySubmittedDesc(a,b){ return (parseTimeOffDate(b.SubmittedAt)||0) - (parseTimeOffDate(a.SubmittedAt)||0); }
+      approvedTimeOffRequests = (requests || []).filter(function(req){ return String(req.Status || "") === "Approved"; });
+      renderUpcomingTimeOffReminders(approvedTimeOffRequests);
       pending.sort(bySubmittedDesc); older.sort(bySubmittedDesc);
       if (!pending.length) currentEl.innerHTML = '<div class="timeoff-empty">No pending time off requests.</div>';
       pending.forEach(function(req){ currentEl.appendChild(renderTimeOffRequestCard(req, false)); });
