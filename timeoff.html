@@ -182,10 +182,18 @@
       jsonp(p).then(function(data){
         if(!data.success) throw new Error(data.error || "Submit failed");
 
-        document.getElementById("emailMessage").value =
-          p.employee + " requested time off. Go to admin page to approve or deny.";
-
-        document.getElementById("emailNotifyForm").submit();
+        fetch("https://formsubmit.co/ajax/michael@universalrentalstl.com", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          },
+          body: JSON.stringify({
+            _captcha: "false",
+            _subject: "Time Off Request",
+            message: p.employee + " requested time off. Go to admin page to approve or deny."
+          })
+        }).catch(() => {});
 
         setStatus("Request submitted.","ok");
         document.getElementById("timeOffForm").reset(); updateVisibleFields(); show(document.getElementById("otherReasonField"), false);
@@ -199,20 +207,6 @@
     }
     (function(){ var btn=document.getElementById("menuBtn"), overlay=document.getElementById("menuOverlay"); function close(){document.body.classList.remove("menu-open");} function open(){document.body.classList.add("menu-open");} btn.addEventListener("click", function(){ document.body.classList.contains("menu-open") ? close() : open(); }); overlay.addEventListener("click", close); document.addEventListener("keydown", function(e){ if(e.key === "Escape") close(); }); })();
   </script>
-
-<form
-  id="emailNotifyForm"
-  action="https://formsubmit.co/michael@universalrentalstl.com"
-  method="POST"
-  style="display:none;">
-
-  <input type="hidden" name="_captcha" value="false">
-  <input type="hidden" name="_template" value="table">
-  <input type="hidden" name="_subject" value="Time Off Request">
-  <input type="hidden" name="_next" value="about:blank">
-
-  <input type="hidden" id="emailMessage" name="message">
-</form>
 
 </body>
 </html>
