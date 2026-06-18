@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Linens | Universal Rentals</title>
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --card: #ffffff;
+      --text: #17202a;
+      --muted: #667085;
+      --border: #d9dee7;
+      --blue: #2563eb;
+      --green: #14804a;
+      --red: #c1121f;
+      --yellow: #f59e0b;
+      --dark: #111827;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    header {
+      background: var(--dark);
+      color: white;
+      padding: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      box-shadow: 0 2px 8px rgba(0,0,0,.2);
+    }
+
+    .topbar {
+      max-width: 1180px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      gap: 12px;
+      position: relative;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 22px;
+      letter-spacing: .3px;
+    }
+
+    .hamburger {
+      border: 1px solid rgba(255,255,255,.25);
+      background: rgba(255,255,255,.08);
+      color: white;
+      border-radius: 10px;
+      padding: 9px 12px;
+      cursor: pointer;
+      font-size: 18px;
+    }
+
+    .menu {
+      display: none;
+      position: absolute;
+      left: 0;
+      top: 46px;
+      background: white;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,.18);
+      min-width: 190px;
+      overflow: hidden;
+    }
+
+    .menu a {
+      display: block;
+      padding: 12px 14px;
+      color: var(--text);
+      text-decoration: none;
+      border-bottom: 1px solid #eef1f5;
+    }
+
+    .menu a:hover { background: #f3f6fa; }
+    .menu.show { display: block; }
+
+    main {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    .controls, .summary-grid, .section, .management-panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow: 0 2px 8px rgba(16,24,40,.05);
+    }
+
+    .controls {
+      padding: 14px;
+      display: grid;
+      grid-template-columns: repeat(6, minmax(110px, 1fr));
+      gap: 10px;
+      align-items: end;
+      margin-bottom: 14px;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    input, select, button, textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 14px;
+      background: white;
+    }
+
+    button {
+      cursor: pointer;
+      font-weight: bold;
+      background: var(--blue);
+      color: white;
+      border-color: var(--blue);
+    }
+
+    button.secondary {
+      background: white;
+      color: var(--text);
+      border-color: var(--border);
+    }
+
+    button.green {
+      background: var(--green);
+      border-color: var(--green);
+    }
+
+    button.red {
+      background: var(--red);
+      border-color: var(--red);
+    }
+
+    .summary-grid {
+      padding: 14px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .metric {
+      border: 1px solid #e5e8ef;
+      border-radius: 12px;
+      padding: 12px;
+      background: #fbfcfe;
+    }
+
+    .metric .num {
+      font-size: 26px;
+      font-weight: 800;
+      margin-bottom: 3px;
+    }
+
+    .metric .label {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .section {
+      padding: 14px;
+      margin-bottom: 14px;
+    }
+
+    .section-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 19px;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .shortage-box {
+      display: none;
+      border: 1px solid #fecaca;
+      background: #fff1f2;
+      color: #991b1b;
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 14px;
+      font-weight: bold;
+    }
+
+    .inventory-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .linen-card, .job-card, .total-card {
+      border: 1px solid #e5e8ef;
+      border-radius: 13px;
+      padding: 12px;
+      background: #fff;
+    }
+
+    .linen-card.warning {
+      border-color: #fbbf24;
+      background: #fffbeb;
+    }
+
+    .linen-card.short {
+      border-color: #fca5a5;
+      background: #fff1f2;
+    }
+
+    .linen-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .linen-name {
+      font-size: 17px;
+      font-weight: 800;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: bold;
+      background: #eef2ff;
+      color: #3730a3;
+      white-space: nowrap;
+    }
+
+    .badge.red { background: #fee2e2; color: #991b1b; }
+    .badge.green { background: #dcfce7; color: #166534; }
+    .badge.yellow { background: #fef3c7; color: #92400e; }
+
+    .counts {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      text-align: center;
+    }
+
+    .count-box {
+      background: #f8fafc;
+      border: 1px solid #eef1f5;
+      border-radius: 10px;
+      padding: 7px 4px;
+    }
+
+    .count-box strong {
+      display: block;
+      font-size: 17px;
+    }
+
+    .count-box span {
+      display: block;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .job-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .date-group {
+      border: 1px solid #e5e8ef;
+      border-radius: 13px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .date-header {
+      background: #f8fafc;
+      padding: 11px 12px;
+      font-weight: 800;
+      border-bottom: 1px solid #e5e8ef;
+    }
+
+    .job-card {
+      border: 0;
+      border-radius: 0;
+      border-bottom: 1px solid #eef1f5;
+    }
+
+    .job-card:last-child { border-bottom: 0; }
+
+    .job-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .job-check {
+      width: 22px;
+      height: 22px;
+      flex: 0 0 auto;
+    }
+
+    .job-title {
+      font-weight: 800;
+      flex: 1;
+    }
+
+    .items {
+      padding-left: 34px;
+      color: #263241;
+      line-height: 1.55;
+    }
+
+    .totals-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .management-panel {
+      padding: 14px;
+      margin-bottom: 20px;
+    }
+
+    .management-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      align-items: end;
+    }
+
+    .full { grid-column: 1 / -1; }
+
+    .status {
+      margin-top: 10px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .readonly-user {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 14px;
+      background: #f8fafc;
+      color: var(--text);
+      min-height: 39px;
+    }
+
+    .empty {
+      padding: 16px;
+      border: 1px dashed var(--border);
+      border-radius: 12px;
+      color: var(--muted);
+      background: #fbfcfe;
+      text-align: center;
+    }
+
+    .loading {
+      opacity: .65;
+      pointer-events: none;
+    }
+
+    @media (max-width: 900px) {
+      .controls, .summary-grid, .inventory-grid, .totals-grid, .management-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 620px) {
+      main { padding: 10px; }
+      .controls, .summary-grid, .inventory-grid, .totals-grid, .management-grid {
+        grid-template-columns: 1fr;
+      }
+      .counts { grid-template-columns: 1fr 1fr; }
+      .items { padding-left: 0; }
+      .section-title { align-items: flex-start; flex-direction: column; }
+    }
+
+    @media print {
+      header, .controls, .summary-grid, #inventorySection, #managementSection, #shortageBox, .section-title button, .hint, .no-print {
+        display: none !important;
+      }
+      body { background: white; }
+      main { max-width: none; padding: 0; }
+      .section { border: 0; box-shadow: none; padding: 0; }
+      .date-group, .job-card { break-inside: avoid; }
+      .job-card:not(.print-selected) { display: none !important; }
+      .job-check { display: none; }
+      .items { padding-left: 0; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="topbar">
+      <button class="hamburger" onclick="toggleMenu()">☰</button>
+      <h1>Linens</h1>
+      <nav id="menu" class="menu"></nav>
+    </div>
+  </header>
+
+  <main id="app">
+    <section class="controls">
+      <div>
+        <label for="daysAhead">Show Jobs</label>
+        <select id="daysAhead">
+          <option value="1">Today + Tomorrow</option>
+          <option value="3">Next 3 Days</option>
+          <option value="7" selected>Next 7 Days</option>
+          <option value="14">Next 14 Days</option>
+          <option value="30">Next 30 Days</option>
+        </select>
+      </div>
+      <div>
+        <label for="searchBox">Search</label>
+        <input id="searchBox" placeholder="132R, white, spandex..." />
+      </div>
+      <div>
+        <label for="shortOnly">Inventory View</label>
+        <select id="shortOnly">
+          <option value="all">All Inventory</option>
+          <option value="short">Shortages Only</option>
+          <option value="dirty">Dirty / Missing Only</option>
+        </select>
+      </div>
+      <div>
+        <label>&nbsp;</label>
+        <button onclick="loadDashboard()">Refresh</button>
+      </div>
+      <div>
+        <label>&nbsp;</label>
+        <button class="secondary" onclick="selectAllVisibleJobs(true)">Check All Jobs</button>
+      </div>
+      <div>
+        <label>&nbsp;</label>
+        <button class="green" onclick="printSelectedJobs()">Print Selected</button>
+      </div>
+    </section>
+
+    <div id="shortageBox" class="shortage-box"></div>
+
+    <section class="summary-grid">
+      <div class="metric"><div id="metricOwned" class="num">0</div><div class="label">Total Owned</div></div>
+      <div class="metric"><div id="metricClean" class="num">0</div><div class="label">Clean</div></div>
+      <div class="metric"><div id="metricDirty" class="num">0</div><div class="label">Dirty</div></div>
+      <div class="metric"><div id="metricShort" class="num">0</div><div class="label">Short For Selected Range</div></div>
+    </section>
+
+    <section id="jobsSection" class="section">
+      <div class="section-title">
+        <div>
+          <h2>Upcoming Linen Pull Sheet</h2>
+          <div class="hint">Check the jobs you want included when printing. Totals below update from checked jobs.</div>
+        </div>
+        <button class="secondary no-print" onclick="selectAllVisibleJobs(false)">Uncheck All</button>
+      </div>
+      <div id="jobList" class="job-list"></div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">
+        <div>
+          <h2>Selected Job Totals</h2>
+          <div class="hint">These are the linens needed for the checked jobs only.</div>
+        </div>
+      </div>
+      <div id="selectedTotals" class="totals-grid"></div>
+    </section>
+
+    <section id="inventorySection" class="section">
+      <div class="section-title">
+        <div>
+          <h2>Inventory</h2>
+          <div class="hint">Compares clean inventory against upcoming needs.</div>
+        </div>
+      </div>
+      <div id="inventoryGrid" class="inventory-grid"></div>
+    </section>
+
+    <section id="managementSection" class="management-panel">
+      <div class="section-title">
+        <div>
+          <h2>Inventory Management</h2>
+          <div class="hint">Use this instead of editing the sheet manually.</div>
+        </div>
+      </div>
+
+      <div class="management-grid">
+        <div>
+          <label for="typeInput">Size / Type</label>
+          <input id="typeInput" list="typeList" placeholder="132R, 90x156, 8ft spandex..." />
+          <datalist id="typeList">
+            <option value="132R"></option>
+            <option value="120R"></option>
+            <option value="90x90"></option>
+            <option value="90x132"></option>
+            <option value="90x156"></option>
+            <option value="6ft Spandex"></option>
+            <option value="8ft Spandex"></option>
+            <option value="Cocktail Spandex"></option>
+          </datalist>
+        </div>
+        <div>
+          <label for="colorInput">Color</label>
+          <input id="colorInput" placeholder="White, black, ivory..." />
+        </div>
+        <div>
+          <label for="qtyInput">Quantity</label>
+          <input id="qtyInput" type="number" min="1" step="1" placeholder="10" />
+        </div>
+        <div>
+          <label for="reasonInput">Reason</label>
+          <select id="reasonInput">
+            <option>Purchased</option>
+            <option>Marked Dirty</option>
+            <option>Washed</option>
+            <option>Missing/Damaged</option>
+            <option>Thrown Away</option>
+            <option>Inventory Correction</option>
+          </select>
+        </div>
+        <div>
+          <label>Current User</label>
+          <div id="currentUserBadge" class="readonly-user">Unknown</div>
+        </div>
+        <div class="full">
+          <label for="notesInput">Notes</label>
+          <textarea id="notesInput" rows="2" placeholder="Optional notes"></textarea>
+        </div>
+        <div class="full">
+          <button onclick="submitAdjustment()">Submit Inventory Adjustment</button>
+          <div id="adjustStatus" class="status"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const API_URL = 'https://script.google.com/macros/s/AKfycbwjUJ0Lm4roxRgeh0wds0-omveEp3Y0nwJrlHRjXDdx7XHPAa7551O2A_vcD52gjxs/exec';
+
+    let dashboard = { inventory: [], needs: [], transactions: [] };
+    let checkedJobKeys = new Set();
+    let currentUser = 'Unknown';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      currentUser = getCurrentUser();
+      renderMenu();
+      document.getElementById('currentUserBadge').textContent = currentUser;
+      document.getElementById('daysAhead').addEventListener('change', loadDashboard);
+      document.getElementById('searchBox').addEventListener('input', renderAll);
+      document.getElementById('shortOnly').addEventListener('change', renderInventory);
+      loadDashboard();
+    });
+
+    function toggleMenu() {
+      document.getElementById('menu').classList.toggle('show');
+    }
+
+    function renderMenu() {
+      const menu = document.getElementById('menu');
+      const user = normalizeUserName(currentUser);
+      const isAdmin = user === 'admin' || user === 'michael' || user === 'michael laz';
+
+      const links = isAdmin
+        ? [
+            ['admin.html', 'Admin'],
+            ['jobedit.html', 'Edit Jobs'],
+            ['tent.html', 'Tents'],
+            ['propane.html', 'Propane'],
+            ['scorecard.html', 'Scorecard'],
+            ['hoursbalance.html', 'Hours Balance'],
+            ['index.html', 'Logout']
+          ]
+        : [
+            ['index.html', 'Home'],
+            ['tent.html', 'Tents'],
+            ['propane.html', 'Propane']
+          ];
+
+      menu.innerHTML = links.map(([href, text]) => `<a href="${href}">${text}</a>`).join('');
+    }
+
+    function getCurrentUser() {
+      const url = new URLSearchParams(window.location.search);
+      const fromUrl = url.get('user') || url.get('employee') || url.get('name');
+      if (fromUrl) return cleanUserName(fromUrl);
+
+      const keys = [
+        'currentUser', 'currentEmployee', 'employeeName', 'loggedInUser', 'loggedInEmployee',
+        'userName', 'username', 'name', 'employee', 'pinName', 'timeOffUser'
+      ];
+
+      for (const store of [localStorage, sessionStorage]) {
+        for (const key of keys) {
+          const value = store.getItem(key);
+          const parsed = parseStoredUser(value);
+          if (parsed) return parsed;
+        }
+      }
+
+      return 'Unknown';
+    }
+
+    function parseStoredUser(value) {
+      if (!value) return '';
+      try {
+        const obj = JSON.parse(value);
+        const found = obj.name || obj.employee || obj.user || obj.username || obj.fullName;
+        if (found) return cleanUserName(found);
+      } catch (e) {}
+      return cleanUserName(value);
+    }
+
+    function cleanUserName(value) {
+      return String(value || '').replace(/[-_]/g, ' ').replace(/\s+/g, ' ').trim();
+    }
+
+    function normalizeUserName(value) {
+      return cleanUserName(value).toLowerCase();
+    }
+
+    async function api(params) {
+      const url = API_URL + '?' + new URLSearchParams(params).toString();
+      const res = await fetch(url);
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || 'Web app error');
+      return data;
+    }
+
+    async function loadDashboard() {
+      const app = document.getElementById('app');
+      app.classList.add('loading');
+      try {
+        const daysAhead = document.getElementById('daysAhead').value;
+        dashboard = await api({ action: 'getDashboard', daysAhead });
+        autoCheckTodayTomorrow();
+        renderAll();
+      } catch (err) {
+        alert('Could not load linens: ' + err.message);
+      } finally {
+        app.classList.remove('loading');
+      }
+    }
+
+    function renderAll() {
+      renderMetrics();
+      renderJobs();
+      renderSelectedTotals();
+      renderInventory();
+      renderShortageBox();
+    }
+
+    function keyFor(type, color) {
+      return `${String(type).toLowerCase().trim()}|${String(color).toLowerCase().trim()}`;
+    }
+
+    function jobKey(jobName, dateText) {
+      return `${dateText}__${jobName}`;
+    }
+
+    function groupNeedsByJob() {
+      const groups = {};
+      dashboard.needs.forEach(n => {
+        const jk = jobKey(n.jobName || 'Unnamed Job', n.dateText);
+        if (!groups[jk]) groups[jk] = {
+          key: jk,
+          jobName: n.jobName || 'Unnamed Job',
+          dateText: n.dateText,
+          items: []
+        };
+        groups[jk].items.push(n);
+      });
+      return Object.values(groups).sort((a, b) => new Date(a.items[0].date) - new Date(b.items[0].date));
+    }
+
+    function autoCheckTodayTomorrow() {
+      checkedJobKeys = new Set();
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      groupNeedsByJob().forEach(job => {
+        const d = new Date(job.items[0].date);
+        const clean = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        if (clean.getTime() === today.getTime() || clean.getTime() === tomorrow.getTime()) {
+          checkedJobKeys.add(job.key);
+        }
+      });
+    }
+
+    function renderMetrics() {
+      const inv = dashboard.inventory || [];
+      const owned = inv.reduce((sum, i) => sum + Number(i.totalOwned || 0), 0);
+      const clean = inv.reduce((sum, i) => sum + Number(i.clean || 0), 0);
+      const dirty = inv.reduce((sum, i) => sum + Number(i.dirty || 0), 0);
+      const shortage = calculateShortages().reduce((sum, s) => sum + s.short, 0);
+
+      document.getElementById('metricOwned').textContent = owned;
+      document.getElementById('metricClean').textContent = clean;
+      document.getElementById('metricDirty').textContent = dirty;
+      document.getElementById('metricShort').textContent = shortage;
+    }
+
+    function renderJobs() {
+      const list = document.getElementById('jobList');
+      const jobs = filterJobs(groupNeedsByJob());
+      if (!jobs.length) {
+        list.innerHTML = '<div class="empty">No linen jobs found in this date range.</div>';
+        return;
+      }
+
+      const byDate = {};
+      jobs.forEach(job => {
+        byDate[job.dateText] = byDate[job.dateText] || [];
+        byDate[job.dateText].push(job);
+      });
+
+      list.innerHTML = Object.entries(byDate).map(([dateText, dateJobs]) => `
+        <div class="date-group">
+          <div class="date-header">${escapeHtml(dateText)}</div>
+          ${dateJobs.map(job => renderJobCard(job)).join('')}
+        </div>
+      `).join('');
+    }
+
+    function renderJobCard(job) {
+      const checked = checkedJobKeys.has(job.key) ? 'checked' : '';
+      const itemMap = {};
+      job.items.forEach(item => {
+        const k = keyFor(item.type, item.color);
+        if (!itemMap[k]) itemMap[k] = { type: item.type, color: item.color, qty: 0 };
+        itemMap[k].qty += Number(item.qty || 0);
+      });
+
+      return `
+        <div class="job-card ${checked ? 'print-selected' : ''}" data-job-key="${escapeAttr(job.key)}">
+          <div class="job-head">
+            <input class="job-check" type="checkbox" ${checked} onchange="toggleJob('${escapeJs(job.key)}', this.checked)" />
+            <div class="job-title">${escapeHtml(job.jobName)}</div>
+            <span class="badge">${Object.values(itemMap).reduce((s, i) => s + i.qty, 0)} pcs</span>
+          </div>
+          <div class="items">
+            ${Object.values(itemMap).map(i => `<div>${escapeHtml(i.type)} ${escapeHtml(i.color)} — <strong>${i.qty}</strong></div>`).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function toggleJob(key, isChecked) {
+      if (isChecked) checkedJobKeys.add(key);
+      else checkedJobKeys.delete(key);
+      renderSelectedTotals();
+      renderJobs();
+    }
+
+    function selectAllVisibleJobs(checked) {
+      filterJobs(groupNeedsByJob()).forEach(job => {
+        if (checked) checkedJobKeys.add(job.key);
+        else checkedJobKeys.delete(job.key);
+      });
+      renderAll();
+    }
+
+    function selectedNeeds() {
+      return groupNeedsByJob()
+        .filter(job => checkedJobKeys.has(job.key))
+        .flatMap(job => job.items);
+    }
+
+    function renderSelectedTotals() {
+      const box = document.getElementById('selectedTotals');
+      const totals = {};
+      selectedNeeds().forEach(item => {
+        const k = keyFor(item.type, item.color);
+        if (!totals[k]) totals[k] = { type: item.type, color: item.color, qty: 0 };
+        totals[k].qty += Number(item.qty || 0);
+      });
+
+      const values = Object.values(totals).sort(sortLinen);
+      if (!values.length) {
+        box.innerHTML = '<div class="empty">Check jobs above to see selected totals.</div>';
+        return;
+      }
+
+      box.innerHTML = values.map(i => `
+        <div class="total-card">
+          <div class="linen-name">${escapeHtml(i.type)} ${escapeHtml(i.color)}</div>
+          <div class="hint">Needed: <strong>${i.qty}</strong></div>
+        </div>
+      `).join('');
+    }
+
+    function renderInventory() {
+      const grid = document.getElementById('inventoryGrid');
+      const search = document.getElementById('searchBox').value.toLowerCase().trim();
+      const mode = document.getElementById('shortOnly').value;
+      const shortageMap = {};
+      calculateShortages().forEach(s => shortageMap[keyFor(s.type, s.color)] = s.short);
+
+      let inv = (dashboard.inventory || []).slice().sort(sortLinen);
+      inv = inv.filter(i => {
+        const hay = `${i.type} ${i.color}`.toLowerCase();
+        if (search && !hay.includes(search)) return false;
+        const shortQty = shortageMap[keyFor(i.type, i.color)] || 0;
+        if (mode === 'short' && shortQty <= 0) return false;
+        if (mode === 'dirty' && Number(i.dirty || 0) <= 0 && Number(i.missingDamaged || 0) <= 0) return false;
+        return true;
+      });
+
+      if (!inv.length) {
+        grid.innerHTML = '<div class="empty">No inventory matches this view.</div>';
+        return;
+      }
+
+      grid.innerHTML = inv.map(i => {
+        const shortQty = shortageMap[keyFor(i.type, i.color)] || 0;
+        const cls = shortQty > 0 ? 'short' : (Number(i.dirty || 0) || Number(i.missingDamaged || 0)) ? 'warning' : '';
+        const badge = shortQty > 0 ? `<span class="badge red">Short ${shortQty}</span>` : `<span class="badge green">OK</span>`;
+        return `
+          <div class="linen-card ${cls}">
+            <div class="linen-head">
+              <div class="linen-name">${escapeHtml(i.type)} ${escapeHtml(i.color)}</div>
+              ${badge}
+            </div>
+            <div class="counts">
+              <div class="count-box"><strong>${i.totalOwned || 0}</strong><span>Owned</span></div>
+              <div class="count-box"><strong>${i.clean || 0}</strong><span>Clean</span></div>
+              <div class="count-box"><strong>${i.dirty || 0}</strong><span>Dirty</span></div>
+              <div class="count-box"><strong>${i.missingDamaged || 0}</strong><span>Missing</span></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function calculateShortages() {
+      const totals = {};
+      (dashboard.needs || []).forEach(item => {
+        const k = keyFor(item.type, item.color);
+        if (!totals[k]) totals[k] = { type: item.type, color: item.color, qty: 0 };
+        totals[k].qty += Number(item.qty || 0);
+      });
+
+      const invMap = {};
+      (dashboard.inventory || []).forEach(i => invMap[keyFor(i.type, i.color)] = Number(i.clean || 0));
+
+      return Object.values(totals)
+        .map(t => ({ ...t, clean: invMap[keyFor(t.type, t.color)] || 0, short: Math.max(0, t.qty - (invMap[keyFor(t.type, t.color)] || 0)) }))
+        .filter(s => s.short > 0);
+    }
+
+    function renderShortageBox() {
+      const box = document.getElementById('shortageBox');
+      const shorts = calculateShortages();
+      if (!shorts.length) {
+        box.style.display = 'none';
+        return;
+      }
+      box.style.display = 'block';
+      box.innerHTML = '⚠ Shortages for this date range: ' + shorts.map(s => `${escapeHtml(s.type)} ${escapeHtml(s.color)}: short ${s.short}`).join(' | ');
+    }
+
+    async function submitAdjustment() {
+      const status = document.getElementById('adjustStatus');
+      const params = {
+        action: 'adjustInventory',
+        type: document.getElementById('typeInput').value.trim(),
+        color: document.getElementById('colorInput').value.trim(),
+        qty: document.getElementById('qtyInput').value.trim(),
+        reason: document.getElementById('reasonInput').value,
+        user: currentUser || 'Unknown',
+        notes: document.getElementById('notesInput').value.trim()
+      };
+
+      if (!params.type || !params.color || !params.qty) {
+        status.textContent = 'Fill in type, color, and quantity.';
+        return;
+      }
+
+      status.textContent = 'Saving...';
+      try {
+        const result = await api(params);
+        status.textContent = `Saved: ${result.updated.type} ${result.updated.color}`;
+        document.getElementById('qtyInput').value = '';
+        document.getElementById('notesInput').value = '';
+        await loadDashboard();
+      } catch (err) {
+        status.textContent = 'Error: ' + err.message;
+      }
+    }
+
+    function printSelectedJobs() {
+      const selected = document.querySelectorAll('.job-card.print-selected');
+      if (!selected.length) {
+        alert('Check at least one job first.');
+        return;
+      }
+      window.print();
+    }
+
+    function filterJobs(jobs) {
+      const search = document.getElementById('searchBox').value.toLowerCase().trim();
+      if (!search) return jobs;
+      return jobs.filter(job => {
+        const hay = [job.jobName, job.dateText, ...job.items.map(i => `${i.type} ${i.color}`)].join(' ').toLowerCase();
+        return hay.includes(search);
+      });
+    }
+
+    function sortLinen(a, b) {
+      return `${a.type} ${a.color}`.localeCompare(`${b.type} ${b.color}`, undefined, { numeric: true });
+    }
+
+    function escapeHtml(v) {
+      return String(v ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    }
+
+    function escapeAttr(v) { return escapeHtml(v).replace(/'/g, '&#39;'); }
+    function escapeJs(v) { return String(v).replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
+  </script>
+</body>
+</html>
