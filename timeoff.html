@@ -31,7 +31,7 @@
   <div class="container">
     <div class="request-card">
       <h1>Time Off Request</h1>
-      <p class="sub">If requesting a single day off, select that date for both start and end boxes</p>
+      <p class="sub">If taking one full day off, select that date for both start and end boxes.</p>
       <span id="employeeChip" class="employee-chip">Employee</span>
 
       <form id="timeOffForm">
@@ -181,6 +181,12 @@
       var btn=document.getElementById("submitBtn"); btn.disabled=true; setStatus("Submitting...","");
       jsonp(p).then(function(data){
         if(!data.success) throw new Error(data.error || "Submit failed");
+
+        document.getElementById("emailMessage").value =
+          p.employee + " requested time off. Go to admin page to approve or deny.";
+
+        document.getElementById("emailNotifyForm").submit();
+
         setStatus("Request submitted.","ok");
         document.getElementById("timeOffForm").reset(); updateVisibleFields(); show(document.getElementById("otherReasonField"), false);
       }).catch(function(error){ setStatus("Could not submit request. " + error.message,"err"); }).finally(function(){ btn.disabled=false; });
@@ -193,5 +199,21 @@
     }
     (function(){ var btn=document.getElementById("menuBtn"), overlay=document.getElementById("menuOverlay"); function close(){document.body.classList.remove("menu-open");} function open(){document.body.classList.add("menu-open");} btn.addEventListener("click", function(){ document.body.classList.contains("menu-open") ? close() : open(); }); overlay.addEventListener("click", close); document.addEventListener("keydown", function(e){ if(e.key === "Escape") close(); }); })();
   </script>
+
+<form
+  id="emailNotifyForm"
+  action="https://formsubmit.co/michael@universalrentalstl.com"
+  method="POST"
+  style="display:none;">
+
+  <input type="hidden" name="_captcha" value="false">
+  <input type="hidden" name="_template" value="table">
+  <input type="hidden" name="_subject" value="Time Off Request">
+  <input type="hidden" name="_next" value="about:blank">
+
+  <input type="hidden" id="emailMessage" name="message">
+</form>
+
 </body>
 </html>
+
