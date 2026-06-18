@@ -789,6 +789,63 @@
 .job-timer-btn:disabled{opacity:.6;cursor:not-allowed;}
 @media (max-width:640px){.job-timer-row{align-items:flex-start;}}
 
+
+/* ===== TIME OFF REQUEST STATUS ===== */
+.timeoff-status-wrap{
+  position:fixed;
+  top:50px;
+  right:8px;
+  z-index:999;
+  max-width:min(260px, calc(100vw - 16px));
+}
+.timeoff-mini-card{
+  background:#fff;
+  border:1px solid #e5e5e5;
+  border-radius:14px;
+  box-shadow:0 4px 14px rgba(0,0,0,0.08);
+  overflow:hidden;
+  font-size:12px;
+}
+.timeoff-mini-head{
+  width:100%;
+  border:0;
+  background:#fff;
+  color:#111;
+  padding:8px 10px;
+  font-size:12px;
+  font-weight:800;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+}
+.timeoff-pill{
+  display:inline-flex;
+  align-items:center;
+  padding:2px 8px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:900;
+  border:1px solid #ddd;
+  background:#f7f7f7;
+  white-space:nowrap;
+}
+.timeoff-pill.pending{background:#fff7e6;border-color:#f0c36a;color:#8a5a00;}
+.timeoff-pill.approved{background:#e8fbe8;border-color:#77c987;color:#1f6f3a;}
+.timeoff-pill.denied{background:#fff0f0;border-color:#e2aaaa;color:#8b1f1f;}
+.timeoff-mini-body{
+  display:none;
+  padding:0 10px 10px 10px;
+  color:#333;
+  line-height:1.35;
+}
+.timeoff-mini-card.open .timeoff-mini-body{display:block;}
+.timeoff-mini-line{margin-top:5px;}
+@media (max-width:640px){
+  .timeoff-status-wrap{position:static;max-width:none;margin:0 0 12px auto;width:fit-content;}
+}
+
 </style>
 </head>
 <body>
@@ -806,6 +863,7 @@
     <a id="scorecardLink" href="scorecard.html?from=64445533.html">Scorecard</a>
     <a id="tentsLink" href="tent.html?from=64445533.html">Tents</a>
     <a id="propaneLink" href="propane.html?from=64445533.html">Propane</a>
+    <a id="timeOffLink" href="timeoff.html?employee=Michael&from=64445533.html">Time Off Request</a>
     <a id="hoursBalanceLink" href="hoursbalance.html?from=64445533.html">Hours Balance</a>
     <a id="loginLink" href="index.html" target="_blank" rel="noopener">Login</a>
   </nav>
@@ -821,6 +879,8 @@
       </div>
     </div>
   </div>
+  <div id="timeoff-status-wrap" class="timeoff-status-wrap"></div>
+
   <div class="container" style="margin-top: 2.5rem;">
     <div style="text-align:right;margin-bottom:8px;">
       <button id="logout-btn" type="button">Log Out</button>
@@ -912,6 +972,7 @@
     }
 
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwDMoZjhy2IHA0PFEqSwd79cOteIBX-QhIVjLh8pXHnzm6frGjoO1FkS9_xrdIQh8M/exec";
+    const TIME_OFF_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxCakwufcmoIAHnlbtcKf-Oj2NwOfGQ3P05LbKmAhKZAGiXg7LWQiaRrKGSoDZc32n9/exec";
 
     const TIME_LOG_SHEET_ID = "1gm39kMipfpLKS2n8g9F4SYG9Do36M_5Lc6GOs-c6jCM";
     const JOBS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxryknrt9pwA_lvmxbSs3Ww1KjIA3kbKkZwhGAD65dYhF_XF--bc8k0NvNiGFpSRuk/exec";
@@ -2106,6 +2167,119 @@ function waitForClockState(expectedState, triesLeft) {
         closeCalendar();
       });
     });
+
+
+    // ===== TIME OFF REQUEST STATUS =====
+    function timeOffJsonp(params, timeoutMs) {
+      timeoutMs = timeoutMs || 15000;
+      return new Promise(function(resolve, reject) {
+        var cbName = "timeoff_cb_" + Math.random().toString(16).slice(2);
+        var u = new URL(TIME_OFF_WEBAPP_URL);
+        Object.keys(params || {}).forEach(function(k){ u.searchParams.set(k, params[k]); });
+        u.searchParams.set("callback", cbName);
+        var done = false;
+        var script = document.createElement("script");
+        var timer = setTimeout(function(){
+          if (done) return;
+          done = true;
+          cleanup();
+          reject(new Error("Time off request lookup failed."));
+        }, timeoutMs);
+        function cleanup(){
+          clearTimeout(timer);
+          script.remove();
+          try { delete window[cbName]; } catch(_) {}
+        }
+        window[cbName] = function(data){
+          if (done) return;
+          done = true;
+          cleanup();
+          resolve(data || {});
+        };
+        script.onerror = function(){
+          if (done) return;
+          done = true;
+          cleanup();
+          reject(new Error("Time off request lookup failed."));
+        };
+        script.src = u.toString();
+        document.body.appendChild(script);
+      });
+    }
+
+    function parseTimeOffDate(value) {
+      if (!value) return null;
+      if (value instanceof Date) return value;
+      var s = String(value);
+      var m = s.match(/^Date\((\d+),(\d+),(\d+)/);
+      if (m) return new Date(parseInt(m[1],10), parseInt(m[2],10), parseInt(m[3],10), 12,0,0);
+      if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+        var p = s.split("-");
+        return new Date(parseInt(p[0],10), parseInt(p[1],10)-1, parseInt(p[2],10), 12,0,0);
+      }
+      var t = Date.parse(s);
+      return isNaN(t) ? null : new Date(t);
+    }
+
+    function formatTimeOffDate(value) {
+      var d = parseTimeOffDate(value);
+      if (!d) return value || "";
+      return (d.getMonth()+1) + "/" + d.getDate() + "/" + String(d.getFullYear()).slice(-2);
+    }
+
+    function getRequestEndDate(req) {
+      return parseTimeOffDate(req.EndDate || req.RequestDate || req.StartDate);
+    }
+
+    function renderEmployeeTimeOffStatus(requests) {
+      var wrap = document.getElementById("timeoff-status-wrap");
+      if (!wrap) return;
+      wrap.innerHTML = "";
+      var today = new Date();
+      today = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0,0,0);
+
+      var active = (requests || []).filter(function(req){
+        if (String(req.Employee || "").trim() !== EMPLOYEE_NAME) return false;
+        var end = getRequestEndDate(req);
+        if (!end) return true;
+        end = new Date(end.getFullYear(), end.getMonth(), end.getDate(), 23,59,59);
+        return end.getTime() >= today.getTime();
+      }).sort(function(a,b){
+        return (parseTimeOffDate(b.SubmittedAt)||0) - (parseTimeOffDate(a.SubmittedAt)||0);
+      });
+
+      if (!active.length) return;
+      var req = active[0];
+      var status = String(req.Status || "Pending");
+      var cls = status.toLowerCase();
+      var dateText = req.RequestType === "Hours"
+        ? formatTimeOffDate(req.RequestDate)
+        : (formatTimeOffDate(req.StartDate) + (req.EndDate && req.EndDate !== req.StartDate ? " - " + formatTimeOffDate(req.EndDate) : ""));
+
+      var card = document.createElement("div");
+      card.className = "timeoff-mini-card";
+      card.innerHTML =
+        '<button type="button" class="timeoff-mini-head">' +
+          '<span>Time Off Request</span>' +
+          '<span class="timeoff-pill ' + cls + '">' + status + '</span>' +
+        '</button>' +
+        '<div class="timeoff-mini-body">' +
+          '<div class="timeoff-mini-line"><strong>Date:</strong> ' + dateText + '</div>' +
+          '<div class="timeoff-mini-line"><strong>Type:</strong> ' + (req.RequestType || '') + (req.HoursType ? ' - ' + req.HoursType : '') + '</div>' +
+          '<div class="timeoff-mini-line"><strong>Duration:</strong> ' + (req.DurationDisplay || '') + '</div>' +
+          '<div class="timeoff-mini-line"><strong>Reason:</strong> ' + (req.Reason === 'Other' ? (req.OtherReason || 'Other') : (req.Reason || '')) + '</div>' +
+        '</div>';
+      card.querySelector(".timeoff-mini-head").addEventListener("click", function(){ card.classList.toggle("open"); });
+      wrap.appendChild(card);
+    }
+
+    function loadEmployeeTimeOffStatus() {
+      timeOffJsonp({ action: "getTimeOffRequests" })
+        .then(function(data){ renderEmployeeTimeOffStatus(data.requests || []); })
+        .catch(function(err){ console.warn(err); });
+    }
+
+    document.addEventListener("DOMContentLoaded", loadEmployeeTimeOffStatus);
 
 
     // Hamburger menu wiring

@@ -452,6 +452,31 @@
   border-right:none !important;
 }
 
+
+/* ===== TIME OFF REQUEST ADMIN PANEL ===== */
+.timeoff-panel{margin-top:1.25rem;padding:0.85rem 0 0;border-top:1px solid #e0e0e0;}
+.timeoff-panel h2{font-size:16px;margin:0 0 0.25rem 0;}
+.timeoff-list{display:grid;gap:10px;margin-top:10px;}
+.timeoff-request-card{border:1px solid #e6e6e6;border-radius:14px;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,0.04);overflow:hidden;}
+.timeoff-request-summary{width:100%;border:0;background:#fff;color:#111;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;text-align:left;}
+.timeoff-summary-left{display:flex;flex-direction:column;gap:2px;min-width:0;}
+.timeoff-summary-title{font-weight:800;font-size:14px;line-height:1.2;}
+.timeoff-summary-sub{font-size:12px;color:#555;}
+.timeoff-pill{display:inline-flex;align-items:center;justify-content:center;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:900;border:1px solid #ddd;background:#f7f7f7;white-space:nowrap;}
+.timeoff-pill.pending{background:#fff7e6;border-color:#f0c36a;color:#8a5a00;}
+.timeoff-pill.approved{background:#e8fbe8;border-color:#77c987;color:#1f6f3a;}
+.timeoff-pill.denied{background:#fff0f0;border-color:#e2aaaa;color:#8b1f1f;}
+.timeoff-request-body{display:none;border-top:1px solid #f0f0f0;padding:12px;font-size:13px;line-height:1.45;color:#222;}
+.timeoff-request-card.open .timeoff-request-body{display:block;}
+.timeoff-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px;}
+.timeoff-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+.timeoff-note{width:100%;min-height:42px;border:1px solid #ddd;border-radius:10px;padding:8px;font:inherit;box-sizing:border-box;margin-top:10px;}
+.timeoff-empty{font-size:13px;color:#666;padding:10px 0;}
+details.timeoff-older{margin-top:12px;border-top:1px solid #e0e0e0;padding-top:12px;}
+.timeoff-older-summary{cursor:pointer;font-weight:700;font-size:13px;padding:8px 10px;border:1px solid #e6e6e6;border-radius:10px;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,0.04);list-style:none;user-select:none;display:block;text-align:center;margin-bottom:10px;}
+details.timeoff-older > summary::-webkit-details-marker{display:none;}
+@media (max-width:640px){.timeoff-grid{grid-template-columns:1fr;}.timeoff-request-summary{align-items:flex-start;}.timeoff-pill{margin-top:1px;}}
+
 </style>
 </head>
 
@@ -466,6 +491,7 @@
     <a href="scorecard.html?from=admin.html">Scorecard</a>
     <a href="tent.html?from=admin.html">Tents</a>
     <a href="propane.html?from=admin.html">Propane</a>
+    <a href="timeoff.html?employee=Michael&from=admin.html">Time Off Request</a>
     <a href="hoursbalance.html?from=admin.html">Hours Balance</a>
     <a href="index.html" id="globalLoginLink">Login</a>
   </aside>
@@ -556,6 +582,21 @@
     </div>
 
 
+
+
+    <div class="timeoff-panel" id="timeoff-admin-panel">
+      <h2>Time Off Requests</h2>
+      <p class="sub" style="font-size:12px;color:#555;margin:0 0 0.75rem 0;line-height:1.3;">
+        Pending requests stay visible here until approved or denied. Approved and denied requests move under older requests after they are handled.
+      </p>
+      <div id="timeoff-current-list" class="timeoff-list"></div>
+      <details class="timeoff-older" id="timeoff-older-details">
+        <summary class="timeoff-older-summary">Show older time off requests</summary>
+        <div id="timeoff-older-list" class="timeoff-list"></div>
+      </details>
+      <div id="timeoff-admin-status" class="mini"></div>
+    </div>
+
     <!-- NEW: Quick Clock Panel -->
     <div class="quick-panel" id="quick-clock">
       <h2>Quick Clock In/Out</h2>
@@ -577,6 +618,7 @@
   <script>
     const TIME_LOG_SHEET_ID = "1gm39kMipfpLKS2n8g9F4SYG9Do36M_5Lc6GOs-c6jCM";
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwDMoZjhy2IHA0PFEqSwd79cOteIBX-QhIVjLh8pXHnzm6frGjoO1FkS9_xrdIQh8M/exec";
+    const TIME_OFF_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxCakwufcmoIAHnlbtcKf-Oj2NwOfGQ3P05LbKmAhKZAGiXg7LWQiaRrKGSoDZc32n9/exec";
     const EMPLOYEES = ["Michael", "Alan", "Joe", "Jeff", "Salim", "Ben Winograd", "Benjamin Kruger", "Ethan Cohen", "Jake Winograd"];
     const EMPLOYEE_PAGES = {
       "Michael": "64445533.html",
@@ -1087,7 +1129,7 @@ var now = new Date();
 
     // --- One refresh to rule them all ---
     function refreshAll() {
-      return loadHistory().then(function(info) {
+      return Promise.all([loadHistory(), loadTimeOffRequests()]).then(function(results) { var info = results[0];
         return loadClockedInStatus(info.currentPeriodKey).then(function() {
           return refreshQuickPanel();
         });
@@ -1097,6 +1139,121 @@ var now = new Date();
     // --- Auto-refresh with countdown ---
     var REFRESH_EVERY_MS = 20000; // 20s
     var countdownMs = REFRESH_EVERY_MS;
+
+    // ===== TIME OFF REQUEST ADMIN =====
+    function timeOffJsonp(params, timeoutMs) {
+      timeoutMs = timeoutMs || 15000;
+      return new Promise(function(resolve, reject) {
+        var cbName = "timeoff_cb_" + Math.random().toString(16).slice(2);
+        var u = new URL(TIME_OFF_WEBAPP_URL);
+        Object.keys(params || {}).forEach(function(k){ u.searchParams.set(k, params[k]); });
+        u.searchParams.set("callback", cbName);
+        var done = false;
+        var script = document.createElement("script");
+        var timer = setTimeout(function(){ if(done) return; done=true; cleanup(); reject(new Error("Time off request failed.")); }, timeoutMs);
+        function cleanup(){ clearTimeout(timer); script.remove(); try { delete window[cbName]; } catch(_) {} }
+        window[cbName] = function(data){ if(done) return; done=true; cleanup(); resolve(data || {}); };
+        script.onerror = function(){ if(done) return; done=true; cleanup(); reject(new Error("Time off request failed.")); };
+        script.src = u.toString();
+        document.body.appendChild(script);
+      });
+    }
+
+    function parseTimeOffDate(value) {
+      if (!value) return null;
+      var s = String(value);
+      var m = s.match(/^Date\((\d+),(\d+),(\d+)(?:,(\d+),(\d+),(\d+))?/);
+      if (m) return new Date(parseInt(m[1],10), parseInt(m[2],10), parseInt(m[3],10), parseInt(m[4]||0,10), parseInt(m[5]||0,10), parseInt(m[6]||0,10));
+      if (/^\d{4}-\d{2}-\d{2}$/.test(s)) { var p=s.split("-"); return new Date(parseInt(p[0],10), parseInt(p[1],10)-1, parseInt(p[2],10), 12,0,0); }
+      var t = Date.parse(s);
+      return isNaN(t) ? null : new Date(t);
+    }
+    function formatTimeOffDate(value) { var d=parseTimeOffDate(value); if(!d) return value || ""; return (d.getMonth()+1)+"/"+d.getDate()+"/"+String(d.getFullYear()).slice(-2); }
+    function escapeHtml(value) { return String(value == null ? "" : value).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+    function getTimeOffDateText(req) {
+      if (req.RequestType === "Hours") return formatTimeOffDate(req.RequestDate);
+      return formatTimeOffDate(req.StartDate) + (req.EndDate && req.EndDate !== req.StartDate ? " - " + formatTimeOffDate(req.EndDate) : "");
+    }
+
+    function renderTimeOffRequestCard(req, isOlder) {
+      var status = String(req.Status || "Pending");
+      var cls = status.toLowerCase();
+      var submitted = formatTimeOffDate(req.SubmittedAt);
+      var reasonText = req.Reason === "Other" ? (req.OtherReason || "Other") : (req.Reason || "");
+      var card = document.createElement("div");
+      card.className = "timeoff-request-card";
+      card.innerHTML =
+        '<button type="button" class="timeoff-request-summary">' +
+          '<span class="timeoff-summary-left">' +
+            '<span class="timeoff-summary-title">' + escapeHtml(submitted) + ' • ' + escapeHtml(req.Employee || '') + '</span>' +
+            '<span class="timeoff-summary-sub">' + escapeHtml(req.DurationDisplay || getTimeOffDateText(req)) + '</span>' +
+          '</span>' +
+          '<span class="timeoff-pill ' + cls + '">' + escapeHtml(status) + '</span>' +
+        '</button>' +
+        '<div class="timeoff-request-body">' +
+          '<div class="timeoff-grid">' +
+            '<div><strong>Submitted:</strong> ' + escapeHtml(submitted) + '</div>' +
+            '<div><strong>Employee:</strong> ' + escapeHtml(req.Employee || '') + '</div>' +
+            '<div><strong>Type:</strong> ' + escapeHtml(req.RequestType || '') + (req.HoursType ? ' - ' + escapeHtml(req.HoursType) : '') + '</div>' +
+            '<div><strong>Date:</strong> ' + escapeHtml(getTimeOffDateText(req)) + '</div>' +
+            '<div><strong>Time:</strong> ' + escapeHtml(req.StartTime || '') + (req.EndTime ? ' - ' + escapeHtml(req.EndTime) : '') + '</div>' +
+            '<div><strong>Reason:</strong> ' + escapeHtml(reasonText) + '</div>' +
+            '<div><strong>Status:</strong> ' + escapeHtml(status) + '</div>' +
+            '<div><strong>Decision:</strong> ' + escapeHtml(req.AdminDecisionAt ? formatTimeOffDate(req.AdminDecisionAt) : '') + '</div>' +
+          '</div>' +
+          (status === 'Pending' ? '<textarea class="timeoff-note" placeholder="Optional admin note"></textarea><div class="timeoff-actions"><button type="button" class="btn primary timeoff-approve">Approve</button><button type="button" class="btn warn timeoff-deny">Deny</button></div>' : '') +
+        '</div>';
+      card.querySelector(".timeoff-request-summary").addEventListener("click", function(){ card.classList.toggle("open"); });
+      var approve = card.querySelector(".timeoff-approve");
+      var deny = card.querySelector(".timeoff-deny");
+      function decide(statusValue) {
+        var note = card.querySelector(".timeoff-note");
+        approve && (approve.disabled = true);
+        deny && (deny.disabled = true);
+        updateTimeOffRequest(req.RequestID, statusValue, note ? note.value : "");
+      }
+      if (approve) approve.addEventListener("click", function(){ decide("Approved"); });
+      if (deny) deny.addEventListener("click", function(){ decide("Denied"); });
+      return card;
+    }
+
+    function renderTimeOffRequests(requests) {
+      var currentEl = document.getElementById("timeoff-current-list");
+      var olderEl = document.getElementById("timeoff-older-list");
+      var statusEl = document.getElementById("timeoff-admin-status");
+      if (!currentEl || !olderEl) return;
+      currentEl.innerHTML = ""; olderEl.innerHTML = "";
+      var pending = [], older = [];
+      (requests || []).forEach(function(req){ String(req.Status || "Pending") === "Pending" ? pending.push(req) : older.push(req); });
+      function bySubmittedDesc(a,b){ return (parseTimeOffDate(b.SubmittedAt)||0) - (parseTimeOffDate(a.SubmittedAt)||0); }
+      pending.sort(bySubmittedDesc); older.sort(bySubmittedDesc);
+      if (!pending.length) currentEl.innerHTML = '<div class="timeoff-empty">No pending time off requests.</div>';
+      pending.forEach(function(req){ currentEl.appendChild(renderTimeOffRequestCard(req, false)); });
+      if (!older.length) olderEl.innerHTML = '<div class="timeoff-empty">No approved or denied requests yet.</div>';
+      older.forEach(function(req){ olderEl.appendChild(renderTimeOffRequestCard(req, true)); });
+      if (statusEl) statusEl.textContent = "Loaded " + (requests || []).length + " time off request(s).";
+    }
+
+    function loadTimeOffRequests() {
+      var statusEl = document.getElementById("timeoff-admin-status");
+      if (statusEl) statusEl.textContent = "Loading time off requests...";
+      return timeOffJsonp({ action: "getTimeOffRequests" })
+        .then(function(data){ renderTimeOffRequests(data.requests || []); })
+        .catch(function(err){ if(statusEl) statusEl.textContent = "Could not load time off requests."; console.warn(err); });
+    }
+
+    function updateTimeOffRequest(requestId, statusValue, note) {
+      var statusEl = document.getElementById("timeoff-admin-status");
+      if (statusEl) statusEl.textContent = "Saving " + statusValue.toLowerCase() + "...";
+      timeOffJsonp({ action:"updateTimeOffRequestStatus", requestId:requestId, status:statusValue, admin:"Michael", note:note || "" })
+        .then(function(data){
+          if (!data.success) throw new Error(data.error || "Save failed");
+          return loadTimeOffRequests();
+        })
+        .catch(function(err){ if(statusEl) statusEl.textContent = "Could not update request."; alert("Could not update request. " + err.message); });
+    }
+
 
     function startAutoRefresh() {
       var secEl = document.getElementById("refresh-seconds");

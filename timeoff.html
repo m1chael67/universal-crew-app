@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Time Off Request - Universal Rentals</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" type="image/png" href="favicon.png" />
+  <style>
+    body{background:#f6f6f6;color:#111;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
+    .menu-btn{position:fixed;top:12px;left:12px;width:44px;height:44px;border-radius:12px;border:1px solid #d9d9d9;background:#fff;display:flex;align-items:center;justify-content:center;z-index:1002;box-shadow:0 1px 8px rgba(0,0,0,0.08);}
+    .menu-icon{width:18px;height:12px;position:relative;}.menu-icon span{position:absolute;left:0;right:0;height:2px;background:#111;border-radius:2px;}.menu-icon span:nth-child(1){top:0}.menu-icon span:nth-child(2){top:5px}.menu-icon span:nth-child(3){top:10px}
+    .menu-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.18);opacity:0;pointer-events:none;transition:opacity .2s ease;z-index:1001;}.side-menu{position:fixed;top:0;left:0;height:100%;width:260px;background:#fff;transform:translateX(-105%);transition:transform .25s ease;z-index:1003;padding:72px 16px 16px;box-shadow:2px 0 16px rgba(0,0,0,0.18);box-sizing:border-box;}body.menu-open .menu-overlay{opacity:1;pointer-events:auto;}body.menu-open .side-menu{transform:translateX(0);}.side-menu h2{margin:0 0 14px 0;font-size:22px}.side-menu a{display:block;padding:12px 10px;border-radius:12px;text-decoration:none;color:#111;font-weight:600}.side-menu a:hover{background:#f1f1f1}
+    .container{max-width:620px;margin:2.7rem auto 0 auto;padding:16px;box-sizing:border-box;}
+    .request-card{background:#fff;border:1px solid #e6e6e6;border-radius:20px;box-shadow:0 8px 24px rgba(0,0,0,.08);padding:18px;}
+    h1{margin:0 0 4px;text-align:center;font-size:28px;letter-spacing:-.5px}.sub{text-align:center;color:#555;font-size:13px;margin:0 0 18px;line-height:1.35}.employee-chip{display:block;width:fit-content;margin:0 auto 16px;padding:8px 13px;border-radius:999px;background:#111;color:#fff;font-size:13px;font-weight:900;}
+    .field{display:grid;gap:6px;margin-bottom:14px}.field label{font-size:13px;font-weight:900;color:#111}.field select,.field input,.field textarea{width:100%;box-sizing:border-box;border:1px solid #ddd;border-radius:14px;background:#fff;color:#111;padding:11px 12px;font-size:15px;font:inherit}.field textarea{min-height:86px;resize:vertical}.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}.hidden{display:none!important}.disclaimer{margin:16px 0 12px;padding:12px;border-radius:14px;border:1px solid #e4e4e4;background:#fafafa;color:#222;font-size:13px;line-height:1.35;font-weight:700}.btn{width:100%;padding:13px 16px;border-radius:14px;border:1px solid #111;background:#111;color:#fff;cursor:pointer;font-size:15px;font-weight:900}.btn:disabled{opacity:.6;cursor:not-allowed}.status{margin-top:12px;text-align:center;font-size:13px;font-weight:800}.status.ok{color:#1f6f3a}.status.err{color:#8b1f1f}.back-link{display:block;text-align:center;margin-top:12px;color:#111;font-size:13px;font-weight:800;text-decoration:none}.small-note{font-size:12px;color:#666;line-height:1.35;margin-top:4px}@media(max-width:640px){.container{padding:12px}.row{grid-template-columns:1fr}.request-card{padding:16px;border-radius:18px}h1{font-size:25px}}
+  </style>
+</head>
+<body>
+  <button id="menuBtn" class="menu-btn" type="button" aria-label="Menu"><div class="menu-icon"><span></span><span></span><span></span></div></button>
+  <div id="menuOverlay" class="menu-overlay"></div>
+  <nav id="sideMenu" class="side-menu" aria-label="Menu">
+    <h2>Menu</h2>
+    <a id="homeLink" href="index.html">Home</a>
+    <a id="tentsLink" href="tent.html">Tents</a>
+    <a id="propaneLink" href="propane.html">Propane</a>
+    <a id="loginLink" href="index.html" target="_blank" rel="noopener">Login</a>
+  </nav>
+
+  <div class="container">
+    <div class="request-card">
+      <h1>Time Off Request</h1>
+      <p class="sub">Submit the request here. Your name is filled in automatically from the employee page.</p>
+      <span id="employeeChip" class="employee-chip">Employee</span>
+
+      <form id="timeOffForm">
+        <div class="field">
+          <label for="requestType">Request Type</label>
+          <select id="requestType" required>
+            <option value="">Choose one</option>
+            <option value="Days">Days</option>
+            <option value="Hours">Hours</option>
+          </select>
+        </div>
+
+        <div id="daysFields" class="hidden">
+          <div class="row">
+            <div class="field"><label for="startDate">Beginning On</label><input id="startDate" type="date"></div>
+            <div class="field"><label for="endDate">Ending On</label><input id="endDate" type="date"></div>
+          </div>
+        </div>
+
+        <div id="hoursFields" class="hidden">
+          <div class="field"><label for="hoursType">Hours Option</label><select id="hoursType"><option value="">Choose one</option><option value="Late Start">Late Start</option><option value="Early Leave">Early Leave</option><option value="Partial Day">Partial Day</option></select></div>
+          <div class="field"><label for="requestDate">Request Date</label><input id="requestDate" type="date"></div>
+          <div id="lateStartFields" class="field hidden"><label for="lateStartTime">Late Start Until</label><select id="lateStartTime"></select></div>
+          <div id="earlyLeaveFields" class="field hidden"><label for="earlyLeaveTime">Early Leave At</label><select id="earlyLeaveTime"></select></div>
+          <div id="partialDayFields" class="row hidden"><div class="field"><label for="startTime">From</label><select id="startTime"></select></div><div class="field"><label for="endTime">To</label><select id="endTime"></select></div></div>
+          <div class="small-note">Times are selectable by the half hour.</div>
+        </div>
+
+        <div class="field">
+          <label for="reason">Reason</label>
+          <select id="reason" required>
+            <option value="">Choose one</option>
+            <option>Vacation</option>
+            <option>Personal Leave</option>
+            <option>Funeral/Bereavement</option>
+            <option>Jury Duty</option>
+            <option>Family Reasons</option>
+            <option>Medical Leave</option>
+            <option>To Vote</option>
+            <option>Other</option>
+          </select>
+        </div>
+
+        <div id="otherReasonField" class="field hidden">
+          <label for="otherReason">Other Reason</label>
+          <textarea id="otherReason" placeholder="Explain the reason"></textarea>
+        </div>
+
+        <div class="disclaimer">I understand that this request is subject to approval by my employer.</div>
+        <button id="submitBtn" class="btn" type="submit">Submit Request</button>
+        <div id="status" class="status"></div>
+      </form>
+      <a id="backLink" class="back-link" href="index.html">Back</a>
+    </div>
+  </div>
+
+  <script>
+    const TIME_OFF_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxCakwufcmoIAHnlbtcKf-Oj2NwOfGQ3P05LbKmAhKZAGiXg7LWQiaRrKGSoDZc32n9/exec";
+
+    function getParam(name){ return new URLSearchParams(window.location.search).get(name) || ""; }
+    const EMPLOYEE_NAME = getParam("employee").trim();
+    const FROM_PAGE = getParam("from").trim();
+
+    function setStatus(msg, type){ var el=document.getElementById("status"); el.textContent=msg || ""; el.className="status " + (type || ""); }
+    function pad(n){ return String(n).padStart(2,"0"); }
+    function formatTime(hour, minute){ var suffix = hour >= 12 ? "PM" : "AM"; var h = hour % 12; if (h === 0) h = 12; return h + ":" + pad(minute) + " " + suffix; }
+    function fillTimeSelect(select){ if(!select) return; select.innerHTML='<option value="">Choose time</option>'; for(var h=0; h<24; h++){ [0,30].forEach(function(m){ var t=formatTime(h,m); var opt=document.createElement("option"); opt.value=t; opt.textContent=t; select.appendChild(opt); }); } }
+    ["lateStartTime","earlyLeaveTime","startTime","endTime"].forEach(function(id){ fillTimeSelect(document.getElementById(id)); });
+
+    function show(el, yes){ if(el) el.classList.toggle("hidden", !yes); }
+    function updateVisibleFields(){
+      var type=document.getElementById("requestType").value;
+      show(document.getElementById("daysFields"), type === "Days");
+      show(document.getElementById("hoursFields"), type === "Hours");
+      updateHoursFields();
+    }
+    function updateHoursFields(){
+      var v=document.getElementById("hoursType").value;
+      show(document.getElementById("lateStartFields"), v === "Late Start");
+      show(document.getElementById("earlyLeaveFields"), v === "Early Leave");
+      show(document.getElementById("partialDayFields"), v === "Partial Day");
+    }
+    document.getElementById("requestType").addEventListener("change", updateVisibleFields);
+    document.getElementById("hoursType").addEventListener("change", updateHoursFields);
+    document.getElementById("reason").addEventListener("change", function(){ show(document.getElementById("otherReasonField"), this.value === "Other"); });
+
+    function buildPayload(){
+      var requestType=document.getElementById("requestType").value;
+      var hoursType=document.getElementById("hoursType").value;
+      var startTime="", endTime="";
+      if (hoursType === "Late Start") endTime = document.getElementById("lateStartTime").value;
+      if (hoursType === "Early Leave") startTime = document.getElementById("earlyLeaveTime").value;
+      if (hoursType === "Partial Day") { startTime = document.getElementById("startTime").value; endTime = document.getElementById("endTime").value; }
+      return {
+        action:"submitTimeOffRequest",
+        employee:EMPLOYEE_NAME,
+        requestType:requestType,
+        hoursType: requestType === "Hours" ? hoursType : "",
+        startDate: requestType === "Days" ? document.getElementById("startDate").value : "",
+        endDate: requestType === "Days" ? document.getElementById("endDate").value : "",
+        requestDate: requestType === "Hours" ? document.getElementById("requestDate").value : "",
+        startTime:startTime,
+        endTime:endTime,
+        reason:document.getElementById("reason").value,
+        otherReason:document.getElementById("otherReason").value.trim(),
+        disclaimerAccepted:"true"
+      };
+    }
+    function validatePayload(p){
+      if (!p.employee) return "Employee was not found. Open this page from your employee menu.";
+      if (!p.requestType) return "Choose Hours or Days.";
+      if (p.requestType === "Days") {
+        if (!p.startDate || !p.endDate) return "Choose a beginning and ending date.";
+        if (p.endDate < p.startDate) return "Ending date cannot be before beginning date.";
+      }
+      if (p.requestType === "Hours") {
+        if (!p.hoursType) return "Choose Late Start, Early Leave, or Partial Day.";
+        if (!p.requestDate) return "Choose the request date.";
+        if (p.hoursType === "Late Start" && !p.endTime) return "Choose the late start time.";
+        if (p.hoursType === "Early Leave" && !p.startTime) return "Choose the early leave time.";
+        if (p.hoursType === "Partial Day" && (!p.startTime || !p.endTime)) return "Choose both start and end times.";
+      }
+      if (!p.reason) return "Choose a reason.";
+      if (p.reason === "Other" && !p.otherReason) return "Fill out the Other Reason box.";
+      return "";
+    }
+    function jsonp(params, timeoutMs){
+      timeoutMs=timeoutMs||15000;
+      return new Promise(function(resolve,reject){
+        var cb="timeoff_submit_"+Math.random().toString(16).slice(2);
+        var u=new URL(TIME_OFF_WEBAPP_URL);
+        Object.keys(params).forEach(function(k){ u.searchParams.set(k, params[k]); });
+        u.searchParams.set("callback", cb);
+        var done=false, script=document.createElement("script");
+        var timer=setTimeout(function(){ if(done)return; done=true; cleanup(); reject(new Error("Request timed out.")); }, timeoutMs);
+        function cleanup(){ clearTimeout(timer); script.remove(); try{ delete window[cb]; }catch(_){} }
+        window[cb]=function(data){ if(done)return; done=true; cleanup(); resolve(data||{}); };
+        script.onerror=function(){ if(done)return; done=true; cleanup(); reject(new Error("Request failed.")); };
+        script.src=u.toString(); document.body.appendChild(script);
+      });
+    }
+    document.getElementById("timeOffForm").addEventListener("submit", function(e){
+      e.preventDefault();
+      var p=buildPayload();
+      var err=validatePayload(p);
+      if (err) { setStatus(err,"err"); return; }
+      var btn=document.getElementById("submitBtn"); btn.disabled=true; setStatus("Submitting...","");
+      jsonp(p).then(function(data){
+        if(!data.success) throw new Error(data.error || "Submit failed");
+        setStatus("Request submitted.","ok");
+        document.getElementById("timeOffForm").reset(); updateVisibleFields(); show(document.getElementById("otherReasonField"), false);
+      }).catch(function(error){ setStatus("Could not submit request. " + error.message,"err"); }).finally(function(){ btn.disabled=false; });
+    });
+
+    document.getElementById("employeeChip").textContent = EMPLOYEE_NAME || "Employee not found";
+    if (FROM_PAGE) {
+      document.getElementById("backLink").href = FROM_PAGE;
+      document.getElementById("homeLink").href = FROM_PAGE;
+    }
+    (function(){ var btn=document.getElementById("menuBtn"), overlay=document.getElementById("menuOverlay"); function close(){document.body.classList.remove("menu-open");} function open(){document.body.classList.add("menu-open");} btn.addEventListener("click", function(){ document.body.classList.contains("menu-open") ? close() : open(); }); overlay.addEventListener("click", close); document.addEventListener("keydown", function(e){ if(e.key === "Escape") close(); }); })();
+  </script>
+</body>
+</html>
