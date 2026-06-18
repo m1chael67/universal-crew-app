@@ -28,52 +28,51 @@
     }
 
     header {
-      background: var(--dark);
-      color: white;
-      padding: 16px;
-      position: sticky;
-      top: 0;
-      z-index: 10;
-      box-shadow: 0 2px 8px rgba(0,0,0,.2);
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 18px 16px 4px 60px;
     }
 
     .topbar {
-      max-width: 1180px;
-      margin: 0 auto;
-      display: flex;
-      justify-content: flex-start;
-      align-items: center;
-      gap: 12px;
+      display: block;
       position: relative;
     }
 
     h1 {
       margin: 0;
-      font-size: 22px;
+      font-size: 28px;
       letter-spacing: .3px;
     }
 
     .hamburger {
-      border: 1px solid rgba(255,255,255,.25);
-      background: rgba(255,255,255,.08);
-      color: white;
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      z-index: 50;
+      width: 44px;
+      height: 44px;
+      border: 1px solid var(--border);
+      background: white;
+      color: var(--text);
       border-radius: 10px;
-      padding: 9px 12px;
       cursor: pointer;
-      font-size: 18px;
+      font-size: 24px;
+      line-height: 1;
+      box-shadow: 0 2px 8px rgba(16,24,40,.12);
     }
 
     .menu {
       display: none;
-      position: absolute;
-      left: 0;
-      top: 46px;
+      position: fixed;
+      left: 12px;
+      top: 62px;
+      z-index: 49;
       background: white;
       color: var(--text);
       border: 1px solid var(--border);
       border-radius: 12px;
       box-shadow: 0 10px 25px rgba(0,0,0,.18);
-      min-width: 190px;
+      min-width: 210px;
       overflow: hidden;
     }
 
@@ -364,17 +363,6 @@
       color: var(--muted);
     }
 
-    .readonly-user {
-      width: 100%;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 10px;
-      font-size: 14px;
-      background: #f8fafc;
-      color: var(--text);
-      min-height: 39px;
-    }
-
     .empty {
       padding: 16px;
       border: 1px dashed var(--border);
@@ -396,6 +384,7 @@
     }
 
     @media (max-width: 620px) {
+      header { padding: 16px 10px 4px 64px; }
       main { padding: 10px; }
       .controls, .summary-grid, .inventory-grid, .totals-grid, .management-grid {
         grid-template-columns: 1fr;
@@ -548,10 +537,6 @@
             <option>Inventory Correction</option>
           </select>
         </div>
-        <div>
-          <label>Current User</label>
-          <div id="currentUserBadge" class="readonly-user">Unknown</div>
-        </div>
         <div class="full">
           <label for="notesInput">Notes</label>
           <textarea id="notesInput" rows="2" placeholder="Optional notes"></textarea>
@@ -574,7 +559,6 @@
     document.addEventListener('DOMContentLoaded', () => {
       currentUser = getCurrentUser();
       renderMenu();
-      document.getElementById('currentUserBadge').textContent = currentUser;
       document.getElementById('daysAhead').addEventListener('change', loadDashboard);
       document.getElementById('searchBox').addEventListener('input', renderAll);
       document.getElementById('shortOnly').addEventListener('change', renderInventory);
@@ -649,11 +633,49 @@
     }
 
     async function api(params) {
-      const url = API_URL + '?' + new URLSearchParams(params).toString();
-      const res = await fetch(url);
-      const data = await res.json();
-      if (!data.ok) throw new Error(data.error || 'Web app error');
-      return data;
+      // Apps Script web apps often block normal fetch/CORS from GitHub Pages.
+      // JSONP uses the callback support in the Apps Script code and avoids that issue.
+      try {
+        return await apiJsonp(params);
+      } catch (jsonpErr) {
+        // Fallback for local testing or if the web app later enables CORS.
+        const url = API_URL + '?' + new URLSearchParams(params).toString();
+        const res = await fetch(url, { method: 'GET', mode: 'cors' });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || 'Web app error');
+        return data;
+      }
+    }
+
+    function apiJsonp(params) {
+      return new Promise((resolve, reject) => {
+        const callbackName = 'linenCb_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
+        const script = document.createElement('script');
+        const timeout = setTimeout(() => {
+          cleanup();
+          reject(new Error('Web app did not respond. Check deployment access and Apps Script errors.'));
+        }, 15000);
+
+        function cleanup() {
+          clearTimeout(timeout);
+          delete window[callbackName];
+          if (script.parentNode) script.parentNode.removeChild(script);
+        }
+
+        window[callbackName] = data => {
+          cleanup();
+          if (!data || !data.ok) reject(new Error((data && data.error) || 'Web app error'));
+          else resolve(data);
+        };
+
+        const allParams = { ...params, callback: callbackName };
+        script.src = API_URL + '?' + new URLSearchParams(allParams).toString();
+        script.onerror = () => {
+          cleanup();
+          reject(new Error('Could not reach linen web app.'));
+        };
+        document.body.appendChild(script);
+      });
     }
 
     async function loadDashboard() {
