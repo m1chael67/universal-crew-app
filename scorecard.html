@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="style.css" />
   <link rel="icon" type="image/png" href="favicon.png" />
   <style>
-    body{background:#f7f7f7;color:#111;margin:0}.container{max-width:1100px;margin:2.5rem auto 0;padding:16px}.menu-btn{position:fixed;top:12px;left:12px;width:44px;height:44px;border-radius:12px;border:1px solid #d9d9d9;background:#fff;display:flex;align-items:center;justify-content:center;z-index:1002;box-shadow:0 1px 8px rgba(0,0,0,.08)}.menu-icon{width:18px;height:12px;position:relative}.menu-icon span{position:absolute;left:0;right:0;height:2px;background:#111;border-radius:2px}.menu-icon span:nth-child(1){top:0}.menu-icon span:nth-child(2){top:5px}.menu-icon span:nth-child(3){top:10px}.menu-overlay{position:fixed;inset:0;background:rgba(0,0,0,.18);opacity:0;pointer-events:none;transition:opacity .2s ease;z-index:1001}.side-menu{position:fixed;top:0;left:0;height:100%;width:260px;background:#fff;transform:translateX(-105%);transition:transform .25s ease;z-index:1003;padding:72px 16px 16px;box-shadow:2px 0 16px rgba(0,0,0,.18)}body.menu-open .menu-overlay{opacity:1;pointer-events:auto}body.menu-open .side-menu{transform:translateX(0)}.side-menu h2{margin:0 0 14px;font-size:22px}.side-menu a{display:block;padding:12px 10px;border-radius:12px;text-decoration:none;color:#111;font-weight:600}.side-menu a:hover{background:#f1f1f1}.page-title-row{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;gap:10px;margin:6px 0 12px}.page-title-row h1{margin:0;text-align:center;letter-spacing:-.6px}.icon-action{width:42px;height:42px;border-radius:14px;border:1px solid #e0e0e0;background:#fff;color:#111;display:inline-flex;align-items:center;justify-content:center;font-size:21px;font-weight:800;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.08)}.small-note{text-align:center;color:#666;font-size:12px;margin-top:-4px;margin-bottom:12px;line-height:1.35}.toolbar{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin:0 0 14px}.filter-btn,.select-control{border:1px solid #e0e0e0;background:#fff;color:#111;border-radius:999px;padding:9px 13px;font-size:12px;font-weight:900;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.06)}.filter-btn.active{background:#111;color:#fff;border-color:#111}.select-control{cursor:pointer;max-width:100%}.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}.summary-card{background:#fff;border:1px solid #e6e6e6;border-radius:16px;padding:12px;box-shadow:0 6px 18px rgba(0,0,0,.06)}.summary-label{font-size:11px;font-weight:900;text-transform:uppercase;color:#666;letter-spacing:.3px}.summary-value{font-size:22px;font-weight:900;margin-top:3px;line-height:1.1}.summary-sub{font-size:12px;color:#666;margin-top:4px;line-height:1.25}.section{background:#fff;border:1px solid #e7e7e7;border-radius:18px;padding:14px;margin:0 0 14px;box-shadow:0 7px 20px rgba(0,0,0,.07)}.section h2{margin:0 0 10px;font-size:19px;letter-spacing:-.25px;display:flex;align-items:center;justify-content:space-between;gap:8px}.table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}table{width:100%;border-collapse:collapse;font-size:13px;min-width:720px}th,td{padding:9px 8px;border-bottom:1px solid #eee;text-align:left;vertical-align:top}th{font-size:11px;text-transform:uppercase;letter-spacing:.25px;color:#666;background:#fafafa;white-space:nowrap}td.num,th.num{text-align:right;white-space:nowrap}tr:hover td{background:#fcfcfc}.pill{display:inline-flex;align-items:center;border-radius:999px;padding:4px 8px;font-size:11px;font-weight:900;background:#f2f2f2;color:#111;white-space:nowrap}.pill.good{background:#eaf8ee;color:#1b7f35}.pill.warn{background:#fff3d5;color:#7a4b00}.pill.bad{background:#fff0f0;color:#9b1c1c}.job-card{border:1px solid #eee;background:#fcfcfc;border-radius:14px;padding:12px;margin:8px 0}.job-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px}.job-head h3{margin:0;font-size:16px;line-height:1.15}.meta{display:grid;gap:5px;font-size:13px;color:#333;line-height:1.35}.inventory-list{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.inventory-pill{font-size:11px;font-weight:800;background:#f1f1f1;border-radius:999px;padding:5px 8px}.empty{padding:18px;text-align:center;font-weight:800;color:#555;background:#fff;border:1px solid #e6e6e6;border-radius:16px}.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px}.date-control{border:1px solid #e0e0e0;background:#fff;color:#111;border-radius:12px;padding:8px 10px;font-size:12px;font-weight:800;box-shadow:0 4px 12px rgba(0,0,0,.06)}.revenue-row{cursor:pointer}.revenue-row td:first-child{font-weight:900}.detail-row td{background:#fbfbfb!important}.detail-box{display:grid;gap:8px}.detail-title{font-weight:900}.detail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.detail-chip{background:#fff;border:1px solid #eee;border-radius:12px;padding:8px}.detail-chip b{display:block;font-size:11px;text-transform:uppercase;color:#666;margin-bottom:2px}.sub-row td:first-child{padding-left:28px}.kind-setup{background:#eaf8ee;color:#1b7f35}.kind-strike{background:#fff3d5;color:#7a4b00}.money-good{font-weight:900}.rev-tools{justify-content:flex-start;margin-bottom:10px}.rev-tools label{font-size:11px;font-weight:900;text-transform:uppercase;color:#666;display:flex;align-items:center;gap:6px}.muted{color:#666;font-size:12px}.profit-note{font-size:12px;color:#555;line-height:1.35;margin-top:8px}@media(max-width:760px){.container{padding:12px}.summary-grid{grid-template-columns:1fr 1fr}.two-col{grid-template-columns:1fr}.page-title-row{grid-template-columns:42px 1fr 42px}.page-title-row h1{font-size:24px}table{min-width:650px}.section{padding:12px}}
+    body{background:#f7f7f7;color:#111;margin:0}.container{max-width:1100px;margin:2.5rem auto 0;padding:16px}.menu-btn{position:fixed;top:12px;left:12px;width:44px;height:44px;border-radius:12px;border:1px solid #d9d9d9;background:#fff;display:flex;align-items:center;justify-content:center;z-index:1002;box-shadow:0 1px 8px rgba(0,0,0,.08)}.menu-icon{width:18px;height:12px;position:relative}.menu-icon span{position:absolute;left:0;right:0;height:2px;background:#111;border-radius:2px}.menu-icon span:nth-child(1){top:0}.menu-icon span:nth-child(2){top:5px}.menu-icon span:nth-child(3){top:10px}.menu-overlay{position:fixed;inset:0;background:rgba(0,0,0,.18);opacity:0;pointer-events:none;transition:opacity .2s ease;z-index:1001}.side-menu{position:fixed;top:0;left:0;height:100%;width:260px;background:#fff;transform:translateX(-105%);transition:transform .25s ease;z-index:1003;padding:72px 16px 16px;box-shadow:2px 0 16px rgba(0,0,0,.18)}body.menu-open .menu-overlay{opacity:1;pointer-events:auto}body.menu-open .side-menu{transform:translateX(0)}.side-menu h2{margin:0 0 14px;font-size:22px}.side-menu a{display:block;padding:12px 10px;border-radius:12px;text-decoration:none;color:#111;font-weight:600}.side-menu a:hover{background:#f1f1f1}.page-title-row{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;gap:10px;margin:6px 0 12px}.page-title-row h1{margin:0;text-align:center;letter-spacing:-.6px}.icon-action{width:42px;height:42px;border-radius:14px;border:1px solid #e0e0e0;background:#fff;color:#111;display:inline-flex;align-items:center;justify-content:center;font-size:21px;font-weight:800;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.08)}.small-note{text-align:center;color:#666;font-size:12px;margin-top:-4px;margin-bottom:12px;line-height:1.35}.toolbar{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin:0 0 14px}.filter-btn,.select-control{border:1px solid #e0e0e0;background:#fff;color:#111;border-radius:999px;padding:9px 13px;font-size:12px;font-weight:900;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.06)}.filter-btn.active{background:#111;color:#fff;border-color:#111}.select-control{cursor:pointer;max-width:100%}.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}.summary-card{background:#fff;border:1px solid #e6e6e6;border-radius:16px;padding:12px;box-shadow:0 6px 18px rgba(0,0,0,.06)}.summary-label{font-size:11px;font-weight:900;text-transform:uppercase;color:#666;letter-spacing:.3px}.summary-value{font-size:22px;font-weight:900;margin-top:3px;line-height:1.1}.summary-sub{font-size:12px;color:#666;margin-top:4px;line-height:1.25}.section{background:#fff;border:1px solid #e7e7e7;border-radius:18px;padding:14px;margin:0 0 14px;box-shadow:0 7px 20px rgba(0,0,0,.07)}.section h2{margin:0 0 10px;font-size:19px;letter-spacing:-.25px;display:flex;align-items:center;justify-content:space-between;gap:8px}.table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}table{width:100%;border-collapse:collapse;font-size:13px;min-width:720px}th,td{padding:9px 8px;border-bottom:1px solid #eee;text-align:left;vertical-align:top}th{font-size:11px;text-transform:uppercase;letter-spacing:.25px;color:#666;background:#fafafa;white-space:nowrap}td.num,th.num{text-align:right;white-space:nowrap}tr:hover td{background:#fcfcfc}.pill{display:inline-flex;align-items:center;border-radius:999px;padding:4px 8px;font-size:11px;font-weight:900;background:#f2f2f2;color:#111;white-space:nowrap}.pill.good{background:#eaf8ee;color:#1b7f35}.pill.warn{background:#fff3d5;color:#7a4b00}.pill.bad{background:#fff0f0;color:#9b1c1c}.job-card{border:1px solid #eee;background:#fcfcfc;border-radius:14px;padding:12px;margin:8px 0}.job-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px}.job-head h3{margin:0;font-size:16px;line-height:1.15}.meta{display:grid;gap:5px;font-size:13px;color:#333;line-height:1.35}.inventory-list{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.inventory-pill{font-size:11px;font-weight:800;background:#f1f1f1;border-radius:999px;padding:5px 8px}.empty{padding:18px;text-align:center;font-weight:800;color:#555;background:#fff;border:1px solid #e6e6e6;border-radius:16px}.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px}.date-control{border:1px solid #e0e0e0;background:#fff;color:#111;border-radius:12px;padding:8px 10px;font-size:12px;font-weight:800;box-shadow:0 4px 12px rgba(0,0,0,.06)}.revenue-row{cursor:pointer}.revenue-row td:first-child{font-weight:900}.detail-row td{background:#fbfbfb!important}.detail-box{display:grid;gap:8px}.detail-title{font-weight:900}.detail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.detail-chip{background:#fff;border:1px solid #eee;border-radius:12px;padding:8px}.detail-chip b{display:block;font-size:11px;text-transform:uppercase;color:#666;margin-bottom:2px}.sub-row td:first-child{padding-left:28px}.kind-setup{background:#eaf8ee;color:#1b7f35}.kind-strike{background:#fff3d5;color:#7a4b00}.money-good{font-weight:900}.rev-tools{justify-content:flex-start;margin-bottom:10px}.rev-tools label{font-size:11px;font-weight:900;text-transform:uppercase;color:#666;display:flex;align-items:center;gap:6px}.muted{color:#666;font-size:12px}\.profit-note{font-size:12px;color:#555;line-height:1.35;margin-top:8px}.schedule-list{display:grid;gap:8px;min-width:260px}.schedule-mini{border:1px solid #e8e8e8;background:#fff;border-radius:14px;padding:10px;box-shadow:0 2px 8px rgba(0,0,0,.04)}.schedule-mini-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}.schedule-mini-title{font-weight:900;line-height:1.15}.schedule-mini-meta{display:flex;gap:6px;flex-wrap:wrap;font-size:11px;color:#555}.schedule-mini .pill{font-size:10px;padding:3px 7px}.ops-metric-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}.ops-metric{background:#fff;border:1px solid #eee;border-radius:12px;padding:9px}.ops-metric b{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.25px;color:#666;margin-bottom:3px}.ops-metric strong{font-size:16px}.support-positive strong{color:#7a4b00}.recovery-good strong{color:#1b7f35}.recovery-warn strong{color:#7a4b00}.recovery-bad strong{color:#9b1c1c}@media(max-width:760px){.container{padding:12px}.summary-grid{grid-template-columns:1fr 1fr}.two-col{grid-template-columns:1fr}.page-title-row{grid-template-columns:42px 1fr 42px}.page-title-row h1{font-size:24px}table{min-width:650px}.section{padding:12px}}
   </style>
 </head>
 <body>
@@ -29,7 +29,7 @@
 <div class="summary-grid"><div class="summary-card"><div class="summary-label">Timed Jobs</div><div id="timed-count" class="summary-value">0</div><div class="summary-sub">Grouped by job</div></div><div class="summary-card"><div class="summary-label">Avg Weighted Setup</div><div id="avg-setup" class="summary-value">—</div><div class="summary-sub">Adjusted tent-only estimate</div></div><div class="summary-card"><div class="summary-label">Avg Weighted Strike</div><div id="avg-strike" class="summary-value">—</div><div class="summary-sub">Adjusted tent-only estimate</div></div><div class="summary-card"><div class="summary-label">Fastest Tracker</div><div id="best-tracker" class="summary-value">—</div><div class="summary-sub" id="best-tracker-sub">By avg completed timer</div></div></div>
     <div class="two-col"><section class="section"><h2><span id="comparison-title">Tent Time Comparison</span></h2><div class="table-scroll"><table><thead><tr><th>Tent</th><th class="num">Jobs</th><th class="num">Raw Setup</th><th class="num">Adj Setup</th><th class="num">Raw Strike</th><th class="num">Clean Setup</th><th class="num">Trend</th></tr></thead><tbody id="tent-body"></tbody></table></div></section><section class="section"><h2>Crew Efficiency <span class="pill">Button Pressers</span></h2><div class="table-scroll"><table><thead><tr><th>Pressed Button</th><th class="num">Timers</th><th class="num">Avg Time</th><th class="num">Setup Avg</th><th class="num">Strike Avg</th></tr></thead><tbody id="tracker-body"></tbody></table></div></section></div>
     <section class="section"><h2>Improvement Trend <span class="pill">Newest vs Previous</span></h2><div class="table-scroll"><table><thead><tr><th>Group</th><th class="num">Newest 5 Avg</th><th class="num">Previous 5 Avg</th><th class="num">Change</th><th>Direction</th></tr></thead><tbody id="trend-body"></tbody></table></div></section>
-    <section class="section" id="revenue-performance-section"><h2>Production / Revenue Tracker <span class="pill">Clocked Hours + Job Timers</span></h2><div class="toolbar rev-tools"><label>Start <input id="rev-start" class="date-control" type="date"></label><label>End <input id="rev-end" class="date-control" type="date"></label><button type="button" class="filter-btn active" data-revenue-view="day">Days</button><button type="button" class="filter-btn" data-revenue-view="job">Jobs</button><button type="button" class="filter-btn active" data-revenue-kind="all">All</button><button type="button" class="filter-btn" data-revenue-kind="setup">Setup</button><button type="button" class="filter-btn" data-revenue-kind="strike">Strike</button></div><div class="summary-grid" style="margin-bottom:10px;"><div class="summary-card"><div class="summary-label">Revenue Shown</div><div id="rev-total" class="summary-value">$0</div><div class="summary-sub">Only jobs with price recorded</div></div><div class="summary-card"><div class="summary-label">Setup/Strike Man-Hours</div><div id="rev-manhours" class="summary-value">0</div><div class="summary-sub">Timer duration × crew count</div></div><div class="summary-card"><div class="summary-label">All Clocked Hours</div><div id="rev-clocked-all" class="summary-value">—</div><div class="summary-sub">Everyone clocked in during shown dates</div></div><div class="summary-card"><div class="summary-label">Revenue / Job Man-Hr</div><div id="rev-per-hour" class="summary-value">—</div><div class="summary-sub">Revenue ÷ setup/strike man-hours</div></div></div><div class="table-scroll"><table><thead id="revenue-head"></thead><tbody id="revenue-performance-body"></tbody></table></div><div class="profit-note">Tip: rows expand. Day mode shows each day, then the setup/strike jobs inside it. Job mode groups setup and strike together, with the strike clearly marked and dated underneath.</div></section>
+    <section class="section" id="revenue-performance-section"><h2>Production / Revenue Tracker <span class="pill">Clocked Hours + Job Timers</span></h2><div class="toolbar rev-tools"><label>Start <input id="rev-start" class="date-control" type="date"></label><label>End <input id="rev-end" class="date-control" type="date"></label><button type="button" class="filter-btn active" data-revenue-view="day">Days</button><button type="button" class="filter-btn" data-revenue-view="job">Jobs</button><button type="button" class="filter-btn active" data-revenue-kind="all">All</button><button type="button" class="filter-btn" data-revenue-kind="setup">Setup</button><button type="button" class="filter-btn" data-revenue-kind="strike">Strike</button></div><div class="summary-grid" style="margin-bottom:10px;"><div class="summary-card"><div class="summary-label">All Clocked Hours</div><div id="rev-clocked-all" class="summary-value">—</div><div class="summary-sub">Everyone clocked in during shown dates</div></div><div class="summary-card"><div class="summary-label">Job-Crew Clocked</div><div id="rev-clocked-crew" class="summary-value">—</div><div class="summary-sub">Only employees on setup/strike events</div></div><div class="summary-card"><div class="summary-label">Support Hours</div><div id="rev-support-hours" class="summary-value">—</div><div class="summary-sub">Job-crew clocked minus timer man-hours</div></div><div class="summary-card"><div class="summary-label">Revenue / Job Man-Hr</div><div id="rev-per-hour" class="summary-value">—</div><div class="summary-sub">Revenue ÷ setup/strike man-hours</div></div></div><div class="table-scroll"><table><thead id="revenue-head"></thead><tbody id="revenue-performance-body"></tbody></table></div><div class="profit-note">Tip: rows expand. Day mode shows each day, then the setup/strike jobs inside it. Job mode groups setup and strike together, with the strike clearly marked and dated underneath.</div></section>
     <section class="section"><h2>Outlier Alerts</h2><div id="outlier-list"></div></section>
     <section class="section"><h2>Most Recent Timed Jobs</h2><div id="recent-list"></div></section>
     <section class="section" id="revenue-section" style="display:none"><h2>Revenue / Profit Preview</h2><div class="table-scroll"><table><thead><tr><th>Job</th><th class="num">Revenue</th><th class="num">Total Time</th><th class="num">Revenue / Hour</th><th>Tents</th></tr></thead><tbody id="revenue-body"></tbody></table></div></section>
@@ -170,70 +170,31 @@ function normalizeInventory(items){
   });
 }
 
-function splitNames(value){
-  if(Array.isArray(value))return value.map(function(x){return String(x||"").trim();}).filter(Boolean);
-  return String(value||"").split(/[,;|]/).map(function(x){return x.trim();}).filter(Boolean);
-}
-function sheetJobName(row){return readAny(row,["Job Name","JobName","jobName","Name","Customer","Customer Name"]);}
-function sheetSetupDate(row){return readAny(row,["Date","Setup Date","SetupDate","Start Date","startDate","Start","Setup"]);}
-function sheetStrikeDate(row){return readAny(row,["Strike Date","StrikeDate","End Date","endDate","Strike"]);}
-function sheetItemName(row){return readAny(row,["Item","Inventory","inventory","item","Name","Description"]);}
-function sheetQty(row){return readAny(row,["Qty","Quantity","quantity","qty","Count"]);}
-function normalizeSingleJob(job){
-  var setupRaw=readAny(job,["startDate","SetupDate","Setup Date","Date","Start Date"]);
-  var strikeRaw=readAny(job,["strikeDate","StrikeDate","Strike Date","End Date"]);
-  var setup=parseUsDate(setupRaw);
-  var strike=parseUsDate(strikeRaw);
-  var name=readAny(job,["jobName","JobName","Job Name","Name","Customer","Customer Name"]);
-  var addr=readAny(job,["address","Address","Location"]);
-  var rowBasedBaseId=slugify(readAny(job,["id","row","rowNumber","Row","Row Number"]));
-  var fallbackBaseId=slugify((name||"")+" "+(addr||"")+" "+(setup?dateKey(setup):String(setupRaw||""))+" "+(strike?dateKey(strike):String(strikeRaw||"")));
-  return {
-    Name:name,
-    SetupDate:setup,
-    StrikeDate:strike,
-    Type:readAny(job,["type","Type"]),
-    OriginalType:readAny(job,["type","Type"]),
-    Address:addr,
-    Phone:readAny(job,["phone","Phone"]),
-    Notes:readAny(job,["notes","Notes"]),
-    employees:splitNames(readAny(job,["employees","Employees","Employees Working","Crew"])),
-    inventory:normalizeInventory(job.inventory || job.Inventory || []),
-    raw:job,
-    JobBaseId:rowBasedBaseId || fallbackBaseId,
-    revenue:readPrice(job)
-  };
-}
 function normalizeJobs(raw){
-  raw=raw||[];
-  if(!raw.length)return [];
+  return (raw || []).map(function(job){
+    var setup = parseUsDate(job.startDate || job.SetupDate || "");
+    var strike = parseUsDate(job.strikeDate || job.StrikeDate || "");
+    var name = job.jobName || job.Name || "";
+    var addr = job.address || job.Address || "";
+    var rowBasedBaseId = slugify(job.id || job.row || job.rowNumber || "");
+    var fallbackBaseId = slugify((name || "") + " " + (addr || "") + " " + (job.startDate || "") + " " + (job.strikeDate || ""));
 
-  // If the Jobs web app already returned nested inventory, normalize those objects directly.
-  var hasNested=raw.some(function(r){return Array.isArray(r.inventory)||Array.isArray(r.Inventory);});
-  if(hasNested)return raw.map(normalizeSingleJob).filter(function(j){return j.Name&&(j.SetupDate||j.StrikeDate);});
-
-  // Direct Sheet2 rows are usually one inventory line per row. Group them into one job using Sheet2 dates as truth.
-  var map={};
-  raw.forEach(function(row,idx){
-    var name=sheetJobName(row);
-    var setup=parseUsDate(sheetSetupDate(row));
-    var strike=parseUsDate(sheetStrikeDate(row));
-    if(!name||(!setup&&!strike))return;
-    var addr=readAny(row,["Address","address","Location"]);
-    var key=slugify([name,addr,setup?dateKey(setup):"",strike?dateKey(strike):""].join(" ")) || ("job-"+idx);
-    if(!map[key]){
-      map[key]={Name:name,SetupDate:setup,StrikeDate:strike,Type:readAny(row,["Type","type"]),OriginalType:readAny(row,["Type","type"]),Address:addr,Phone:readAny(row,["Phone","phone"]),Notes:readAny(row,["Notes","notes"]),employees:splitNames(readAny(row,["Employees Working","Employees","employees","Crew"])),inventory:[],raw:row,JobBaseId:key,revenue:readPrice(row)};
-    }
-    var item=sheetItemName(row), qty=sheetQty(row);
-    // Avoid using the job name itself as an inventory item when the sheet doesn't have an item column.
-    if(item && String(item).trim() && String(item).trim()!==String(name).trim()){
-      map[key].inventory.push({inventory:item,quantity:qty,note:readAny(row,["Item Notes","Notes","notes"])});
-    }
-    var emps=splitNames(readAny(row,["Employees Working","Employees","employees","Crew"]));
-    emps.forEach(function(n){if(map[key].employees.indexOf(n)===-1)map[key].employees.push(n);});
-    var price=readPrice(row); if(price&&!map[key].revenue)map[key].revenue=price;
+    return {
+      Name: name,
+      SetupDate: setup,
+      StrikeDate: strike,
+      Type: job.type || job.Type || "",
+      OriginalType: job.type || job.Type || "",
+      Address: addr,
+      Phone: job.phone || job.Phone || "",
+      Notes: job.notes || job.Notes || "",
+      employees: job.employees || [],
+      inventory: normalizeInventory(job.inventory || job.Inventory || []),
+      raw: job,
+      JobBaseId: rowBasedBaseId || fallbackBaseId,
+      revenue: readPrice(job)
+    };
   });
-  return Object.keys(map).map(function(k){return map[k];});
 }
 
 function baseId(job){
@@ -824,29 +785,64 @@ function loadTimeLogRows(){
     if(rows&&rows.length)return rows;
     throw new Error("No Time Log rows from web app.");
   }).catch(function(){
-    return gvizp(TIME_LOG_SHEET_ID,TIME_LOG_SHEET_NAME,15000).then(gvizToObjects);
+    return gvizp(TIME_LOG_SHEET_ID,TIME_LOG_SHEET_NAME,15000).then(gvizToObjects).catch(function(){
+      return gvizp(TIME_LOG_SHEET_ID,"Sheet1",15000).then(gvizToObjects);
+    });
   });
 }
-function loadJobRows(){
-  // Use UniversalToDo Sheet2 directly as the source of truth for scheduled setup/strike dates.
-  // If the sheet feed is unavailable because of permissions, fall back to the existing jobs web app.
-  return gvizp(UNIVERSAL_TODO_SHEET_ID,UNIVERSAL_TODO_SHEET_NAME,18000).then(function(rows){
-    var objects=gvizToObjects(rows);
-    if(objects&&objects.length)return objects;
-    throw new Error("No Sheet2 rows from sheet feed.");
-  }).catch(function(err){
-    console.warn("Direct Sheet2 feed failed; falling back to jobs web app",err);
-    return jsonp(JOBS_WEBAPP_URL,{action:"listJobs"},20000).then(function(res){return (res&&res.jobs)||[];});
+function loadSheet2Rows(){
+  return gvizp(UNIVERSAL_TODO_SHEET_ID,UNIVERSAL_TODO_SHEET_NAME,15000).then(gvizToObjects).catch(function(){
+    return gvizp(UNIVERSAL_TODO_SHEET_ID,"Sheet2",15000).then(gvizToObjects);
   });
+}
+function normalizeSheet2Jobs(rows){
+  var map={};
+  (rows||[]).forEach(function(row,idx){
+    var name=String(readAny(row,["Job Name","JobName","Name","Customer","Event Name","Column2","B"])||"").trim();
+    var address=String(readAny(row,["Address","Location","Column3","C"])||"").trim();
+    var setup=parseUsDate(readAny(row,["Date","Setup Date","Start Date","SetupDate","startDate","Column4","D"]));
+    var strike=parseUsDate(readAny(row,["Strike Date","StrikeDate","End Date","Pickup Date","Column5","E"]));
+    var item=readAny(row,["Item","Inventory","Description","Rental Item","Column6","F"]);
+    var qty=readAny(row,["Qty","Quantity","Count","Column7","G"]);
+    var typ=readAny(row,["Type","Job Type","Column8","H"]);
+    var employeesRaw=readAny(row,["Employees Working","Employees","Crew","Employee","Column9","I"]);
+    var notes=readAny(row,["Notes","Note","Column11","K"]);
+    var phone=readAny(row,["Phone","Phone Number","Column12","L"]);
+    var price=readAny(row,["Price","Job Price","Revenue","Total","Amount","Column13","M"]);
+    if(!name || (!setup&&!strike))return;
+    var key=slugify(name+" "+address+" "+dateKey(setup)+" "+dateKey(strike));
+    if(!map[key])map[key]={Name:name,Address:address,Phone:phone||"",SetupDate:setup,StrikeDate:strike,Type:typ||"",OriginalType:typ||"",Notes:notes||"",employees:[],inventory:[],raw:row,JobBaseId:key,revenue:parseMoney(price)};
+    var job=map[key];
+    if(item)job.inventory.push({inventory:item,quantity:qty,note:notes||""});
+    if(price&&!job.revenue)job.revenue=parseMoney(price);
+    String(employeesRaw||"").split(/[,;|]/).map(function(x){return x.trim();}).filter(Boolean).forEach(function(n){ if(job.employees.indexOf(n)===-1)job.employees.push(n); });
+  });
+  return Object.keys(map).map(function(k){return map[k];});
+}
+function mergeJobs(primary, fallback){
+  var map={};
+  (primary||[]).concat(fallback||[]).forEach(function(job){
+    var k=baseId(job);
+    if(!map[k]){map[k]=job;return;}
+    var cur=map[k];
+    if((!cur.inventory||!cur.inventory.length)&&job.inventory&&job.inventory.length)cur.inventory=job.inventory;
+    if((!cur.employees||!cur.employees.length)&&job.employees&&job.employees.length)cur.employees=job.employees;
+    if(!cur.revenue&&job.revenue)cur.revenue=job.revenue;
+    if(!cur.Phone&&job.Phone)cur.Phone=job.Phone;
+    if(!cur.Notes&&job.Notes)cur.Notes=job.Notes;
+  });
+  return Object.keys(map).map(function(k){return map[k];});
 }
 function normalizeTimeLogs(raw){
   var rows=(raw||[]).map(function(x){
     var stamp=readAny(x,["timestamp","Timestamp","Time Stamp","dateTime","DateTime","time","Time","date","Date"]);
+    var dateOnly=readAny(x,["date","Date","Work Date","Day"]);
     var ts=parseDate(stamp)||parseUsDate(stamp);
+    var dOnly=parseUsDate(dateOnly)||parseUsDate(stamp);
     var emp=String(readAny(x,["employee","Employee","name","Name"] )||"").trim();
     var event=readAny(x,["event","Event","action","Action","type","Type"]);
-    var hrs=parseMoney(readAny(x,["hours","Hours","durationHours","DurationHours","totalHours","Total Hours"]));
-    return {raw:x,ts:ts,date:ts?dateKey(ts):dateKey(parseUsDate(readAny(x,["date","Date"]))),employee:emp,hours:hrs,event:event};
+    var hrs=parseMoney(readAny(x,["hours","Hours","durationHours","DurationHours","totalHours","Total Hours","Decimal Hours"]));
+    return {raw:x,ts:ts,date:ts?dateKey(ts):(dOnly?dateKey(dOnly):""),employee:emp,hours:hrs,event:event};
   }).filter(function(x){return x.date&&x.employee;}).sort(function(a,b){return (a.ts?a.ts.getTime():0)-(b.ts?b.ts.getTime():0);});
 
   var direct=rows.filter(function(x){return Number(x.hours||0)>0;}).map(function(x){return {date:x.date,employee:x.employee,hours:Number(x.hours||0),event:x.event,raw:x.raw};});
@@ -855,7 +851,7 @@ function normalizeTimeLogs(raw){
   var open={},segments=[];
   rows.forEach(function(r){
     var key=String(r.employee||"").toLowerCase().trim();
-    if(isClockInEvent(r.event)||(!isClockOutEvent(r.event)&&!open[key])){open[key]=r;return;}
+    if(isClockInEvent(r.event)){open[key]=r;return;}
     if(isClockOutEvent(r.event)&&open[key]&&open[key].ts&&r.ts){
       var hrs=Math.max(0,(r.ts-open[key].ts)/3600000);
       segments.push({date:dateKey(open[key].ts),employee:r.employee||open[key].employee,hours:hrs,event:"paired",raw:r.raw});
@@ -951,6 +947,30 @@ function getRecordCrewList(record){
   if(record.job&&record.job.employees)(record.job.employees||[]).forEach(function(n){if(n)set[n]=true;});
   return Object.keys(set);
 }
+function uniqueCrewForOccurrences(occs){
+  var set={};
+  (occs||[]).forEach(function(o){(o.employees||[]).forEach(function(n){if(n)set[n]=true;});});
+  return Object.keys(set).sort();
+}
+function crewClockForOccurrences(occs){
+  var seen={},sum=0;
+  (occs||[]).forEach(function(o){
+    var key=o.date+"|"+employeesKey(o.employees||[]);
+    if(seen[key])return; seen[key]=true;
+    sum+=timeLogHoursForDate(o.date,o.employees||[]);
+  });
+  return sum;
+}
+function supportHours(clock,man){return Math.max(0,Number(clock||0)-Number(man||0));}
+function recoveryPct(man,clock){return clock?Math.max(0,Math.min(999,(Number(man||0)/Number(clock))*100)):0;}
+function recoveryClass(p){return p>=70?"recovery-good":(p>=50?"recovery-warn":"recovery-bad");}
+function scheduleListHtml(occs){
+  if(!occs||!occs.length)return "—";
+  return '<div class="schedule-list">'+occs.map(function(o){
+    var r=o.record;
+    return '<div class="schedule-mini"><div class="schedule-mini-head"><div class="schedule-mini-title">'+esc(r.jobName)+'</div><span class="pill '+(o.kind==="setup"?"kind-setup":"kind-strike")+'">'+(o.kind==="setup"?"SETUP":"STRIKE")+'</span></div><div class="schedule-mini-meta"><span>'+esc(itemSummary(r))+'</span><span>•</span><span>'+esc((o.employees||[]).join(", ")||"No crew listed")+'</span></div></div>';
+  }).join("")+'</div>';
+}
 function revMetricRow(label, jobs, revenue, manHours, setupHrs, strikeHrs, extra){
   var rpmh = manHours ? revenue / manHours : 0;
   return '<tr><td><strong>'+esc(label)+'</strong>'+(extra?'<br><span class="muted">'+esc(extra)+'</span>':'')+'</td><td class="num">'+jobs+'</td><td class="num">'+moneyFmt(revenue)+'</td><td class="num">'+hoursFmt(manHours)+'</td><td class="num">'+(rpmh?moneyFmt(rpmh):"—")+'</td><td class="num">'+hoursFmt(setupHrs)+'</td><td class="num">'+hoursFmt(strikeHrs)+'</td></tr>';
@@ -958,8 +978,9 @@ function revMetricRow(label, jobs, revenue, manHours, setupHrs, strikeHrs, extra
 function detailHtmlForOccurrences(occs){
   return '<div class="detail-box">'+occs.map(function(o){
     var r=o.record, price=getOccurrenceRevenue(o), revHr=o.manHours?price/o.manHours:0, crewClock=timeLogHoursForDate(o.date,o.employees);
+    var support=supportHours(crewClock,o.manHours), recov=recoveryPct(o.manHours,crewClock);
     var inv=(r.inventory||[]).slice(0,10).map(function(i){var n=i.inventory||i.item||i.name||"Item",q=i.quantity||i.qty||"";return '<span class="inventory-pill">'+esc(n+(q?" × "+q:""))+'</span>';}).join("");
-    return '<div class="job-card"><div class="job-head"><h3>'+esc(r.jobName)+'</h3><span class="pill '+(o.kind==="setup"?"kind-setup":"kind-strike")+'">'+(o.kind==="setup"?"SETUP":"STRIKE")+'</span></div><div class="detail-grid"><div class="detail-chip"><b>Date</b>'+esc(weekdayLabel(o.date))+'</div><div class="detail-chip"><b>Employees</b>'+esc(o.employees.join(", ")||"—")+'</div><div class="detail-chip"><b>Total Clocked For Crew</b>'+(allTimeLogs.length?hoursFmt(crewClock):"—")+'</div><div class="detail-chip"><b>Job Timer</b>'+(o.minutes?fmtMin(Math.round(o.minutes)):"No timer")+' / '+hoursFmt(o.manHours)+' man-hr</div><div class="detail-chip"><b>Revenue Counted</b>'+moneyFmt(price)+'</div><div class="detail-chip"><b>Rev / Job Man-Hr</b>'+(revHr?moneyFmt(revHr):"—")+'</div><div class="detail-chip"><b>Job Details</b>'+esc(itemSummary(r))+'</div></div>'+(inv?'<div class="inventory-list">'+inv+'</div>':'')+'</div>';
+    return '<div class="job-card"><div class="job-head"><h3>'+esc(r.jobName)+'</h3><span class="pill '+(o.kind==="setup"?"kind-setup":"kind-strike")+'">'+(o.kind==="setup"?"SETUP":"STRIKE")+'</span></div><div class="ops-metric-grid"><div class="ops-metric"><b>Date</b><strong>'+esc(weekdayLabel(o.date))+'</strong></div><div class="ops-metric"><b>Crew</b><strong>'+esc(o.employees.join(", ")||"—")+'</strong></div><div class="ops-metric"><b>Crew Clocked</b><strong>'+(allTimeLogs.length?hoursFmt(crewClock):"—")+'</strong></div><div class="ops-metric"><b>Job Timer Man-Hrs</b><strong>'+hoursFmt(o.manHours)+'</strong></div><div class="ops-metric support-positive"><b>Support Time</b><strong>'+(allTimeLogs.length?hoursFmt(support):"—")+'</strong></div><div class="ops-metric '+recoveryClass(recov)+'"><b>Recovery</b><strong>'+(allTimeLogs.length&&crewClock?recov.toFixed(0)+"%":"—")+'</strong></div><div class="ops-metric"><b>Revenue Counted</b><strong>'+moneyFmt(price)+'</strong></div><div class="ops-metric"><b>Rev / Job Man-Hr</b><strong>'+(revHr?moneyFmt(revHr):"—")+'</strong></div></div><div class="meta" style="margin-top:8px"><div><strong>Job Details:</strong> '+esc(itemSummary(r))+'</div></div>'+(inv?'<div class="inventory-list">'+inv+'</div>':'')+'</div>';
   }).join("")+'</div>';
 }
 function renderRevenuePerformance(){
@@ -973,43 +994,50 @@ function renderRevenuePerformance(){
   var totalManHours=occs.reduce(function(s,o){return s+o.manHours;},0);
   var shownDates={}; occs.forEach(function(o){shownDates[o.date]=true;});
   var allClocked=Object.keys(shownDates).reduce(function(s,k){return s+timeLogHoursForDate(k,null);},0);
-  document.getElementById("rev-total").textContent=moneyFmt(totalRevenue);
-  document.getElementById("rev-manhours").textContent=hoursFmt(totalManHours);
+  var crewClockByDate={};
+  occs.forEach(function(o){
+    if(!crewClockByDate[o.date])crewClockByDate[o.date]={names:{}};
+    (o.employees||[]).forEach(function(n){crewClockByDate[o.date].names[n]=true;});
+  });
+  var totalCrewClocked=Object.keys(crewClockByDate).reduce(function(s,k){return s+timeLogHoursForDate(k,Object.keys(crewClockByDate[k].names));},0);
+  var totalSupport=supportHours(totalCrewClocked,totalManHours);
+  var revTotal=document.getElementById("rev-total"); if(revTotal)revTotal.textContent=moneyFmt(totalRevenue);
+  var revMh=document.getElementById("rev-manhours"); if(revMh)revMh.textContent=hoursFmt(totalManHours);
   document.getElementById("rev-clocked-all").textContent=allTimeLogs.length?hoursFmt(allClocked):"—";
+  var crewEl=document.getElementById("rev-clocked-crew"); if(crewEl)crewEl.textContent=allTimeLogs.length?hoursFmt(totalCrewClocked):"—";
+  var supportEl=document.getElementById("rev-support-hours"); if(supportEl)supportEl.textContent=allTimeLogs.length?hoursFmt(totalSupport):"—";
   document.getElementById("rev-per-hour").textContent=totalManHours?moneyFmt(totalRevenue/totalManHours):"—";
 
   if(revenueView==="job"){
-    head.innerHTML='<tr><th>Job / Setup + Strike</th><th class="num">Setup Date</th><th class="num">Strike Date</th><th class="num">Job Timer</th><th class="num">Job Man-Hrs</th><th class="num">Crew Clocked Hrs</th><th class="num">Revenue</th><th class="num">Rev / Man-Hr</th></tr>';
+    head.innerHTML='<tr><th>Job / Setup + Strike</th><th class="num">Setup Date</th><th class="num">Strike Date</th><th class="num">Job Timer</th><th class="num">Job Man-Hrs</th><th class="num">Crew Clocked</th><th class="num">Support Hrs</th><th class="num">Recovery</th><th class="num">Revenue</th></tr>';
     var map={};
     occs.forEach(function(o){var k=baseId(o.job);if(!map[k])map[k]={record:o.record,occs:[]};map[k].occs.push(o);});
     var rows=Object.keys(map).map(function(k){
       var x=map[k], r=x.record, setup=x.occs.find(function(o){return o.kind==="setup";}), strike=x.occs.find(function(o){return o.kind==="strike";});
       var mins=x.occs.reduce(function(s,o){return s+o.minutes;},0), mh=x.occs.reduce(function(s,o){return s+o.manHours;},0), rev=x.occs.reduce(function(s,o){return s+getOccurrenceRevenue(o);},0);
-      var names={}; x.occs.forEach(function(o){o.employees.forEach(function(n){names[n]=true;});});
-      var crew=Object.keys(names); var clock=x.occs.reduce(function(s,o){return s+timeLogHoursForDate(o.date,crew);},0);
+      var clock=crewClockForOccurrences(x.occs), support=supportHours(clock,mh), recov=recoveryPct(mh,clock);
       var id='rev-detail-'+slugify(k);
       var setupTxt=setup?weekdayLabel(setup.date):'—', strikeTxt=strike?weekdayLabel(strike.date):'—';
-      var main='<tr class="revenue-row" data-rev-detail="'+id+'"><td><strong>'+esc(r.jobName)+'</strong><br><span class="muted">'+esc(itemSummary(r))+'</span></td><td class="num">'+esc(setupTxt)+'</td><td class="num">'+esc(strikeTxt)+'</td><td class="num">'+(mins?fmtMin(Math.round(mins)):'No timer')+'</td><td class="num">'+hoursFmt(mh)+'</td><td class="num">'+(allTimeLogs.length?hoursFmt(clock):'—')+'</td><td class="num money-good">'+moneyFmt(rev)+'</td><td class="num">'+(mh?moneyFmt(rev/mh):'—')+'</td></tr>';
-      var detail='<tr id="'+id+'" class="detail-row" style="display:none"><td colspan="8">'+detailHtmlForOccurrences(x.occs.sort(function(a,b){return a.kind==="setup"?-1:1;}))+'</td></tr>';
+      var main='<tr class="revenue-row" data-rev-detail="'+id+'"><td><strong>'+esc(r.jobName)+'</strong><br><span class="muted">'+esc(itemSummary(r))+'</span></td><td class="num">'+esc(setupTxt)+'</td><td class="num">'+esc(strikeTxt)+'</td><td class="num">'+(mins?fmtMin(Math.round(mins)):'No timer')+'</td><td class="num">'+hoursFmt(mh)+'</td><td class="num">'+(allTimeLogs.length?hoursFmt(clock):'—')+'</td><td class="num">'+(allTimeLogs.length?hoursFmt(support):'—')+'</td><td class="num">'+(allTimeLogs.length&&clock?recov.toFixed(0)+'%':'—')+'</td><td class="num money-good">'+moneyFmt(rev)+'</td></tr>';
+      var detail='<tr id="'+id+'" class="detail-row" style="display:none"><td colspan="9">'+detailHtmlForOccurrences(x.occs.sort(function(a,b){return a.kind==="setup"?-1:1;}))+'</td></tr>';
       return {html:main+detail,date:(setup&&setup.date)||(strike&&strike.date)||''};
     }).sort(function(a,b){return String(b.date).localeCompare(String(a.date));}).map(function(x){return x.html;}).join('');
-    body.innerHTML=rows||'<tr><td colspan="8">No scheduled setup/strike jobs found for this date range.</td></tr>';
+    body.innerHTML=rows||'<tr><td colspan="9">No scheduled setup/strike jobs found for this date range.</td></tr>';
     return;
   }
 
-  head.innerHTML='<tr><th>Day</th><th>Scheduled Setups / Strikes</th><th class="num">All Clocked Hrs</th><th class="num">Job-Crew Clocked Hrs</th><th class="num">Setup/Strike Timer</th><th class="num">Job Man-Hrs</th><th class="num">Revenue</th><th class="num">Rev / Man-Hr</th></tr>';
+  head.innerHTML='<tr><th>Day</th><th>Scheduled Setups / Strikes</th><th class="num">All Clocked</th><th class="num">Job-Crew Clocked</th><th class="num">Job Timer</th><th class="num">Job Man-Hrs</th><th class="num">Support Hrs</th><th class="num">Recovery</th><th class="num">Revenue</th></tr>';
   var days={};
   occs.forEach(function(o){
     if(!days[o.date])days[o.date]={date:o.date,occs:[],names:{},revenue:0,minutes:0,manHours:0};
     days[o.date].occs.push(o); days[o.date].revenue+=getOccurrenceRevenue(o); days[o.date].minutes+=o.minutes; days[o.date].manHours+=o.manHours; o.employees.forEach(function(n){days[o.date].names[n]=true;});
   });
   body.innerHTML=Object.keys(days).sort().reverse().map(function(k){
-    var d=days[k], crew=Object.keys(d.names), allH=timeLogHoursForDate(k,null), crewH=timeLogHoursForDate(k,crew), id='rev-day-'+slugify(k);
-    var itemText=d.occs.map(function(o){return (o.kind==="strike"?"Strike: ":"Setup: ")+o.record.jobName+" ("+itemSummary(o.record)+")";}).join(' | ');
-    var main='<tr class="revenue-row" data-rev-detail="'+id+'"><td>'+esc(weekdayLabel(k))+'</td><td>'+esc(itemText||'—')+'</td><td class="num">'+(allTimeLogs.length?hoursFmt(allH):'—')+'</td><td class="num">'+(allTimeLogs.length?hoursFmt(crewH):'—')+'</td><td class="num">'+(d.minutes?fmtMin(Math.round(d.minutes)):'No timer')+'</td><td class="num">'+hoursFmt(d.manHours)+'</td><td class="num money-good">'+moneyFmt(d.revenue)+'</td><td class="num">'+(d.manHours?moneyFmt(d.revenue/d.manHours):'—')+'</td></tr>';
-    var detail='<tr id="'+id+'" class="detail-row" style="display:none"><td colspan="8">'+detailHtmlForOccurrences(d.occs)+'</td></tr>';
+    var d=days[k], crew=Object.keys(d.names), allH=timeLogHoursForDate(k,null), crewH=timeLogHoursForDate(k,crew), support=supportHours(crewH,d.manHours), recov=recoveryPct(d.manHours,crewH), id='rev-day-'+slugify(k);
+    var main='<tr class="revenue-row" data-rev-detail="'+id+'"><td><strong>'+esc(weekdayLabel(k))+'</strong><br><span class="muted">'+d.occs.length+' scheduled event'+(d.occs.length===1?'':'s')+'</span></td><td>'+scheduleListHtml(d.occs)+'</td><td class="num">'+(allTimeLogs.length?hoursFmt(allH):'—')+'</td><td class="num">'+(allTimeLogs.length?hoursFmt(crewH):'—')+'</td><td class="num">'+(d.minutes?fmtMin(Math.round(d.minutes)):'No timer')+'</td><td class="num">'+hoursFmt(d.manHours)+'</td><td class="num">'+(allTimeLogs.length?hoursFmt(support):'—')+'</td><td class="num">'+(allTimeLogs.length&&crewH?recov.toFixed(0)+'%':'—')+'</td><td class="num money-good">'+moneyFmt(d.revenue)+'</td></tr>';
+    var detail='<tr id="'+id+'" class="detail-row" style="display:none"><td colspan="9">'+detailHtmlForOccurrences(d.occs)+'</td></tr>';
     return main+detail;
-  }).join('')||'<tr><td colspan="8">No scheduled setup/strike jobs found for this date range.</td></tr>';
+  }).join('')||'<tr><td colspan="9">No scheduled setup/strike jobs found for this date range.</td></tr>';
 }
 function renderOutliers(records){var allocs=allAllocations(records),cut=outlierCut(allocs.map(function(a){return a.adjustedSetup;})),out=allocs.filter(function(a){return a.adjustedSetup>cut;}).sort(function(a,b){return b.adjustedSetup-a.adjustedSetup;}).slice(0,8),running=records.flatMap(function(r){return r.timers.filter(isRunning).map(function(t){return{record:r,timer:t};});}).slice(0,6),miss=records.filter(function(r){return !r.inventory||!r.inventory.length;}).slice(0,6),html="";html+=out.map(function(a){return alertHtml(a.record,"Long Adjusted Setup",a.tent+" estimated at "+fmtMin(a.adjustedSetup),"bad");}).join("");html+=running.map(function(x){return alertHtml(x.record,"In Progress",typeText(x.timer)+" still running","warn");}).join("");html+=miss.map(function(r){return alertHtml(r,"Missing Inventory","Could not match this timer to inventory.","warn");}).join("");document.getElementById("outlier-list").innerHTML=html||'<div class="empty">No outliers found for this filter.</div>';}
 
@@ -1038,7 +1066,7 @@ function renderRecent(records){var rows=records.slice(0,12),list=document.getEle
 
 function renderRevenue(records){var rows=records.filter(r=>r.revenue&&r.totalMinutes).sort((a,b)=>(b.revenue/(b.totalMinutes/60))-(a.revenue/(a.totalMinutes/60))).slice(0,20),sec=document.getElementById("revenue-section");if(!rows.length){sec.style.display="none";return}sec.style.display="block";document.getElementById("revenue-body").innerHTML=rows.map(r=>{var ph=r.revenue/(r.totalMinutes/60);return '<tr><td><strong>'+esc(r.jobName)+'</strong></td><td class="num">$'+r.revenue.toFixed(2)+'</td><td class="num">'+fmtMin(r.totalMinutes)+'</td><td class="num">$'+ph.toFixed(2)+'/hr</td><td>'+esc(r.tents.join(", ")||"—")+'</td></tr>'}).join("")}
 function populateFilters(){var tentSet=new Set(),trackerSet=new Set();allRecords.forEach(r=>{r.tents.forEach(t=>tentSet.add(t));r.timers.forEach(t=>{if(t.employee)trackerSet.add(t.employee)})});document.getElementById("tent-filter").innerHTML='<option value="">All Tents</option>'+Array.from(tentSet).sort().map(t=>'<option value="'+esc(t)+'">'+esc(t)+'</option>').join("");document.getElementById("tracker-filter").innerHTML='<option value="">All Crew</option>'+Array.from(trackerSet).sort().map(t=>'<option value="'+esc(t)+'">'+esc(t)+'</option>').join("")}
-function loadData(){document.getElementById("recent-list").innerHTML='<div class="empty">Loading scorecard...</div>';Promise.all([jsonp(JOB_TIMER_WEBAPP_URL,{action:"getJobTimers"},20000),loadJobRows().catch(e=>{console.warn("Jobs feed failed",e);return []}),loadTimeLogRows().catch(e=>{console.warn("Time log feed failed",e);return []})]).then(res=>{var timerRes=res[0],jobRows=res[1]||[],timeRows=res[2]||[];if(!timerRes||timerRes.success===false)throw new Error(timerRes&&timerRes.error?timerRes.error:"Failed to load timer data.");allTimers=timerRes.timers||[];allJobs=normalizeJobs(jobRows);allTimeLogs=normalizeTimeLogs(timeRows);allRecords=buildRecords();populateFilters();render()}).catch(err=>{console.error(err);document.getElementById("recent-list").innerHTML='<div class="empty">Failed to load scorecard data.</div>'})}
+function loadData(){document.getElementById("recent-list").innerHTML='<div class="empty">Loading scorecard...</div>';Promise.all([jsonp(JOB_TIMER_WEBAPP_URL,{action:"getJobTimers"},20000),jsonp(JOBS_WEBAPP_URL,{action:"listJobs"},20000).catch(e=>{console.warn("Jobs feed failed",e);return{jobs:[]}}),loadSheet2Rows().catch(e=>{console.warn("Sheet2 direct feed failed",e);return []}),loadTimeLogRows().catch(e=>{console.warn("Time log feed failed",e);return []})]).then(res=>{var timerRes=res[0],jobsRes=res[1],sheet2Rows=res[2]||[],timeRows=res[3]||[];if(!timerRes||timerRes.success===false)throw new Error(timerRes&&timerRes.error?timerRes.error:"Failed to load timer data.");allTimers=timerRes.timers||[];var webJobs=normalizeJobs(jobsRes.jobs||[]), sheetJobs=normalizeSheet2Jobs(sheet2Rows);allJobs=mergeJobs(sheetJobs,webJobs);allTimeLogs=normalizeTimeLogs(timeRows);allRecords=buildRecords();populateFilters();render()}).catch(err=>{console.error(err);document.getElementById("recent-list").innerHTML='<div class="empty">Failed to load scorecard data.</div>'})}
 
 document.addEventListener("click", function(e){
   var revViewBtn = e.target.closest ? e.target.closest(".filter-btn[data-revenue-view]") : null;
