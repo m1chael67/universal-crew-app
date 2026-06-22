@@ -19,9 +19,12 @@
     .date-control{border:0;background:transparent;font-weight:900;color:#111;outline:none;max-width:135px}
     .production-list{display:grid;gap:12px}.prod-day-card,.prod-job-card{border:1px solid #e5e5e5;border-radius:18px;background:#fff;box-shadow:0 6px 18px rgba(0,0,0,.06);overflow:hidden}.prod-row{width:100%;border:0;background:#fff;display:grid;grid-template-columns:1.3fr repeat(6,minmax(80px,.75fr));gap:8px;align-items:center;text-align:left;padding:13px 14px;cursor:pointer}.prod-row:hover{background:#fbfbfb}.prod-main-title{font-size:16px;font-weight:950;line-height:1.15}.prod-sub{font-size:12px;color:#666;margin-top:3px;line-height:1.25}.prod-metric{text-align:right}.prod-metric-label{font-size:10px;text-transform:uppercase;letter-spacing:.25px;color:#777;font-weight:900}.prod-metric-value{font-size:15px;font-weight:950;color:#111;margin-top:2px}.prod-detail{display:none;border-top:1px solid #eee;background:#fafafa;padding:12px}.prod-card.open .prod-detail{display:block}.scheduled-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}.scheduled-card{background:#fff;border:1px solid #e9e9e9;border-radius:16px;padding:12px;box-shadow:0 3px 10px rgba(0,0,0,.04)}.scheduled-card.setup{border-left:5px solid #1b7f35}.scheduled-card.strike{border-left:5px solid #d9822b}.scheduled-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px}.scheduled-title{font-size:15px;font-weight:950;line-height:1.15}.scheduled-type{font-size:11px;font-weight:950;text-transform:uppercase;border-radius:999px;padding:4px 8px;background:#f1f1f1;color:#111;white-space:nowrap}.scheduled-card.setup .scheduled-type{background:#eaf8ee;color:#1b7f35}.scheduled-card.strike .scheduled-type{background:#fff3e6;color:#9a5200}.scheduled-meta{display:grid;gap:5px;font-size:13px;color:#333;line-height:1.3}.crew-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:3px}.crew-chip{background:#f2f2f2;border-radius:999px;padding:3px 7px;font-size:11px;font-weight:850}.prod-note{font-size:12px;color:#666;line-height:1.35;margin-top:8px}@media(max-width:900px){.prod-row{grid-template-columns:1fr 1fr 1fr}.prod-metric{text-align:left}}@media(max-width:620px){.prod-row{grid-template-columns:1fr 1fr}.scheduled-grid{grid-template-columns:1fr}.date-filter-label{width:100%;justify-content:space-between}.date-control{max-width:none}}
 
-  </style>
+  
+    .revenue-ops-toolbar{justify-content:flex-start;margin-bottom:12px;padding-bottom:12px;border-bottom:2px solid #eeeeee;gap:10px}.rev-filter-group{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.rev-date-group{padding-right:2px}.rev-filter-divider{width:2px;align-self:stretch;min-height:38px;background:#dedede;border-radius:99px;margin:0 2px}.info-btn{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:50%;border:1px solid #bdbdbd;background:#fff;color:#111;font-size:11px;font-weight:950;cursor:pointer;margin-left:4px;vertical-align:middle;line-height:1}.info-btn:hover{background:#111;color:#fff;border-color:#111}.metric-info-row{display:inline-flex;align-items:center;gap:4px}.info-modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.28);z-index:2000;display:none;align-items:center;justify-content:center;padding:18px}.info-modal-backdrop.show{display:flex}.info-modal{max-width:430px;width:100%;background:#fff;border-radius:18px;border:1px solid #e2e2e2;box-shadow:0 18px 50px rgba(0,0,0,.22);padding:16px}.info-modal h3{margin:0 0 8px;font-size:20px}.info-modal p{margin:7px 0;font-size:14px;line-height:1.4;color:#222}.info-modal code{display:block;background:#f6f6f6;border:1px solid #ececec;border-radius:12px;padding:9px;margin-top:8px;white-space:normal;font-size:12px}.info-modal .btn{margin-top:10px}
+</style>
 </head>
 <body>
+  <div id="metricInfoModal" class="info-modal-backdrop" aria-hidden="true"><div class="info-modal" role="dialog" aria-modal="true" aria-labelledby="metricInfoTitle"><h3 id="metricInfoTitle">Metric info</h3><div id="metricInfoBody"></div><button type="button" class="btn primary" id="metricInfoClose">Got it</button></div></div>
   <button id="menuBtn" class="menu-btn" type="button" aria-label="Menu"><div class="menu-icon" aria-hidden="true"><span></span><span></span><span></span></div></button>
   <div id="menuOverlay" class="menu-overlay" aria-hidden="true"></div>
   <nav id="sideMenu" class="side-menu" aria-label="Menu">
@@ -34,7 +37,7 @@
 <div class="summary-grid"><div class="summary-card"><div class="summary-label">Timed Jobs</div><div id="timed-count" class="summary-value">0</div><div class="summary-sub">Grouped by job</div></div><div class="summary-card"><div class="summary-label">Avg Weighted Setup</div><div id="avg-setup" class="summary-value">—</div><div class="summary-sub">Adjusted tent-only estimate</div></div><div class="summary-card"><div class="summary-label">Avg Weighted Strike</div><div id="avg-strike" class="summary-value">—</div><div class="summary-sub">Adjusted tent-only estimate</div></div><div class="summary-card"><div class="summary-label">Fastest Tracker</div><div id="best-tracker" class="summary-value">—</div><div class="summary-sub" id="best-tracker-sub">By avg completed timer</div></div></div>
     <div class="two-col"><section class="section"><h2><span id="comparison-title">Tent Time Comparison</span></h2><div class="table-scroll"><table><thead><tr><th>Tent</th><th class="num">Jobs</th><th class="num">Raw Setup</th><th class="num">Adj Setup</th><th class="num">Raw Strike</th><th class="num">Clean Setup</th><th class="num">Trend</th></tr></thead><tbody id="tent-body"></tbody></table></div></section><section class="section"><h2>Crew Efficiency <span class="pill">Button Pressers</span></h2><div class="table-scroll"><table><thead><tr><th>Pressed Button</th><th class="num">Timers</th><th class="num">Avg Time</th><th class="num">Setup Avg</th><th class="num">Strike Avg</th></tr></thead><tbody id="tracker-body"></tbody></table></div></section></div>
     <section class="section"><h2>Improvement Trend <span class="pill">Newest vs Previous</span></h2><div class="table-scroll"><table><thead><tr><th>Group</th><th class="num">Newest 5 Avg</th><th class="num">Previous 5 Avg</th><th class="num">Change</th><th>Direction</th></tr></thead><tbody id="trend-body"></tbody></table></div></section>
-    <section class="section" id="revenue-performance-section"><h2>Production + Revenue <span class="pill">Schedule + Time Log</span></h2><div class="toolbar revenue-ops-toolbar" style="justify-content:flex-start;margin-bottom:10px;"><label class="date-filter-label">Start <input id="rev-start-date" type="date" class="date-control"></label><label class="date-filter-label">End <input id="rev-end-date" type="date" class="date-control"></label><button type="button" class="filter-btn active" data-revenue-view="ops-day">Days</button><button type="button" class="filter-btn" data-revenue-view="ops-job">Jobs</button><button type="button" class="filter-btn active" data-work-kind="all">All</button><button type="button" class="filter-btn" data-work-kind="setup">Setups</button><button type="button" class="filter-btn" data-work-kind="strike">Strikes</button></div><div id="rev-load-status" class="small-note" style="text-align:left;margin:0 0 10px 0;">Loading production data...</div><div class="summary-grid" style="margin-bottom:10px;"><div class="summary-card"><div class="summary-label">Revenue Shown</div><div id="rev-total" class="summary-value">$0</div><div class="summary-sub">From JobTimers price fields</div></div><div class="summary-card"><div class="summary-label">All Clocked Hours</div><div id="rev-all-clocked" class="summary-value">0.00</div><div class="summary-sub">Everyone clocked that day</div></div><div class="summary-card"><div class="summary-label">Job-Crew Clocked</div><div id="rev-crew-clocked" class="summary-value">0.00</div><div class="summary-sub">Only setup/strike crews</div></div><div class="summary-card"><div class="summary-label">Support Hours</div><div id="rev-support-hours" class="summary-value">0.00</div><div class="summary-sub">Crew clocked minus job timer hours</div></div></div><div id="production-list" class="production-list"></div></section><section class="section"><h2>Outlier Alerts</h2><div id="outlier-list"></div></section>
+    <section class="section" id="revenue-performance-section"><h2>Production + Revenue <span class="pill">Recorded setup/strike only</span></h2><div class="toolbar revenue-ops-toolbar"><div class="rev-filter-group rev-date-group"><label class="date-filter-label">Start <input id="rev-start-date" type="date" class="date-control"></label><label class="date-filter-label">End <input id="rev-end-date" type="date" class="date-control"></label></div><div class="rev-filter-group"><button type="button" class="filter-btn active" data-revenue-view="ops-day">Days</button><button type="button" class="filter-btn" data-revenue-view="ops-job">Jobs</button></div><div class="rev-filter-divider" aria-hidden="true"></div><div class="rev-filter-group"><button type="button" class="filter-btn active" data-work-kind="all">All</button><button type="button" class="filter-btn" data-work-kind="setup">Setups</button><button type="button" class="filter-btn" data-work-kind="strike">Strikes</button></div></div><div id="rev-load-status" class="small-note" style="text-align:left;margin:0 0 10px 0;">Loading production data...</div><div class="summary-grid" style="margin-bottom:10px;"><div class="summary-card"><div class="summary-label">Revenue Shown</div><div id="rev-total" class="summary-value">$0</div><div class="summary-sub">One price per job id</div></div><div class="summary-card"><div class="summary-label">All Clocked Hours</div><div id="rev-all-clocked" class="summary-value">0.00</div><div class="summary-sub">Everyone clocked that day</div></div><div class="summary-card"><div class="summary-label">Job-Crew Clocked</div><div id="rev-crew-clocked" class="summary-value">0.00</div><div class="summary-sub">Only names in JobTimers Crew</div></div><div class="summary-card"><div class="summary-label">Support Hours <button type="button" class="info-btn" data-info="support" aria-label="Support hours info">i</button></div><div id="rev-support-hours" class="summary-value">0.00</div><div class="summary-sub">Crew clocked minus on-job timer</div></div></div><div id="production-list" class="production-list"></div></section><section class="section"><h2>Outlier Alerts</h2><div id="outlier-list"></div></section>
     <section class="section"><h2>Most Recent Timed Jobs</h2><div id="recent-list"></div></section>
     <section class="section" id="revenue-section" style="display:none"><h2>Revenue / Profit Preview</h2><div class="table-scroll"><table><thead><tr><th>Job</th><th class="num">Revenue</th><th class="num">Total Time</th><th class="num">Revenue / Hour</th><th>Tents</th></tr></thead><tbody id="revenue-body"></tbody></table></div></section>
   </div>
@@ -736,6 +739,22 @@ function revMetricRow(label, jobs, revenue, manHours, setupHrs, strikeHrs, extra
     + '</tr>';
 }
 
+
+function showMetricInfo(kind){
+  var modal=document.getElementById('metricInfoModal'), title=document.getElementById('metricInfoTitle'), body=document.getElementById('metricInfoBody');
+  if(!modal||!title||!body) return;
+  if(kind==='recovery'){
+    title.textContent='Recovery %';
+    body.innerHTML="<p><strong>Recovery</strong> shows how much of the job crew's clocked-in time was spent actively on recorded setup/strike timers.</p><code>Recovery % = On-job timer man-hours ÷ Job-crew clocked hours</code><p>Example: if the job crew was clocked in 40 hours total and 28 hours were recorded on setup/strike timers, recovery is 70%.</p>";
+  } else {
+    title.textContent='Support hours';
+    body.innerHTML="<p><strong>Support hours</strong> are the job crew's clocked-in hours that were not captured by setup/strike timers.</p><code>Support hours = Job-crew clocked hours − On-job timer man-hours</code><p>This is the loading, unloading, warehouse prep, driving, fueling, and other job support time for the people who actually did setup/strike work that day.</p>";
+  }
+  modal.classList.add('show');
+  modal.setAttribute('aria-hidden','false');
+}
+function hideMetricInfo(){ var modal=document.getElementById('metricInfoModal'); if(modal){ modal.classList.remove('show'); modal.setAttribute('aria-hidden','true'); } }
+
 function renderRevenuePerformance(records){
   var body = document.getElementById("revenue-performance-body");
   var head = document.getElementById("revenue-head");
@@ -912,7 +931,7 @@ function getJobEventCrew(job, timers){
   if(!names.length){ var raw=job&&job.employees; names=Array.isArray(raw)?raw:String(raw||"").split(/[,;|]/); }
   return normalizeNameList(names);
 }
-function timerKind(t){ var x=typeText(t).toLowerCase(); return x.indexOf("strike")!==-1?"strike":"setup"; }
+function timerKind(t){ var x=typeText(t).toLowerCase(); if(x.indexOf("strike")!==-1) return "strike"; if(x.indexOf("set")!==-1 || x.indexOf("setup")!==-1) return "setup"; return ""; }
 function sameJobForTimer(timer, job){
   var tj=findJob(timer);
   if(tj && baseId(tj)===baseId(job)) return true;
@@ -927,7 +946,7 @@ function timersForJobEvent(job, kind, d){
     if(timerKind(t)!==kind) return false;
     var td=parseUsDate(t.date||"");
     if(td && dateKey(td)!==dk) return false;
-    return sameJobForTimer(t, job);
+    return timerMatchesJobId(t, job);
   });
 }
 function completedTimers(timers){ return (timers||[]).filter(isComplete); }
@@ -961,12 +980,30 @@ function dailyTimerSummary(dateKeyValue){
   });
   return { crew:Object.keys(crewSet).map(function(k){return crewSet[k];}), timerHours:timerHours, timerCount:timerCount };
 }
-function eventRevenue(job,timers){
+function timerBaseId(t){
+  var id=String((t&&t.jobId)||"").trim();
+  if(!id) return "";
+  return id.replace(/_(set-up|setup|strike)_\d{4}-\d{2}-\d{2}$/i,"");
+}
+function timerMatchesJobId(t, job){
+  var tb=timerBaseId(t), jb=baseId(job);
+  if(tb && jb && jb!=="job" && tb===jb) return true;
+  return sameJobForTimer(t, job);
+}
+function jobRevenue(job){
   var vals=[];
-  (timers||[]).forEach(function(t){ vals.push(timerJobPriceValue(t)); });
-  vals.push(job && job.revenue); vals.push(job && job.raw && readPrice(job.raw));
-  for(var i=0;i<vals.length;i++){ var n=parseMoney(vals[i]); if(n>0) return n; }
-  return 0;
+  (allTimers||[]).forEach(function(t){ if(timerMatchesJobId(t,job)) vals.push(timerJobPriceValue(t)); });
+  vals.push(job && job.revenue);
+  vals.push(job && job.raw && readPrice(job.raw));
+  var best=0;
+  vals.forEach(function(v){ var n=parseMoney(v); if(n>best) best=n; });
+  return best;
+}
+function eventRevenue(job,timers){
+  // Revenue is intentionally pulled once per job id, not per setup/strike event.
+  // If price was entered on setup only, strike rows still inherit it.
+  // If price was accidentally entered on both setup and strike, we use the single highest price once.
+  return jobRevenue(job);
 }
 function eventTruckDistance(job,timers){
   for(var i=0;i<(timers||[]).length;i++){ var y=parseTruckYards(timerTruckDistanceValue(timers[i])); if(y>0) return y; }
@@ -977,12 +1014,15 @@ function buildScheduleEvents(){
   (allJobs||[]).forEach(function(job){
     [{kind:"setup",date:job.SetupDate},{kind:"strike",date:job.StrikeDate}].forEach(function(x){
       if(!x.date) return;
-      var timers=timersForJobEvent(job,x.kind,x.date), crew=getJobEventCrew(job,timers);
-      var mh=timerManHours(timers), dk=dateKey(x.date), crewClocked=hoursForDate(dk,crew);
+      var timers=timersForJobEvent(job,x.kind,x.date);
+      var complete=completedTimers(timers);
+      if(!complete.length) return;
+      var crew=getJobEventCrew(job,complete);
+      var mh=timerManHours(complete), dk=dateKey(x.date), crewClocked=hoursForDate(dk,crew);
       events.push({
         id:baseId(job)+"_"+x.kind+"_"+dk,
         jobKey:baseId(job), job:job, jobName:job.Name||"Unnamed Job", kind:x.kind, date:x.date, dateKey:dk,
-        timers:timers, crew:crew, timerManHours:mh, crewClocked:crewClocked, supportHours:Math.max(0,crewClocked-mh),
+        timers:complete, crew:crew, timerManHours:mh, crewClocked:crewClocked, supportHours:Math.max(0,crewClocked-mh),
         revenue:eventRevenue(job,timers), truckYards:eventTruckDistance(job,timers), difficulty: (typeof difficulty==="function"?difficulty({tents:tents(job),inventory:job.inventory||[]}):0), tents:tents(job)
       });
     });
@@ -1018,7 +1058,7 @@ function scheduledCardHtml(e){
 }
 function renderOpsDay(events){
   var list=document.getElementById('production-list'); if(!list) return;
-  if(!events.length){ list.innerHTML='<div class="empty">No scheduled setups or strikes in this date range.</div>'; return; }
+  if(!events.length){ list.innerHTML='<div class="empty">No recorded setup or strike timers in this date range.</div>'; return; }
   var map={};
   events.forEach(function(e){
     if(!map[e.dateKey]) map[e.dateKey]={key:e.dateKey,date:e.date,events:[],revenueJobs:{},revenue:0};
@@ -1036,14 +1076,14 @@ function renderOpsDay(events){
     if(!timerHours){ d.events.forEach(function(e){ timerHours+=e.timerManHours; }); }
     var support=Math.max(0,crewClocked-timerHours);
     return '<div class="prod-day-card prod-card" data-prod-card><button class="prod-row" type="button">'
-      + '<div><div class="prod-main-title">'+esc(fmtDate(d.date))+'</div><div class="prod-sub">'+d.events.length+' scheduled item'+(d.events.length===1?'':'s')+' · '+crew.length+' job crew member'+(crew.length===1?'':'s')+'</div></div>'
+      + '<div><div class="prod-main-title">'+esc(fmtDate(d.date))+'</div><div class="prod-sub">'+d.events.length+' recorded item'+(d.events.length===1?'':'s')+' · '+crew.length+' job crew member'+(crew.length===1?'':'s')+'</div></div>'
       + metricHtml('Revenue', moneyFmt(d.revenue)) + metricHtml('All clocked', fmtHours(allClocked)+'h') + metricHtml('Job crew clocked', fmtHours(crewClocked)+'h') + metricHtml('On-job timer', fmtHours(timerHours)+'h') + metricHtml('Support', fmtHours(support)+'h') + metricHtml('Recovery', pct(timerHours,crewClocked))
       + '</button><div class="prod-detail"><div class="scheduled-grid">'+d.events.map(scheduledCardHtml).join('')+'</div><div class="prod-note">Day crew comes from the Crew field on JobTimers for that date. All clocked includes everyone. Job crew clocked includes only those crew names. Support = job crew clocked minus setup/strike timer man-hours.</div></div></div>';
   }).join('');
 }
 function renderOpsJob(events){
   var list=document.getElementById('production-list'); if(!list) return;
-  if(!events.length){ list.innerHTML='<div class="empty">No scheduled jobs in this date range.</div>'; return; }
+  if(!events.length){ list.innerHTML='<div class="empty">No recorded setup/strike jobs in this date range.</div>'; return; }
   var map={};
   events.forEach(function(e){ if(!map[e.jobKey]) map[e.jobKey]={jobName:e.jobName,events:[],revenue:0}; map[e.jobKey].events.push(e); if(e.revenue) map[e.jobKey].revenue=Math.max(map[e.jobKey].revenue,e.revenue); });
   list.innerHTML=Object.keys(map).sort(function(a,b){ var ea=map[a].events[0], eb=map[b].events[0]; return ea.date-eb.date || map[a].jobName.localeCompare(map[b].jobName); }).map(function(k){
@@ -1058,7 +1098,23 @@ function renderOpsJob(events){
       + '</button><div class="prod-detail"><div class="scheduled-grid">'+j.events.map(scheduledCardHtml).join('')+'</div></div></div>';
   }).join('');
 }
-function metricHtml(label,value){ return '<div class="prod-metric"><div class="prod-metric-label">'+esc(label)+'</div><div class="prod-metric-value">'+esc(value)+'</div></div>'; }
+function metricHtml(label,value){ var key=String(label||'').toLowerCase(); var info=(key==='support'||key==='recovery')?' <button type="button" class="info-btn" data-info="'+key+'" aria-label="'+esc(label)+' info">i</button>':''; return '<div class="prod-metric"><div class="prod-metric-label"><span class="metric-info-row">'+esc(label)+info+'</span></div><div class="prod-metric-value">'+esc(value)+'</div></div>'; }
+
+function showMetricInfo(kind){
+  var modal=document.getElementById('metricInfoModal'), title=document.getElementById('metricInfoTitle'), body=document.getElementById('metricInfoBody');
+  if(!modal||!title||!body) return;
+  if(kind==='recovery'){
+    title.textContent='Recovery %';
+    body.innerHTML="<p><strong>Recovery</strong> shows how much of the job crew's clocked-in time was spent actively on recorded setup/strike timers.</p><code>Recovery % = On-job timer man-hours ÷ Job-crew clocked hours</code><p>Example: if the job crew was clocked in 40 hours total and 28 hours were recorded on setup/strike timers, recovery is 70%.</p>";
+  } else {
+    title.textContent='Support hours';
+    body.innerHTML="<p><strong>Support hours</strong> are the job crew's clocked-in hours that were not captured by setup/strike timers.</p><code>Support hours = Job-crew clocked hours − On-job timer man-hours</code><p>This is the loading, unloading, warehouse prep, driving, fueling, and other job support time for the people who actually did setup/strike work that day.</p>";
+  }
+  modal.classList.add('show');
+  modal.setAttribute('aria-hidden','false');
+}
+function hideMetricInfo(){ var modal=document.getElementById('metricInfoModal'); if(modal){ modal.classList.remove('show'); modal.setAttribute('aria-hidden','true'); } }
+
 function renderRevenuePerformance(records){
   var events=filteredScheduleEvents();
   var status=document.getElementById('rev-load-status');
@@ -1116,6 +1172,12 @@ document.addEventListener('click',function(e){
   if(row){ var card=row.closest('[data-prod-card]'); var was=card.classList.contains('open'); document.querySelectorAll('[data-prod-card].open').forEach(function(c){c.classList.remove('open');}); if(!was) card.classList.add('open'); }
 });
 document.addEventListener('change',function(e){ if(e.target&& (e.target.id==='rev-start-date'||e.target.id==='rev-end-date')) render(); });
+
+document.addEventListener("click", function(e){
+  var infoBtn = e.target.closest ? e.target.closest(".info-btn[data-info]") : null;
+  if(infoBtn){ e.preventDefault(); e.stopPropagation(); showMetricInfo(infoBtn.getAttribute("data-info")); return; }
+  if(e.target && (e.target.id==="metricInfoClose" || e.target.id==="metricInfoModal")){ hideMetricInfo(); return; }
+});
 
 document.addEventListener("click", function(e){
   var revBtn = e.target.closest ? e.target.closest(".filter-btn[data-revenue-view]") : null;
