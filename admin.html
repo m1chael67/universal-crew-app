@@ -462,6 +462,8 @@
 .timeoff-summary-left{display:flex;flex-direction:column;gap:2px;min-width:0;}
 .timeoff-summary-title{font-weight:800;font-size:14px;line-height:1.2;}
 .timeoff-summary-sub{font-size:12px;color:#555;}
+.timeoff-requested-date{font-size:14px;font-weight:900;color:#111;}
+.timeoff-date-detail{font-size:14px;font-weight:900;color:#111;}
 .timeoff-pill{display:inline-flex;align-items:center;justify-content:center;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:900;border:1px solid #ddd;background:#f7f7f7;white-space:nowrap;}
 .timeoff-pill.pending{background:#fff7e6;border-color:#f0c36a;color:#8a5a00;}
 .timeoff-pill.approved{background:#e8fbe8;border-color:#77c987;color:#1f6f3a;}
@@ -1268,6 +1270,67 @@ var now = new Date();
     }
     function escapeHtml(value) { return String(value == null ? "" : value).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 
+    function formatReadableTime(value) {
+      if (value == null || value === "") return "";
+      var s = String(value).trim();
+
+      // Already readable, such as "1:30 PM".
+      if (/^\d{1,2}:\d{2}\s*(AM|PM)$/i.test(s)) {
+        return s.replace(/\s+/g, " ").toUpperCase();
+      }
+
+      // Plain 24-hour time, such as "13:30" or "13:30:00".
+      var plain = s.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+      if (plain) {
+        var plainHour = parseInt(plain[1], 10);
+        var plainMinute = parseInt(plain[2], 10);
+        var plainSuffix = plainHour >= 12 ? "PM" : "AM";
+        var plainDisplayHour = plainHour % 12 || 12;
+        return plainDisplayHour + ":" + String(plainMinute).padStart(2, "0") + " " + plainSuffix;
+      }
+
+      // Google Sheets time-only values may arrive as an ISO timestamp on 1899-12-30.
+      // The sheet stores these in UTC while the intended business time is Central Standard Time.
+      var iso = s.match(/^1899-12-30T(\d{2}):(\d{2})(?::\d{2}(?:\.\d+)?)?Z$/i);
+      if (iso) {
+        var utcHour = parseInt(iso[1], 10);
+        var minute = parseInt(iso[2], 10);
+        var centralHour = (utcHour + 18) % 24; // UTC minus 6 hours
+        var suffix = centralHour >= 12 ? "PM" : "AM";
+        var displayHour = centralHour % 12 || 12;
+        return displayHour + ":" + String(minute).padStart(2, "0") + " " + suffix;
+      }
+
+      // Last-resort handling for another valid timestamp.
+      var parsed = new Date(s);
+      if (!isNaN(parsed.getTime())) {
+        return parsed.toLocaleTimeString("en-US", {
+          hour: "numeric",
+          minute: "2-digit"
+        });
+      }
+
+      return s;
+    }
+
+    function getTimeOffTimeText(req) {
+      if (!req || req.RequestType !== "Hours") return "";
+      var start = formatReadableTime(req.StartTime);
+      var end = formatReadableTime(req.EndTime);
+
+      if (req.HoursType === "Late Start") return end ? "Until " + end : "";
+      if (req.HoursType === "Early Leave") return start ? "At " + start : "";
+      if (req.HoursType === "Partial Day") return start + (start && end ? " - " : "") + end;
+      return start + (start && end ? " - " : "") + end;
+    }
+
+    function requestHasEnded(req) {
+      var end = getTimeOffEndDate(req);
+      if (!end) return false;
+      var today = startOfLocalDay(new Date());
+      return startOfLocalDay(end).getTime() < today.getTime();
+    }
+
     function getTimeOffDateText(req) {
       if (req.RequestType === "Hours") return formatTimeOffDateWithWeekday(req.RequestDate);
       var start = formatTimeOffDateWithWeekday(req.StartDate);
@@ -1294,9 +1357,9 @@ var now = new Date();
     function buildActiveOffText(req) {
       if (!req) return "";
       if (req.RequestType === "Hours") {
-        if (req.HoursType === "Late Start") return "Late Start Until " + (req.EndTime || "");
-        if (req.HoursType === "Early Leave") return "Early Leave At " + (req.StartTime || "");
-        if (req.HoursType === "Partial Day") return (req.StartTime || "") + " - " + (req.EndTime || "");
+        if (req.HoursType === "Late Start") return "Late Start Until " + formatReadableTime(req.EndTime);
+        if (req.HoursType === "Early Leave") return "Early Leave At " + formatReadableTime(req.StartTime);
+        if (req.HoursType === "Partial Day") return formatReadableTime(req.StartTime) + " - " + formatReadableTime(req.EndTime);
         return "OFF TODAY";
       }
       var end = getTimeOffEndDate(req);
@@ -1358,13 +1421,15 @@ var now = new Date();
       var cls = status.toLowerCase();
       var submitted = formatTimeOffDateWithWeekday(req.SubmittedAt);
       var reasonText = req.Reason === "Other" ? (req.OtherReason || "Other") : (req.Reason || "");
+      var requestedDateText = getTimeOffDateText(req);
+      var requestedTimeText = getTimeOffTimeText(req);
       var card = document.createElement("div");
       card.className = "timeoff-request-card";
       card.innerHTML =
         '<button type="button" class="timeoff-request-summary">' +
           '<span class="timeoff-summary-left">' +
             '<span class="timeoff-summary-title">' + escapeHtml(submitted) + ' • ' + escapeHtml(req.Employee || '') + '</span>' +
-            '<span class="timeoff-summary-sub">' + escapeHtml(req.DurationDisplay || getTimeOffDateText(req)) + '</span>' +
+            '<span class="timeoff-summary-sub"><span class="timeoff-requested-date">' + escapeHtml(requestedDateText) + '</span>' + (requestedTimeText ? ' • ' + escapeHtml(requestedTimeText) : '') + '</span>' +
           '</span>' +
           '<span class="timeoff-pill ' + cls + '">' + escapeHtml(status) + '</span>' +
         '</button>' +
@@ -1373,8 +1438,8 @@ var now = new Date();
             '<div><strong>Submitted:</strong> ' + escapeHtml(submitted) + '</div>' +
             '<div><strong>Employee:</strong> ' + escapeHtml(req.Employee || '') + '</div>' +
             '<div><strong>Type:</strong> ' + escapeHtml(req.RequestType || '') + (req.HoursType ? ' - ' + escapeHtml(req.HoursType) : '') + '</div>' +
-            '<div><strong>Date:</strong> ' + escapeHtml(getTimeOffDateText(req)) + '</div>' +
-            '<div><strong>Time:</strong> ' + escapeHtml(req.StartTime || '') + (req.EndTime ? ' - ' + escapeHtml(req.EndTime) : '') + '</div>' +
+            '<div><strong>Date:</strong> <span class="timeoff-date-detail">' + escapeHtml(requestedDateText) + '</span></div>' +
+            '<div><strong>Time:</strong> ' + escapeHtml(requestedTimeText || "—") + '</div>' +
             '<div><strong>Reason:</strong> ' + escapeHtml(reasonText) + '</div>' +
             '<div><strong>Status:</strong> ' + escapeHtml(status) + '</div>' +
             '<div><strong>Decision:</strong> ' + escapeHtml(req.AdminDecisionAt ? formatTimeOffDateWithWeekday(req.AdminDecisionAt) : '') + '</div>' +
@@ -1401,10 +1466,11 @@ var now = new Date();
       var statusEl = document.getElementById("timeoff-admin-status");
       if (!currentEl || !olderEl) return;
       currentEl.innerHTML = ""; olderEl.innerHTML = "";
+      var visibleRequests = (requests || []).filter(function(req){ return !requestHasEnded(req); });
       var pending = [], older = [];
-      (requests || []).forEach(function(req){ String(req.Status || "Pending").trim() === "Pending" ? pending.push(req) : older.push(req); });
+      visibleRequests.forEach(function(req){ String(req.Status || "Pending").trim() === "Pending" ? pending.push(req) : older.push(req); });
       function bySubmittedDesc(a,b){ return (parseTimeOffDate(b.SubmittedAt)||0) - (parseTimeOffDate(a.SubmittedAt)||0); }
-      approvedTimeOffRequests = (requests || []).filter(function(req){ return String(req.Status || "").trim() === "Approved"; });
+      approvedTimeOffRequests = visibleRequests.filter(function(req){ return String(req.Status || "").trim() === "Approved"; });
       var upcomingCount = renderUpcomingTimeOffReminders(approvedTimeOffRequests);
       updateOlderTimeOffCount(upcomingCount);
       pending.sort(bySubmittedDesc); older.sort(bySubmittedDesc);
@@ -1412,7 +1478,7 @@ var now = new Date();
       pending.forEach(function(req){ currentEl.appendChild(renderTimeOffRequestCard(req, false)); });
       if (!older.length) olderEl.innerHTML = '<div class="timeoff-empty">No approved or denied requests yet.</div>';
       older.forEach(function(req){ olderEl.appendChild(renderTimeOffRequestCard(req, true)); });
-      if (statusEl) statusEl.textContent = "Loaded " + (requests || []).length + " time off request(s).";
+      if (statusEl) statusEl.textContent = "Showing " + visibleRequests.length + " active or upcoming time off request(s).";
     }
 
     function loadTimeOffRequests() {
