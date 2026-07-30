@@ -2,6 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <!-- TIMEOFF BUILD: 5-DAY-HARD-BLOCK-2026-07-30 -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Time Off Request - Universal Rentals</title>
   <link rel="stylesheet" href="style.css" />
@@ -14,7 +18,7 @@
     .container{max-width:620px;margin:2.7rem auto 0 auto;padding:16px;box-sizing:border-box;}
     .request-card{background:#fff;border:1px solid #e6e6e6;border-radius:20px;box-shadow:0 8px 24px rgba(0,0,0,.08);padding:18px;}
     h1{margin:0 0 4px;text-align:center;font-size:28px;letter-spacing:-.5px}.sub{text-align:center;color:#555;font-size:13px;margin:0 0 18px;line-height:1.35}.employee-chip{display:block;width:fit-content;margin:0 auto 16px;padding:8px 13px;border-radius:999px;background:#111;color:#fff;font-size:13px;font-weight:900;}
-    .field{display:grid;gap:6px;margin-bottom:14px}.field label{font-size:13px;font-weight:900;color:#111}.field select,.field input,.field textarea{width:100%;box-sizing:border-box;border:1px solid #ddd;border-radius:14px;background:#fff;color:#111;padding:11px 12px;font-size:15px;font:inherit}.field textarea{min-height:86px;resize:vertical}.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}.hidden{display:none!important}.disclaimer{margin:16px 0 12px;padding:12px;border-radius:14px;border:1px solid #e4e4e4;background:#fafafa;color:#222;font-size:13px;line-height:1.35;font-weight:700}.btn{width:100%;padding:13px 16px;border-radius:14px;border:1px solid #111;background:#111;color:#fff;cursor:pointer;font-size:15px;font-weight:900}.btn:disabled{opacity:.6;cursor:not-allowed}.status{margin-top:12px;text-align:center;font-size:13px;font-weight:800}.status.ok{color:#1f6f3a}.status.err{color:#8b1f1f}.back-link{display:block;text-align:center;margin-top:12px;color:#111;font-size:13px;font-weight:800;text-decoration:none}.small-note{font-size:12px;color:#666;line-height:1.35;margin-top:4px}@media(max-width:640px){.container{padding:12px}.row{grid-template-columns:1fr}.request-card{padding:16px;border-radius:18px}h1{font-size:25px}}
+    .field{display:grid;gap:6px;margin-bottom:14px}.field label{font-size:13px;font-weight:900;color:#111}.field select,.field input,.field textarea{width:100%;box-sizing:border-box;border:1px solid #ddd;border-radius:14px;background:#fff;color:#111;padding:11px 12px;font-size:15px;font:inherit}.field textarea{min-height:86px;resize:vertical}.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}.hidden{display:none!important}.disclaimer{margin:16px 0 12px;padding:12px;border-radius:14px;border:1px solid #e4e4e4;background:#fafafa;color:#222;font-size:13px;line-height:1.35;font-weight:700}.btn{width:100%;padding:13px 16px;border-radius:14px;border:1px solid #111;background:#111;color:#fff;cursor:pointer;font-size:15px;font-weight:900}.btn:disabled{opacity:.6;cursor:not-allowed}.status{margin-top:12px;text-align:center;font-size:13px;font-weight:800}.status.ok{color:#1f6f3a}.status.err{color:#c00000;background:#fff0f0;border:1px solid #efb2b2;border-radius:12px;padding:10px}.back-link{display:block;text-align:center;margin-top:12px;color:#111;font-size:13px;font-weight:800;text-decoration:none}.small-note{font-size:12px;color:#666;line-height:1.35;margin-top:4px}@media(max-width:640px){.container{padding:12px}.row{grid-template-columns:1fr}.request-card{padding:16px;border-radius:18px}h1{font-size:25px}}
   </style>
 </head>
 <body>
@@ -81,6 +85,7 @@
         </div>
 
         <div class="disclaimer">I understand that this request is subject to approval by my employer.</div>
+        <div style="margin:0 0 12px;color:#c00000;font-size:13px;font-weight:900;text-align:center;">Requests for dates within the next 5 days cannot be submitted online. Contact your employer directly.</div>
         <button id="submitBtn" class="btn" type="submit">Submit Request</button>
         <div id="status" class="status"></div>
       </form>
@@ -140,21 +145,45 @@
         disclaimerAccepted:"true"
       };
     }
-    function parseLocalDateInput(value){
-      if (!value) return null;
-      var parts = String(value).split("-");
-      if (parts.length !== 3) return null;
-      var date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-      return isNaN(date.getTime()) ? null : date;
+    function localTodayKey(){
+      var now = new Date();
+      return now.getFullYear() + "-" + pad(now.getMonth() + 1) + "-" + pad(now.getDate());
     }
 
-    function isWithinFiveDays(value){
-      var requested = parseLocalDateInput(value);
-      if (!requested) return false;
-      var today = new Date();
-      today = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-      var difference = Math.floor((requested.getTime() - today.getTime()) / 86400000);
-      return difference <= 5;
+    function calendarDayNumber(value){
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value || ""))) return null;
+      var parts = String(value).split("-");
+      return Math.floor(Date.UTC(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2])) / 86400000);
+    }
+
+    function daysUntilRequestedDate(value){
+      var requestedDay = calendarDayNumber(value);
+      var todayDay = calendarDayNumber(localTodayKey());
+      if (requestedDay === null || todayDay === null) return null;
+      return requestedDay - todayDay;
+    }
+
+    function fiveDayRestrictionMessage(value){
+      var daysAway = daysUntilRequestedDate(value);
+      if (daysAway === null) return "";
+      if (daysAway < 0) return "The requested date cannot be before today.";
+      if (daysAway <= 5) return "Time off requests within 5 days cannot be submitted online. Please contact your employer.";
+      return "";
+    }
+
+    function selectedRequestDate(){
+      var type = document.getElementById("requestType").value;
+      if (type === "Days") return document.getElementById("startDate").value;
+      if (type === "Hours") return document.getElementById("requestDate").value;
+      return "";
+    }
+
+    function showDateRestrictionImmediately(){
+      var value = selectedRequestDate();
+      var message = value ? fiveDayRestrictionMessage(value) : "";
+      if (message) setStatus(message, "err");
+      else if (document.getElementById("status").classList.contains("err")) setStatus("", "");
+      return message;
     }
 
     function validatePayload(p){
@@ -163,12 +192,14 @@
       if (p.requestType === "Days") {
         if (!p.startDate || !p.endDate) return "Choose a beginning and ending date.";
         if (p.endDate < p.startDate) return "Ending date cannot be before beginning date.";
-        if (isWithinFiveDays(p.startDate)) return "Time off requests cannot be submitted within 5 days of the requested date. Please contact your employer.";
+        var daysRestriction = fiveDayRestrictionMessage(p.startDate);
+        if (daysRestriction) return daysRestriction;
       }
       if (p.requestType === "Hours") {
         if (!p.hoursType) return "Choose Late Start, Early Leave, or Partial Day.";
         if (!p.requestDate) return "Choose the request date.";
-        if (isWithinFiveDays(p.requestDate)) return "Time off requests cannot be submitted within 5 days of the requested date. Please contact your employer.";
+        var hoursRestriction = fiveDayRestrictionMessage(p.requestDate);
+        if (hoursRestriction) return hoursRestriction;
         if (p.hoursType === "Late Start" && !p.endTime) return "Choose the late start time.";
         if (p.hoursType === "Early Leave" && !p.startTime) return "Choose the early leave time.";
         if (p.hoursType === "Partial Day" && (!p.startTime || !p.endTime)) return "Choose both start and end times.";
@@ -197,6 +228,12 @@
       var p=buildPayload();
       var err=validatePayload(p);
       if (err) { setStatus(err,"err"); return; }
+
+      var finalDateCheck = fiveDayRestrictionMessage(
+        p.requestType === "Days" ? p.startDate : p.requestDate
+      );
+      if (finalDateCheck) { setStatus(finalDateCheck,"err"); return; }
+
       var btn=document.getElementById("submitBtn"); btn.disabled=true; setStatus("Submitting...","");
       jsonp(p).then(function(data){
         if(!data.success) throw new Error(data.error || "Submit failed");
@@ -219,15 +256,18 @@
       }).catch(function(error){ setStatus("Could not submit request. " + error.message,"err"); }).finally(function(){ btn.disabled=false; });
     });
 
-    (function setMinimumRequestDates(){
-      var minimum = new Date();
-      minimum.setDate(minimum.getDate() + 6);
-      var minimumValue = minimum.getFullYear() + "-" + pad(minimum.getMonth() + 1) + "-" + pad(minimum.getDate());
+    (function configureRequestDates(){
+      var today = localTodayKey();
       ["startDate", "endDate", "requestDate"].forEach(function(id){
         var input = document.getElementById(id);
-        if (input) input.min = minimumValue;
+        if (!input) return;
+        input.min = today;
+        input.addEventListener("change", showDateRestrictionImmediately);
+        input.addEventListener("input", showDateRestrictionImmediately);
       });
     })();
+
+    document.getElementById("requestType").addEventListener("change", showDateRestrictionImmediately);
 
     document.getElementById("employeeChip").textContent = EMPLOYEE_NAME || "Employee not found";
     if (FROM_PAGE) {
