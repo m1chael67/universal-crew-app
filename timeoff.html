@@ -182,7 +182,23 @@
       var message = value ? fiveDayRestrictionMessage(value) : "";
       if (message) setStatus(message, "err");
       else if (document.getElementById("status").classList.contains("err")) setStatus("", "");
+      updateSubmitButtonState();
       return message;
+    }
+
+
+    function updateSubmitButtonState(){
+      var btn = document.getElementById("submitBtn");
+      if (!btn) return;
+
+      var disabled = false;
+
+      var value = selectedRequestDate();
+      if (value && fiveDayRestrictionMessage(value)) {
+        disabled = true;
+      }
+
+      btn.disabled = disabled;
     }
 
     function validatePayload(p){
@@ -266,9 +282,11 @@
       });
     })();
 
-    document.getElementById("requestType").addEventListener("change", showDateRestrictionImmediately);
+    document.getElementById("requestType").addEventListener("change", function(){ showDateRestrictionImmediately(); updateSubmitButtonState(); });
 
     document.getElementById("employeeChip").textContent = EMPLOYEE_NAME || "Employee not found";
+    updateSubmitButtonState();
+
     if (FROM_PAGE) {
       document.getElementById("backLink").href = FROM_PAGE;
       document.getElementById("homeLink").href = FROM_PAGE;
