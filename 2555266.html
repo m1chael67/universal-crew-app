@@ -160,7 +160,7 @@
     .inventory-row{
       display:flex;
       align-items:flex-start;
-      justify-content:space-between;
+      justify-content:flex-start;
       gap:10px;
     }
     .inventory-main{
@@ -204,7 +204,7 @@
     }
     .job-block-header{
       display:flex;
-      justify-content:space-between;
+      justify-content:flex-start;
       align-items:flex-start;
       gap:10px;
       margin-bottom:12px;
@@ -403,7 +403,7 @@
 .calendar-head{
   display:flex;
   align-items:center;
-  justify-content:space-between;
+  justify-content:flex-start;
   gap:8px;
   margin-bottom:10px;
 }
@@ -477,7 +477,7 @@
 .calendar-day.selected.has-job::after{ background:#fff; }
 .calendar-actions{
   display:flex;
-  justify-content:space-between;
+  justify-content:flex-start;
   gap:8px;
   margin-top:10px;
 }
@@ -605,7 +605,7 @@
 }
 .job-block-header{
   display:flex;
-  justify-content:space-between;
+  justify-content:flex-start;
   align-items:flex-start;
   gap:12px;
   margin-bottom:12px;
@@ -730,7 +730,7 @@
 
 /* ===== SETUP / STRIKE TIMER CONTROLS ===== */
 .job-timer-panel{border-top:1px solid #ededed;margin-top:12px;padding-top:12px;display:grid;gap:8px;}
-.job-timer-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid #eeeeee;background:#fafafa;border-radius:14px;flex-wrap:wrap;}
+.job-timer-row{display:flex;align-items:center;justify-content:flex-start;gap:10px;padding:10px 12px;border:1px solid #eeeeee;background:#fafafa;border-radius:14px;flex-wrap:wrap;}
 .job-timer-label{font-size:13px;font-weight:900;color:#111;text-transform:uppercase;letter-spacing:.25px;}
 .job-timer-status{font-size:13px;font-weight:700;color:#444;}
 .job-timer-status.complete{color:#1b7f35;}
@@ -758,6 +758,7 @@
   font-size:12px;
 }
 .timeoff-mini-head{
+  gap:6px;
   width:100%;
   border:0;
   background:#fff;
@@ -768,7 +769,7 @@
   cursor:pointer;
   display:flex;
   align-items:center;
-  justify-content:space-between;
+  justify-content:flex-start;
   gap:8px;
 }
 .timeoff-pill{
