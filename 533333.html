@@ -160,7 +160,7 @@
     .inventory-row{
       display:flex;
       align-items:flex-start;
-      justify-content:flex-start;
+      justify-content:space-between;
       gap:10px;
     }
     .inventory-main{
@@ -204,7 +204,7 @@
     }
     .job-block-header{
       display:flex;
-      justify-content:flex-start;
+      justify-content:space-between;
       align-items:flex-start;
       gap:10px;
       margin-bottom:12px;
@@ -403,7 +403,7 @@
 .calendar-head{
   display:flex;
   align-items:center;
-  justify-content:flex-start;
+  justify-content:space-between;
   gap:8px;
   margin-bottom:10px;
 }
@@ -477,7 +477,7 @@
 .calendar-day.selected.has-job::after{ background:#fff; }
 .calendar-actions{
   display:flex;
-  justify-content:flex-start;
+  justify-content:space-between;
   gap:8px;
   margin-top:10px;
 }
@@ -605,7 +605,7 @@
 }
 .job-block-header{
   display:flex;
-  justify-content:flex-start;
+  justify-content:space-between;
   align-items:flex-start;
   gap:12px;
   margin-bottom:12px;
@@ -730,7 +730,7 @@
 
 /* ===== SETUP / STRIKE TIMER CONTROLS ===== */
 .job-timer-panel{border-top:1px solid #ededed;margin-top:12px;padding-top:12px;display:grid;gap:8px;}
-.job-timer-row{display:flex;align-items:center;justify-content:flex-start;gap:10px;padding:10px 12px;border:1px solid #eeeeee;background:#fafafa;border-radius:14px;flex-wrap:wrap;}
+.job-timer-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid #eeeeee;background:#fafafa;border-radius:14px;flex-wrap:wrap;}
 .job-timer-label{font-size:13px;font-weight:900;color:#111;text-transform:uppercase;letter-spacing:.25px;}
 .job-timer-status{font-size:13px;font-weight:700;color:#444;}
 .job-timer-status.complete{color:#1b7f35;}
@@ -758,7 +758,6 @@
   font-size:12px;
 }
 .timeoff-mini-head{
-  gap:6px;
   width:100%;
   border:0;
   background:#fff;
@@ -769,7 +768,7 @@
   cursor:pointer;
   display:flex;
   align-items:center;
-  justify-content:flex-start;
+  justify-content:space-between;
   gap:8px;
 }
 .timeoff-pill{
@@ -795,9 +794,69 @@
 .timeoff-mini-card.open .timeoff-mini-body{display:block;}
 .timeoff-mini-line{margin-top:5px;}
 @media (max-width:640px){
-  .timeoff-status-wrap{position:static;max-width:none;margin:0 0 12px auto;width:fit-content;}
+  .timeoff-status-wrap{
+    position:fixed;
+    top:58px;
+    right:8px;
+    z-index:1001;
+    width:min(290px, calc(100vw - 82px));
+    max-width:none;
+    margin:0;
+  }
+  .timeoff-mini-card{
+    width:100%;
+  }
 }
 
+.timeoff-nav-row{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  margin:8px 0 2px;
+}
+.timeoff-nav-btn{
+  width:30px;
+  height:30px;
+  border:1px solid #ddd;
+  border-radius:999px;
+  background:#fff;
+  color:#111;
+  font-size:17px;
+  font-weight:900;
+  line-height:1;
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow:0 2px 7px rgba(0,0,0,0.07);
+}
+.timeoff-nav-btn:disabled{
+  opacity:.35;
+  cursor:default;
+}
+.timeoff-request-count{
+  font-size:10px;
+  font-weight:900;
+  color:#666;
+  white-space:nowrap;
+}
+.timeoff-mini-head > span:first-child{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+
+.timeoff-mini-head{
+  justify-content:flex-start !important;
+  gap:6px !important;
+  width:auto !important;
+  padding:7px 9px !important;
+}
+.timeoff-status-wrap{
+  width:auto !important;
+}
 </style>
 </head>
 <body>
@@ -2140,6 +2199,7 @@ var refreshBtn = document.getElementById("refresh-page-btn");
       var wrap = document.getElementById("timeoff-status-wrap");
       if (!wrap) return;
       wrap.innerHTML = "";
+
       var today = new Date();
       today = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0,0,0);
 
@@ -2154,28 +2214,83 @@ var refreshBtn = document.getElementById("refresh-page-btn");
       });
 
       if (!active.length) return;
-      var req = active[0];
-      var status = String(req.Status || "Pending");
-      var cls = status.toLowerCase();
-      var dateText = req.RequestType === "Hours"
-        ? formatTimeOffDate(req.RequestDate)
-        : (formatTimeOffDate(req.StartDate) + (req.EndDate && req.EndDate !== req.StartDate ? " - " + formatTimeOffDate(req.EndDate) : ""));
 
-      var card = document.createElement("div");
-      card.className = "timeoff-mini-card";
-      card.innerHTML =
-        '<button type="button" class="timeoff-mini-head">' +
+      var currentIndex = 0;
+      var isOpen = false;
+
+      function drawRequest() {
+        wrap.innerHTML = "";
+
+        var req = active[currentIndex];
+        var status = String(req.Status || "Pending");
+        var cls = status.toLowerCase();
+        var dateText = req.RequestType === "Hours"
+          ? formatTimeOffDate(req.RequestDate)
+          : (formatTimeOffDate(req.StartDate) + (req.EndDate && req.EndDate !== req.StartDate ? " - " + formatTimeOffDate(req.EndDate) : ""));
+
+        var card = document.createElement("div");
+        card.className = "timeoff-mini-card" + (isOpen ? " open" : "");
+
+        var head = document.createElement("button");
+        head.type = "button";
+        head.className = "timeoff-mini-head";
+        head.innerHTML =
           '<span>Time Off Request</span>' +
-          '<span class="timeoff-pill ' + cls + '">' + status + '</span>' +
-        '</button>' +
-        '<div class="timeoff-mini-body">' +
+          '<span class="timeoff-pill ' + cls + '">' + status + '</span>';
+
+        var body = document.createElement("div");
+        body.className = "timeoff-mini-body";
+
+        var navHtml = "";
+        if (active.length > 1) {
+          navHtml =
+            '<div class="timeoff-nav-row">' +
+              '<button type="button" class="timeoff-nav-btn timeoff-prev" aria-label="Previous time off request">‹</button>' +
+              '<span class="timeoff-request-count">Request ' + (currentIndex + 1) + ' of ' + active.length + '</span>' +
+              '<button type="button" class="timeoff-nav-btn timeoff-next" aria-label="Next time off request">›</button>' +
+            '</div>';
+        }
+
+        body.innerHTML =
+          navHtml +
           '<div class="timeoff-mini-line"><strong>Date:</strong> ' + dateText + '</div>' +
           '<div class="timeoff-mini-line"><strong>Type:</strong> ' + (req.RequestType || '') + (req.HoursType ? ' - ' + req.HoursType : '') + '</div>' +
           '<div class="timeoff-mini-line"><strong>Duration:</strong> ' + (req.DurationDisplay || '') + '</div>' +
-          '<div class="timeoff-mini-line"><strong>Reason:</strong> ' + (req.Reason === 'Other' ? (req.OtherReason || 'Other') : (req.Reason || '')) + '</div>' +
-        '</div>';
-      card.querySelector(".timeoff-mini-head").addEventListener("click", function(){ card.classList.toggle("open"); });
-      wrap.appendChild(card);
+          '<div class="timeoff-mini-line"><strong>Reason:</strong> ' + (req.Reason === 'Other' ? (req.OtherReason || 'Other') : (req.Reason || '')) + '</div>';
+
+        card.appendChild(head);
+        card.appendChild(body);
+
+        head.addEventListener("click", function(){
+          isOpen = !isOpen;
+          card.classList.toggle("open", isOpen);
+        });
+
+        var prevBtn = body.querySelector(".timeoff-prev");
+        var nextBtn = body.querySelector(".timeoff-next");
+
+        if (prevBtn) {
+          prevBtn.addEventListener("click", function(e){
+            e.stopPropagation();
+            currentIndex = (currentIndex - 1 + active.length) % active.length;
+            isOpen = true;
+            drawRequest();
+          });
+        }
+
+        if (nextBtn) {
+          nextBtn.addEventListener("click", function(e){
+            e.stopPropagation();
+            currentIndex = (currentIndex + 1) % active.length;
+            isOpen = true;
+            drawRequest();
+          });
+        }
+
+        wrap.appendChild(card);
+      }
+
+      drawRequest();
     }
 
     function loadEmployeeTimeOffStatus() {
