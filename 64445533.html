@@ -857,20 +857,21 @@
   }
 }
 
-.timeoff-mini-toprow{
+.timeoff-nav-row{
   display:flex;
   align-items:center;
-  gap:6px;
+  justify-content:center;
+  gap:10px;
+  margin:8px 0 2px;
 }
 .timeoff-nav-btn{
-  width:28px;
-  height:28px;
-  flex:0 0 28px;
+  width:30px;
+  height:30px;
   border:1px solid #ddd;
   border-radius:999px;
   background:#fff;
   color:#111;
-  font-size:16px;
+  font-size:17px;
   font-weight:900;
   line-height:1;
   cursor:pointer;
@@ -888,10 +889,6 @@
   font-weight:900;
   color:#666;
   white-space:nowrap;
-}
-.timeoff-mini-head{
-  flex:1 1 auto;
-  min-width:0;
 }
 .timeoff-mini-head > span:first-child{
   overflow:hidden;
@@ -2306,6 +2303,7 @@ function waitForClockState(expectedState, triesLeft) {
       if (!active.length) return;
 
       var currentIndex = 0;
+      var isOpen = false;
 
       function drawRequest() {
         wrap.innerHTML = "";
@@ -2318,17 +2316,7 @@ function waitForClockState(expectedState, triesLeft) {
           : (formatTimeOffDate(req.StartDate) + (req.EndDate && req.EndDate !== req.StartDate ? " - " + formatTimeOffDate(req.EndDate) : ""));
 
         var card = document.createElement("div");
-        card.className = "timeoff-mini-card";
-
-        var topRow = document.createElement("div");
-        topRow.className = "timeoff-mini-toprow";
-
-        var prevBtn = document.createElement("button");
-        prevBtn.type = "button";
-        prevBtn.className = "timeoff-nav-btn";
-        prevBtn.setAttribute("aria-label", "Previous time off request");
-        prevBtn.textContent = "‹";
-        prevBtn.disabled = active.length < 2;
+        card.className = "timeoff-mini-card" + (isOpen ? " open" : "");
 
         var head = document.createElement("button");
         head.type = "button";
@@ -2337,44 +2325,54 @@ function waitForClockState(expectedState, triesLeft) {
           '<span>Time Off Request</span>' +
           '<span class="timeoff-pill ' + cls + '">' + status + '</span>';
 
-        var nextBtn = document.createElement("button");
-        nextBtn.type = "button";
-        nextBtn.className = "timeoff-nav-btn";
-        nextBtn.setAttribute("aria-label", "Next time off request");
-        nextBtn.textContent = "›";
-        nextBtn.disabled = active.length < 2;
-
-        topRow.appendChild(prevBtn);
-        topRow.appendChild(head);
-        topRow.appendChild(nextBtn);
-
         var body = document.createElement("div");
         body.className = "timeoff-mini-body";
+
+        var navHtml = "";
+        if (active.length > 1) {
+          navHtml =
+            '<div class="timeoff-nav-row">' +
+              '<button type="button" class="timeoff-nav-btn timeoff-prev" aria-label="Previous time off request">‹</button>' +
+              '<span class="timeoff-request-count">Request ' + (currentIndex + 1) + ' of ' + active.length + '</span>' +
+              '<button type="button" class="timeoff-nav-btn timeoff-next" aria-label="Next time off request">›</button>' +
+            '</div>';
+        }
+
         body.innerHTML =
-          (active.length > 1
-            ? '<div class="timeoff-mini-line timeoff-request-count">Request ' + (currentIndex + 1) + ' of ' + active.length + '</div>'
-            : '') +
+          navHtml +
           '<div class="timeoff-mini-line"><strong>Date:</strong> ' + dateText + '</div>' +
           '<div class="timeoff-mini-line"><strong>Type:</strong> ' + (req.RequestType || '') + (req.HoursType ? ' - ' + req.HoursType : '') + '</div>' +
           '<div class="timeoff-mini-line"><strong>Duration:</strong> ' + (req.DurationDisplay || '') + '</div>' +
           '<div class="timeoff-mini-line"><strong>Reason:</strong> ' + (req.Reason === 'Other' ? (req.OtherReason || 'Other') : (req.Reason || '')) + '</div>';
 
-        card.appendChild(topRow);
+        card.appendChild(head);
         card.appendChild(body);
 
         head.addEventListener("click", function(){
-          card.classList.toggle("open");
+          isOpen = !isOpen;
+          card.classList.toggle("open", isOpen);
         });
 
-        prevBtn.addEventListener("click", function(){
-          currentIndex = (currentIndex - 1 + active.length) % active.length;
-          drawRequest();
-        });
+        var prevBtn = body.querySelector(".timeoff-prev");
+        var nextBtn = body.querySelector(".timeoff-next");
 
-        nextBtn.addEventListener("click", function(){
-          currentIndex = (currentIndex + 1) % active.length;
-          drawRequest();
-        });
+        if (prevBtn) {
+          prevBtn.addEventListener("click", function(e){
+            e.stopPropagation();
+            currentIndex = (currentIndex - 1 + active.length) % active.length;
+            isOpen = true;
+            drawRequest();
+          });
+        }
+
+        if (nextBtn) {
+          nextBtn.addEventListener("click", function(e){
+            e.stopPropagation();
+            currentIndex = (currentIndex + 1) % active.length;
+            isOpen = true;
+            drawRequest();
+          });
+        }
 
         wrap.appendChild(card);
       }
