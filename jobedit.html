@@ -240,6 +240,13 @@
     .msg.error{color:#b42318}
     .msg.ok{color:#166534}
     .muted{color:#666;font-size:13px}
+    .division-toggle{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:5px;background:#ededed;border-radius:16px}
+    .division-btn{border:0;border-radius:12px;padding:11px 14px;background:transparent;color:#444;font:inherit;font-size:14px;font-weight:900;cursor:pointer}
+    .division-btn.active{background:#fff;color:#111;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+    .division-btn[data-division="cm"].active{background:#171717;color:#fff}
+    .division-note{font-size:12px;color:#666;line-height:1.35}
+    .job-card.cm-job{border-color:#262626;border-left:7px solid #171717;background:linear-gradient(90deg,#f1f1f1 0,#fff 24%)}
+    .division-badge{display:inline-flex;align-items:center;padding:5px 9px;border-radius:999px;background:#171717;color:#fff;font-size:11px;font-weight:900;letter-spacing:.35px;margin-bottom:7px}
 
     /* ===== Calendar Filter ===== */
     .calendar-wrap{
@@ -445,12 +452,20 @@
     <div class="sheet-body">
       <form id="jobForm" class="form-grid">
         <div class="row">
-          <label for="jobName">Job Name</label>
+          <label>Division</label>
+          <div class="division-toggle" role="group" aria-label="Division">
+            <button type="button" class="division-btn active" data-division="universal">Universal</button>
+            <button type="button" class="division-btn" data-division="cm">C&amp;M</button>
+          </div>
+          <div id="divisionNote" class="division-note">Universal Rentals &amp; Events job</div>
+        </div>
+        <div class="row">
+          <label for="jobName" id="jobNameLabel">Job Name</label>
           <textarea id="jobName" rows="1" placeholder="Enter the job name"></textarea>
         </div>
 
         <div class="two-col">
-          <div class="row">
+          <div class="row" id="jobTypeRow">
             <label for="jobType">Type</label>
             <select id="jobType">
               <option value="Set-Up">Set-Up</option>
@@ -466,10 +481,10 @@
 
         <div class="two-col">
           <div class="row">
-            <label for="startDate">Start Date</label>
+            <label for="startDate" id="startDateLabel">Start Date</label>
             <input id="startDate" type="date" />
           </div>
-          <div class="row">
+          <div class="row" id="strikeDateRow">
             <label for="strikeDate">Strike Date</label>
             <input id="strikeDate" type="date" />
           </div>
@@ -487,7 +502,7 @@
         </div>
 
         <div class="row">
-          <label>Inventory</label>
+          <label id="inventoryLabel">Inventory</label>
           <div id="inventoryWrap"></div>
           <button type="button" class="btn small" id="addInventoryBtn">+ Add Inventory Row</button>
         </div>
@@ -546,7 +561,28 @@
       }
     })();
 
-    const state = { employees: [], jobs: [], editingJob: null, selectedDateKey: null, calendarMonth: new Date() };
+    const state = { employees: [], jobs: [], editingJob: null, selectedDateKey: null, calendarMonth: new Date(), division: "universal" };
+    const CM_PREFIX = "[C&M] ";
+
+    function isCmName(name){ return /^\s*\[C&M\]\s*/i.test(String(name || "")); }
+    function stripCmPrefix(name){ return String(name || "").replace(/^\s*\[C&M\]\s*/i, "").trim(); }
+    function storedJobName(name, division){ return division === "cm" ? CM_PREFIX + stripCmPrefix(name) : stripCmPrefix(name); }
+
+    function setDivision(division){
+      state.division = division === "cm" ? "cm" : "universal";
+      document.querySelectorAll(".division-btn").forEach(btn=>btn.classList.toggle("active", btn.dataset.division === state.division));
+      const cm = state.division === "cm";
+      document.getElementById("divisionNote").textContent = cm ? "C&M furniture delivery" : "Universal Rentals & Events job";
+      document.getElementById("jobNameLabel").textContent = cm ? "Client / Delivery Name" : "Job Name";
+      document.getElementById("jobName").placeholder = cm ? "Enter client or delivery name" : "Enter the job name";
+      document.getElementById("jobTypeRow").classList.toggle("hidden", cm);
+      document.getElementById("strikeDateRow").classList.toggle("hidden", cm);
+      document.getElementById("startDateLabel").textContent = cm ? "Delivery Date" : "Start Date";
+      document.getElementById("inventoryLabel").textContent = cm ? "Furniture / Items" : "Inventory";
+      document.getElementById("addInventoryBtn").textContent = cm ? "+ Add Furniture / Item" : "+ Add Inventory Row";
+      if (cm){ document.getElementById("jobType").value = "Delivery"; document.getElementById("strikeDate").value = ""; }
+      syncTypeVisibility();
+    }
 
     function autoGrow(el){
       if (!el) return;
@@ -658,7 +694,7 @@
       card.className = "inv-card";
       card.innerHTML = `
         <div class="inv-head">
-          <strong>Inventory Item</strong>
+          <strong>${state.division === "cm" ? "Furniture / Item" : "Inventory Item"}</strong>
           <button type="button" class="btn danger small delete-item-btn">Delete</button>
         </div>
         <div class="two-col">
@@ -724,14 +760,15 @@
       document.getElementById("sheet").classList.add("open");
       document.getElementById("overlay").classList.add("show");
       document.getElementById("sheetTitle").textContent = job ? "Edit Job" : "New Job";
-      document.getElementById("sheetSub").textContent = job ? ("Editing " + (job.jobName || "job")) : "";
+      document.getElementById("sheetSub").textContent = job ? ("Editing " + stripCmPrefix(job.jobName || "job")) : "";
       document.getElementById("deleteJobBtn").style.display = job ? "" : "none";
       setFormMsg("", false);
 
-      document.getElementById("jobName").value = job ? (job.jobName || "") : "";
-      document.getElementById("jobType").value = job ? (job.type || "Set-Up") : "Set-Up";
+      setDivision(job && isCmName(job.jobName) ? "cm" : "universal");
+      document.getElementById("jobName").value = job ? stripCmPrefix(job.jobName || "") : "";
+      document.getElementById("jobType").value = state.division === "cm" ? "Delivery" : (job ? (job.type || "Set-Up") : "Set-Up");
       document.getElementById("startDate").value = job ? (job.startDate || "") : "";
-      document.getElementById("strikeDate").value = job ? (job.strikeDate || "") : "";
+      document.getElementById("strikeDate").value = state.division === "cm" ? "" : (job ? (job.strikeDate || "") : "");
       document.getElementById("jobAddress").value = job ? (job.address || "") : "";
       document.getElementById("jobPhone").value = job ? (job.phone || "") : "";
       document.getElementById("jobNotes").value = job ? (job.notes || "") : "";
@@ -757,10 +794,10 @@
     }
 
     function collectForm(){
-      const jobName = document.getElementById("jobName").value.trim();
-      const type = document.getElementById("jobType").value.trim();
+      const jobName = storedJobName(document.getElementById("jobName").value.trim(), state.division);
+      const type = state.division === "cm" ? "Delivery" : document.getElementById("jobType").value.trim();
       const startDate = document.getElementById("startDate").value;
-      const strikeDate = document.getElementById("strikeDate").value;
+      const strikeDate = state.division === "cm" ? "" : document.getElementById("strikeDate").value;
       const address = document.getElementById("jobAddress").value.trim();
       const notes = document.getElementById("jobNotes").value.trim();
       const phone = document.getElementById("jobPhone").value.trim();
@@ -988,14 +1025,15 @@
 
       grid.innerHTML = jobs.map(job=>{
         const employees = (job.employees || []).join(", ") || "—";
+        const cm = isCmName(job.jobName);
         const invHtml = (job.inventory || []).map(item=>`<li class="inventory-view"><span>${item.inventory || "—"} × ${item.quantity || "—"}</span></li>`).join("");
         const selectedChip = getSelectedJobChip(job);
         const chipClass = selectedChip ? selectedChip.cls : getJobState(job);
         const chipLabel = selectedChip ? selectedChip.label : getJobStateLabel(job);
         return `
-          <div class="job-card" data-job-id="${job.jobId}">
+          <div class="job-card${cm ? " cm-job" : ""}" data-job-id="${job.jobId}">
             <div class="job-card-header">
-              <h2>${job.jobName || "Untitled Job"}</h2>
+              <div>${cm ? '<span class="division-badge">C&amp;M DELIVERY</span>' : ''}<h2>${stripCmPrefix(job.jobName) || "Untitled Job"}</h2></div>
               <span class="job-chip state-${chipClass}">${chipLabel}</span>
             </div>
             <div class="job-meta">
@@ -1130,6 +1168,7 @@
       }
     });
     document.getElementById("jobType").addEventListener("change", syncTypeVisibility);
+    document.querySelectorAll(".division-btn").forEach(btn=>btn.addEventListener("click", ()=>setDivision(btn.dataset.division)));
 
     (async function init(){
       try{

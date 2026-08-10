@@ -25,7 +25,7 @@
   <button id="menuBtn" class="menu-btn" type="button" aria-label="Menu"><div class="menu-icon" aria-hidden="true"><span></span><span></span><span></span></div></button>
   <div id="menuOverlay" class="menu-overlay" aria-hidden="true"></div>
   <nav id="sideMenu" class="side-menu" aria-label="Menu">
-    <h2>Menu</h2><a href="jobs.html">Jobs</a><a href="jobdata.html">Job Data</a><a href="admin.html?from=scorecard.html">Admin</a><a href="jobedit.html?from=scorecard.html">Edit Jobs</a><a href="tent.html?from=scorecard.html">Tents</a><a href="propane.html?from=scorecard.html">Propane</a><a href="hoursbalance.html?from=scorecard.html">Hours Balance</a>
+    <h2>Menu</h2><a id="home-link" href="64445533.html">Home</a><a href="jobdata.html">Job Data</a><a href="admin.html?from=scorecard.html">Admin</a><a href="jobedit.html?from=scorecard.html">Edit Jobs</a><a href="tent.html?from=scorecard.html">Tents</a><a href="propane.html?from=scorecard.html">Propane</a><a href="hoursbalance.html?from=scorecard.html">Hours Balance</a>
   </nav>
   <div class="container">
     <div class="page-title-row"><button id="back-btn" class="icon-action" type="button" aria-label="Back" title="Back">‹</button><h1>Job Scorecard</h1><button id="refresh-btn" class="icon-action" type="button" aria-label="Refresh" title="Refresh">↻</button></div>
@@ -45,6 +45,8 @@ let allTimers=[],allJobs=[],allRecords=[],activeRange="all";
 let revenueView="ops-day";
 let allTimeLogRows=[];
 const TIME_LOG_SHEET_ID="1gm39kMipfpLKS2n8g9F4SYG9Do36M_5Lc6GOs-c6jCM";
+function hasCmMarker(value){return /^\s*\[C&M\]\s*/i.test(String(value||""));}
+function isCmRecord(record){return hasCmMarker(record&&(record.jobName||record.Name||record.name));}
 function jsonp(url,params,timeoutMs){timeoutMs=timeoutMs||15000;return new Promise(function(resolve,reject){var cb="cb_"+Math.random().toString(16).slice(2),u=new URL(url);Object.keys(params||{}).forEach(k=>u.searchParams.set(k,params[k]));u.searchParams.set("callback",cb);var done=false,s=document.createElement("script"),timer=setTimeout(()=>{if(done)return;done=true;cleanup();reject(new Error("JSONP request failed."))},timeoutMs);function cleanup(){clearTimeout(timer);s.remove();try{delete window[cb]}catch(_){}}window[cb]=data=>{if(done)return;done=true;cleanup();resolve(data)};s.onerror=()=>{if(done)return;done=true;cleanup();reject(new Error("JSONP request failed."))};s.src=u.toString();document.body.appendChild(s)})}
 function parseDate(v){
   if(!v)return null;
@@ -867,7 +869,7 @@ function renderRecent(records){var rows=records.slice(0,12),list=document.getEle
 
 function renderRevenue(records){var rows=records.filter(r=>r.revenue&&r.totalMinutes).sort((a,b)=>(b.revenue/(b.totalMinutes/60))-(a.revenue/(a.totalMinutes/60))).slice(0,20),sec=document.getElementById("revenue-section");if(!rows.length){sec.style.display="none";return}sec.style.display="block";document.getElementById("revenue-body").innerHTML=rows.map(r=>{var ph=r.revenue/(r.totalMinutes/60);return '<tr><td><strong>'+esc(r.jobName)+'</strong></td><td class="num">$'+r.revenue.toFixed(2)+'</td><td class="num">'+fmtMin(r.totalMinutes)+'</td><td class="num">$'+ph.toFixed(2)+'/hr</td><td>'+esc(r.tents.join(", ")||"—")+'</td></tr>'}).join("")}
 function populateFilters(){var tentSet=new Set(),trackerSet=new Set();allRecords.forEach(r=>{r.tents.forEach(t=>tentSet.add(t));r.timers.forEach(t=>{if(t.employee)trackerSet.add(t.employee)})});document.getElementById("tent-filter").innerHTML='<option value="">All Tents</option>'+Array.from(tentSet).sort().map(t=>'<option value="'+esc(t)+'">'+esc(t)+'</option>').join("");document.getElementById("tracker-filter").innerHTML='<option value="">All Crew</option>'+Array.from(trackerSet).sort().map(t=>'<option value="'+esc(t)+'">'+esc(t)+'</option>').join("")}
-function loadData(){document.getElementById("recent-list").innerHTML='<div class="empty">Loading scorecard...</div>';Promise.all([jsonp(JOB_TIMER_WEBAPP_URL,{action:"getJobTimers"},20000),jsonp(JOBS_WEBAPP_URL,{action:"listJobs"},20000).catch(e=>{console.warn("Jobs feed failed",e);return{jobs:[]}})]).then(res=>{var timerRes=res[0],jobsRes=res[1];if(!timerRes||timerRes.success===false)throw new Error(timerRes&&timerRes.error?timerRes.error:"Failed to load timer data.");allTimers=timerRes.timers||[];allJobs=normalizeJobs(jobsRes.jobs||[]);allRecords=buildRecords();populateFilters();render()}).catch(err=>{console.error(err);document.getElementById("recent-list").innerHTML='<div class="empty">Failed to load scorecard data.</div>'})}
+function loadData(){document.getElementById("recent-list").innerHTML='<div class="empty">Loading scorecard...</div>';Promise.all([jsonp(JOB_TIMER_WEBAPP_URL,{action:"getJobTimers"},20000),jsonp(JOBS_WEBAPP_URL,{action:"listJobs"},20000).catch(e=>{console.warn("Jobs feed failed",e);return{jobs:[]}})]).then(res=>{var timerRes=res[0],jobsRes=res[1];if(!timerRes||timerRes.success===false)throw new Error(timerRes&&timerRes.error?timerRes.error:"Failed to load timer data.");allTimers=(timerRes.timers||[]).filter(function(t){return !isCmRecord(t);});allJobs=normalizeJobs((jobsRes.jobs||[]).filter(function(j){return !isCmRecord(j);}));allRecords=buildRecords();populateFilters();render()}).catch(err=>{console.error(err);document.getElementById("recent-list").innerHTML='<div class="empty">Failed to load scorecard data.</div>'})}
 
 
 // ===== Production + Revenue rebuild (patched from admin + Michael page patterns) =====
@@ -1113,8 +1115,8 @@ function loadData(){
   ]).then(function(res){
     var timerRes=res[0], jobsRes=res[1];
     if(!timerRes||timerRes.success===false) throw new Error(timerRes&&timerRes.error?timerRes.error:"Failed to load timer data.");
-    allTimers=timerRes.timers||[];
-    allJobs=normalizeJobs(jobsRes.jobs||[]);
+    allTimers=(timerRes.timers||[]).filter(function(t){return !isCmRecord(t);});
+    allJobs=normalizeJobs((jobsRes.jobs||[]).filter(function(j){return !isCmRecord(j);}));
     allTimeLogRows=res[2]||[];
     allRecords=buildRecords();
     populateFilters();
@@ -1145,6 +1147,13 @@ document.addEventListener("click", function(e){
 });
 
 document.addEventListener("DOMContentLoaded",function(){document.getElementById("back-btn").addEventListener("click",()=>window.location.href="jobdata.html");document.getElementById("refresh-btn").addEventListener("click",loadData);document.querySelectorAll(".filter-btn[data-range]").forEach(btn=>btn.addEventListener("click",function(){activeRange=this.dataset.range||"all";document.querySelectorAll(".filter-btn[data-range]").forEach(b=>b.classList.toggle("active",b===btn));render()}));document.getElementById("tent-filter").addEventListener("change",render);document.getElementById("tracker-filter").addEventListener("change",render);var viewMode=document.getElementById("view-mode");if(viewMode)viewMode.addEventListener("change",render);var diffFilter=document.getElementById("difficulty-filter");if(diffFilter)diffFilter.addEventListener("change",render);var tentBody=document.getElementById("tent-body");if(tentBody)tentBody.addEventListener("click",function(e){var row=e.target.closest?e.target.closest(".tent-stat-row"):null;if(!row)return;var id="tent-detail-"+row.getAttribute("data-tent-row");var detail=document.getElementById(id);if(detail)detail.style.display=detail.style.display==="none"?"table-row":"none";});var menuBtn=document.getElementById("menuBtn"),menuOverlay=document.getElementById("menuOverlay");function closeMenu(){document.body.classList.remove("menu-open")}if(menuBtn)menuBtn.addEventListener("click",()=>document.body.classList.toggle("menu-open"));if(menuOverlay)menuOverlay.addEventListener("click",closeMenu);document.addEventListener("keydown",e=>{if(e.key==="Escape")closeMenu()});loadData()});if('serviceWorker'in navigator){navigator.serviceWorker.register('/universal-crew-app/service-worker.js')}
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function(){
+  var from = new URLSearchParams(location.search).get("from") || "";
+  var home = document.getElementById("home-link");
+  if (home && /^[a-zA-Z0-9_.-]+\.html$/.test(from) && from.toLowerCase() !== "scorecard.html") home.href = from;
+});
 </script>
 </body>
 </html>

@@ -738,6 +738,10 @@
 .job-timer-btn.stop{background:#fff3f3;border-color:#e0a8a8;color:#7a1e1e;}
 .job-timer-btn:disabled{opacity:.6;cursor:not-allowed;}
 @media (max-width:640px){.job-timer-row{align-items:flex-start;}}
+.job-block.cm-job{border:1px solid #242424;border-left:7px solid #171717 !important;background:linear-gradient(90deg,#ededed 0,#fff 24%);box-shadow:0 8px 22px rgba(0,0,0,.10);}
+.cm-division-badge{display:inline-flex;align-items:center;margin-bottom:7px;padding:5px 9px;border-radius:999px;background:#171717;color:#fff;font-size:11px;font-weight:950;letter-spacing:.4px;}
+.job-block.cm-job .job-type-pill{background:#171717 !important;color:#fff;}
+.job-block.cm-job .job-inventory h3::before{content:"▣";}
 
 
 
@@ -1632,6 +1636,14 @@ function waitForClockState(expectedState, triesLeft) {
 
     var jobTimerCache = {};
 
+    function isCmJob(job) {
+      return /^\\s*\\[C&M\\]\\s*/i.test(String(job && job.Name || ""));
+    }
+
+    function stripCmPrefix(value) {
+      return String(value || "").replace(/^\\s*\\[C&M\\]\\s*/i, "").trim();
+    }
+
     function slugifyJobPart(value) {
       return String(value || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60);
     }
@@ -1654,6 +1666,7 @@ function waitForClockState(expectedState, triesLeft) {
     function normalizeTimerKind(kind) {
       var k = String(kind || "").toLowerCase();
       if (k.indexOf("strike") !== -1) return "Strike";
+      if (k.indexOf("delivery") !== -1) return "Delivery";
       return "Set-Up";
     }
 
@@ -1663,6 +1676,10 @@ function waitForClockState(expectedState, triesLeft) {
       today = new Date(today.getFullYear(), today.getMonth(), today.getDate());
       if (!sameDay(displayDate, today)) return [];
       var kinds = [];
+      if (isCmJob(job)) {
+        if (job.SetupDate && sameDay(job.SetupDate, today)) kinds.push("Delivery");
+        return kinds;
+      }
       var originalTypeLower = String(job.OriginalType || job.Type || "").toLowerCase();
       var isPickupJob = originalTypeLower.includes("pickup") || originalTypeLower.includes("pick-up") || originalTypeLower.includes("pick up") || originalTypeLower.includes("return");
       if (job.SetupDate && sameDay(job.SetupDate, today) && !isPickupJob) kinds.push("Set-Up");
@@ -1698,7 +1715,7 @@ function waitForClockState(expectedState, triesLeft) {
         var running = timer && !complete && String(timer.action || "").toUpperCase() === "START" && !timer.stopTime;
         var durationText = timer && timer.formattedDuration ? timer.formattedDuration : (timer && timer.durationMinutes ? formatTimerDuration(timer.durationMinutes) : "");
         var statusText = complete ? (kind + " Time: " + durationText + " — Complete") : (running ? formatLiveElapsed(timer.startTime) : "Not started");
-        var btnText = running ? "Stop" : (kind === "Strike" ? "Start Strike" : "Start Set-Up");
+        var btnText = running ? "Stop" : (kind === "Strike" ? "Start Strike" : (kind === "Delivery" ? "Start Delivery" : "Start Set-Up"));
         var btnClass = running ? "job-timer-btn stop" : "job-timer-btn";
         html += ''
           + '<div class="job-timer-row">'
@@ -1817,7 +1834,8 @@ function waitForClockState(expectedState, triesLeft) {
         }
 
         var block = document.createElement("div");
-        block.className = "job-block";
+        var cmJob = isCmJob(job);
+        block.className = "job-block" + (cmJob ? " cm-job" : "");
 
         var crewLabel = (job.employees || []).join(", ");
 
@@ -1838,7 +1856,8 @@ function waitForClockState(expectedState, triesLeft) {
         block.innerHTML = ''
           + '<div class="job-block-header">'
           +   '<div>'
-          +     '<h2>' + (job.Name || '') + '</h2>'
+          +     (cmJob ? '<span class="cm-division-badge">C&amp;M DELIVERY</span>' : '')
+          +     '<h2>' + stripCmPrefix(job.Name || '') + '</h2>'
           +     '<div class="job-card-subhead"><span class="job-type-pill" style="background:' + typeColor + '">' + (display.type || 'Job') + '</span></div>'
           +   '</div>'
           +   '<span class="job-date-badge' + (isToday ? ' today' : '') + '">' + display.dateLabel + '</span>'
@@ -1849,7 +1868,7 @@ function waitForClockState(expectedState, triesLeft) {
           +   (crewLabel ? '<div class="job-meta-row"><strong>Crew:</strong> ' + crewLabel + '</div>' : '')
           +   ((job.Notes && job.Notes !== "—") ? ('<div class="job-meta-row"><strong>Notes:</strong> ' + job.Notes + '</div>') : '')
           + '</div>'
-          + '<div class="job-inventory"><h3>Inventory</h3>'
+          + '<div class="job-inventory"><h3>' + (cmJob ? 'Furniture / Items' : 'Inventory') + '</h3>'
           + '<ul>' + inventoryHtml + '</ul></div>'
           + buildTimerControls(job, display.date);
 
