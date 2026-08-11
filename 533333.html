@@ -724,8 +724,30 @@
   background:#111;
   color:#fff;
 }
+.division-filter{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:6px;
+  border-radius:999px;
+  background:#fff;
+  border:1px solid #e2e2e2;
+  box-shadow:0 6px 16px rgba(0,0,0,0.08);
+}
+.division-filter-btn{
+  border:none;
+  background:transparent;
+  color:#222;
+  border-radius:999px;
+  padding:8px 12px;
+  font-size:12px;
+  font-weight:900;
+  cursor:pointer;
+  white-space:nowrap;
+}
+.division-filter-btn.active{background:#111;color:#fff;}
 @media (max-width:640px){
-  .job-type-filter{width:100%;justify-content:center;flex-wrap:wrap;border-radius:18px;}
+  .job-type-filter,.division-filter{width:100%;justify-content:center;flex-wrap:wrap;border-radius:18px;}
 }
 
 /* ===== SETUP / STRIKE TIMER CONTROLS ===== */
@@ -739,8 +761,7 @@
 .job-timer-btn:disabled{opacity:.6;cursor:not-allowed;}
 @media (max-width:640px){.job-timer-row{align-items:flex-start;}}
 .job-block.cm-job{border:1px solid #242424;border-left:7px solid #171717 !important;background:linear-gradient(90deg,#ededed 0,#fff 24%);box-shadow:0 8px 22px rgba(0,0,0,.10);}
-.cm-division-badge{display:inline-flex;align-items:center;margin-bottom:7px;padding:5px 9px;border-radius:999px;background:#171717;color:#fff;font-size:11px;font-weight:950;letter-spacing:.4px;}
-.job-block.cm-job .job-type-pill{background:#171717 !important;color:#fff;}
+.cm-division-badge{display:inline-flex;align-items:center;margin-bottom:7px;padding:5px 9px;border-radius:999px;background:#171717;color:#fff;font-size:11px;font-weight:900;letter-spacing:.35px;}
 .job-block.cm-job .job-inventory h3::before{content:"▣";}
 
 
@@ -926,6 +947,11 @@
         <button type="button" class="job-filter-btn active" data-job-filter="all">All</button>
         <button type="button" class="job-filter-btn" data-job-filter="pickupreturn">Pickups/Returns</button>
         <button type="button" class="job-filter-btn" data-job-filter="activework">Setups/Deliveries/Strikes</button>
+      </div>
+      <div class="division-filter" aria-label="Division filter">
+        <button type="button" class="division-filter-btn active" data-division-filter="all">All</button>
+        <button type="button" class="division-filter-btn" data-division-filter="cm">C&amp;M</button>
+        <button type="button" class="division-filter-btn" data-division-filter="universal">Universal</button>
       </div>
     </div>
     <div class="clock-row">
@@ -1444,6 +1470,7 @@ function waitForClockState(expectedState, triesLeft) {
 
     var selectedCalendarDate = null;
     var activeJobTypeFilter = "all";
+    var activeDivisionFilter = "all";
     var calendarMonthDate = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 
     function dateKey(d) {
@@ -1579,6 +1606,16 @@ function waitForClockState(expectedState, triesLeft) {
         btn.addEventListener("click", function() {
           activeJobTypeFilter = this.dataset.jobFilter || "all";
           filterBtns.forEach(function(b) { b.classList.toggle("active", b === btn); });
+          renderJobsTodayOnly();
+        });
+      });
+      var divisionBtns = document.querySelectorAll(".division-filter-btn");
+      divisionBtns.forEach(function(btn) {
+        if (btn.dataset.bound) return;
+        btn.dataset.bound = "1";
+        btn.addEventListener("click", function() {
+          activeDivisionFilter = this.dataset.divisionFilter || "all";
+          divisionBtns.forEach(function(b) { b.classList.toggle("active", b === btn); });
           renderJobsTodayOnly();
         });
       });
@@ -1773,6 +1810,14 @@ function waitForClockState(expectedState, triesLeft) {
       return true;
     }
 
+    function jobPassesDivisionFilter(job) {
+      if (!activeDivisionFilter || activeDivisionFilter === "all") return true;
+      var cm = isCmJob(job);
+      if (activeDivisionFilter === "cm") return cm;
+      if (activeDivisionFilter === "universal") return !cm;
+      return true;
+    }
+
     function renderJobsTodayOnly() {
       var list = document.getElementById("job-list");
       if (!list || !window.__jobsCache) return;
@@ -1801,7 +1846,7 @@ function waitForClockState(expectedState, triesLeft) {
 
       // Apply the All / Pickups-Returns / Setups-Deliveries-Strikes filter after
       // date filtering, because the displayed type can change by selected day.
-      jobsArray = jobsArray.filter(jobPassesTypeFilter);
+      jobsArray = jobsArray.filter(jobPassesTypeFilter).filter(jobPassesDivisionFilter);
 
       jobsArray.sort(function(a, b) {
         var da = getDisplayDateForJob(a) ? getDisplayDateForJob(a).getTime() : 0;
@@ -1813,7 +1858,7 @@ function waitForClockState(expectedState, triesLeft) {
       updateCalendarFilterChip();
 
       if (!jobsArray.length) {
-        var filterMsg = activeJobTypeFilter && activeJobTypeFilter !== "all" ? " for this filter" : "";
+        var filterMsg = (activeJobTypeFilter && activeJobTypeFilter !== "all") || (activeDivisionFilter && activeDivisionFilter !== "all") ? " for this filter" : "";
         list.textContent = selectedCalendarDate
           ? ("No jobs" + filterMsg + " for " + formatCalendarDateLabel(selectedCalendarDate) + ".")
           : (isTodayOnlyEnabled() ? ("No jobs" + filterMsg + " for today.") : ("No jobs" + filterMsg + " scheduled."));
