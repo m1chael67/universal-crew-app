@@ -1674,11 +1674,11 @@ function waitForClockState(expectedState, triesLeft) {
     var jobTimerCache = {};
 
     function isCmJob(job) {
-      return /^\\s*\\[C&M\\]\\s*/i.test(String(job && job.Name || ""));
+      return /^\s*\[C&M\]\s*/i.test(String(job && job.Name || ""));
     }
 
     function stripCmPrefix(value) {
-      return String(value || "").replace(/^\\s*\\[C&M\\]\\s*/i, "").trim();
+      return String(value || "").replace(/^\s*\[C&M\]\s*/i, "").trim();
     }
 
     function slugifyJobPart(value) {
