@@ -73,6 +73,7 @@
       box-shadow: 0 2px 10px rgba(0,0,0,0.04);
       cursor: pointer;
     }
+    .emp-row.limited-no-link{cursor:default;}
     .emp-left {
       display: flex;
       flex-direction: column;
@@ -678,6 +679,7 @@ details.timeoff-older > summary::-webkit-details-marker{display:none;}
       "Derick": "337375.html",
       "Todd": "todd.html"
     };
+    const IS_JEFF_LIMITED_ADMIN = (new URLSearchParams(window.location.search).get("from") || "").toLowerCase() === "533333.html";
 
     // --- Pay period logic (unchanged) ---
     function getPayPeriodInfo(date) {
@@ -1058,11 +1060,15 @@ var now = new Date();
         row.className = "emp-row";
         row.id = "emp-row-" + emp;
 
-        row.addEventListener("click", function(e) {
-          if (e.target && e.target.tagName && e.target.tagName.toLowerCase() === "button") return;
-          var page = EMPLOYEE_PAGES[emp];
-          if (page) window.location.href = page;
-        });
+        if (IS_JEFF_LIMITED_ADMIN && emp !== "Jeff") {
+          row.classList.add("limited-no-link");
+        } else {
+          row.addEventListener("click", function(e) {
+            if (e.target && e.target.tagName && e.target.tagName.toLowerCase() === "button") return;
+            var page = EMPLOYEE_PAGES[emp];
+            if (page) window.location.href = page;
+          });
+        }
 
         var left = document.createElement("div");
         left.className = "emp-left";
@@ -1568,6 +1574,7 @@ var now = new Date();
       + '<a href="533333.html">Home</a>'
       + '<a href="tent.html?from=533333.html">Tents</a>'
       + '<a href="propane.html?from=533333.html">Propane</a>'
+      + '<a href="timeoff.html?employee=Jeff&from=533333.html">Time Off Request</a>'
       + '<a href="index.html" id="globalLoginLink">Login</a>';
   }
   var login = document.getElementById("globalLoginLink");
