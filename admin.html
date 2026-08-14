@@ -1561,6 +1561,15 @@ var now = new Date();
   var btn = document.getElementById("globalMenuBtn");
   var menu = document.getElementById("globalSideMenu");
   var overlay = document.getElementById("globalMenuOverlay");
+  var from = new URLSearchParams(window.location.search).get("from") || "";
+  if (menu && from.toLowerCase() === "533333.html") {
+    menu.innerHTML = ''
+      + '<h3>Menu</h3>'
+      + '<a href="533333.html">Home</a>'
+      + '<a href="tent.html?from=533333.html">Tents</a>'
+      + '<a href="propane.html?from=533333.html">Propane</a>'
+      + '<a href="index.html" id="globalLoginLink">Login</a>';
+  }
   var login = document.getElementById("globalLoginLink");
   if (!btn || !menu || !overlay) return;
   btn.addEventListener("click", function(){
