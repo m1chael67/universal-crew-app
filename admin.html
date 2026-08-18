@@ -31,6 +31,11 @@
       box-shadow: 0 0 6px rgba(46, 204, 113, 0.7);
       font-weight: 600;
     }
+    .week-hours-green { background: #dff5e5 !important; color: #195c31; font-weight: 700; }
+    .week-hours-yellow { background: #fff1b8 !important; color: #6f5100; font-weight: 700; }
+    .week-hours-red { background: #ffd9d9 !important; color: #7a1e1e; font-weight: 800; }
+    .week-hours-key { margin: 5px 0 0; font-size: 11px; color: #666; }
+    .week-hours-key span { display: inline-block; margin-right: 10px; }
     .pill {
       display: inline-block;
       padding: 2px 6px;
@@ -576,6 +581,9 @@ details.timeoff-older > summary::-webkit-details-marker{display:none;}
     <div id="periods-wrap">
       <div class="period-block period-current">
         <div class="period-title">Current Pay Period</div>
+        <div class="week-hours-key" aria-label="Weekly hour color key">
+          <span>Green: 20+ weekly hours</span><span>Yellow: 30+</span><span>Red: 36+</span>
+        </div>
         <div class="table-scroll">
         <table class="history-table history-table-current">
           <thead>
@@ -684,8 +692,8 @@ details.timeoff-older > summary::-webkit-details-marker{display:none;}
       "Jeff": "533333.html",
       "Derick": "337375.html",
       "Todd": "todd.html",
-      "Anthony": "26689.html",
-      "Jesse": "53373.html"
+      "Anthony": "anthony.html",
+      "Jesse": "jesse.html"
     };
     const IS_JEFF_LIMITED_ADMIN = (new URLSearchParams(window.location.search).get("from") || "").toLowerCase() === "533333.html";
 
@@ -759,6 +767,39 @@ function fmt(d) {
       return fmt(start) + " - " + fmt(end);
     }
 
+    function parseSheetDateTime(cell) {
+      if (!cell) return null;
+      var raw = cell.v;
+      if (raw instanceof Date && !isNaN(raw.getTime())) return raw;
+      var text = String(raw == null ? "" : raw).trim();
+      var gviz = /^Date\((\d+),(\d+),(\d+)(?:,(\d+),(\d+),(\d+))?\)$/.exec(text);
+      if (gviz) {
+        return new Date(
+          Number(gviz[1]), Number(gviz[2]), Number(gviz[3]),
+          Number(gviz[4] || 0), Number(gviz[5] || 0), Number(gviz[6] || 0)
+        );
+      }
+      var parsed = new Date(text || cell.f || "");
+      return isNaN(parsed.getTime()) ? null : parsed;
+    }
+
+    function getCurrentWorkWeek(date) {
+      var d = (date instanceof Date) ? new Date(date.getTime()) : new Date(date);
+      if (isNaN(d.getTime())) d = new Date();
+      d.setHours(12, 0, 0, 0);
+      var daysSinceSaturday = (d.getDay() + 1) % 7;
+      var start = new Date(d.getFullYear(), d.getMonth(), d.getDate() - daysSinceSaturday, 0, 0, 0, 0);
+      var end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 7, 0, 0, 0, 0);
+      return { start: start, end: end };
+    }
+
+    function weekHoursClass(hours) {
+      if (hours >= 36) return "week-hours-red";
+      if (hours >= 30) return "week-hours-yellow";
+      if (hours >= 20) return "week-hours-green";
+      return "";
+    }
+
     // --- Hours table (same as admin.html) ---
     function loadHistory() {
       var statusEl = document.getElementById("admin-status");
@@ -774,10 +815,9 @@ var now = new Date();
       if (statusEl) statusEl.textContent = "Loading hours...";
 
       var tq =
-        "select D, B, sum(F) " +
+        "select A, D, B, F " +
         "where C = 'clock_out' " +
-        "group by D, B " +
-        "label sum(F) ''";
+        "order by A";
 
       var baseUrl = "https://docs.google.com/spreadsheets/d/" + TIME_LOG_SHEET_ID + "/gviz/tq";
       var url = baseUrl +
@@ -793,10 +833,13 @@ var now = new Date();
           var rows = json.table.rows || [];
 
           var byPeriod = {};
+          var currentWeekHours = {};
+          var currentWeek = getCurrentWorkWeek(now);
           rows.forEach(function(row) {
-            var pkCell  = row.c[0];
-            var empCell = row.c[1];
-            var hrsCell = row.c[2];
+            var tsCell  = row.c[0];
+            var pkCell  = row.c[1];
+            var empCell = row.c[2];
+            var hrsCell = row.c[3];
             if (!pkCell || !empCell || !hrsCell) return;
 
             var pk  = String(pkCell.v || "");
@@ -814,6 +857,12 @@ var now = new Date();
             var p = byPeriod[pk];
             if (!p.employees[emp]) p.employees[emp] = 0;
             p.employees[emp] += hrs;
+
+            var eventTime = parseSheetDateTime(tsCell);
+            if (eventTime && eventTime >= currentWeek.start && eventTime < currentWeek.end) {
+              if (!currentWeekHours[emp]) currentWeekHours[emp] = 0;
+              currentWeekHours[emp] += hrs;
+            }
           });
 
           var periods = Object.keys(byPeriod).map(function(k) { return byPeriod[k]; });
@@ -826,7 +875,7 @@ var now = new Date();
           });
 
           
-          function renderPeriodRow(tbody, p) {
+          function renderPeriodRow(tbody, p, isCurrent) {
             if (!tbody || !p) return;
             var tr = document.createElement("tr");
             var label = labelForPeriodKey(p.key);
@@ -835,11 +884,15 @@ var now = new Date();
 
             EMPLOYEES.forEach(function(emp) {
               var val = p.employees[emp] || 0;
+              var weekHours = currentWeekHours[emp] || 0;
+              var weeklyClass = isCurrent ? weekHoursClass(weekHours) : "";
+              var className = "num" + (weeklyClass ? " " + weeklyClass : "");
+              var title = isCurrent ? " title='This week: " + weekHours.toFixed(2) + " hours'" : "";
               if (val < 0.0001) {
-                rowHtml += "<td class='num'></td>";
+                rowHtml += "<td class='" + className + "'" + title + "></td>";
               } else {
                 total += val;
-                rowHtml += "<td class='num'>" + val.toFixed(2) + "</td>";
+                rowHtml += "<td class='" + className + "'" + title + ">" + val.toFixed(2) + "</td>";
               }
             });
 
@@ -889,7 +942,7 @@ var now = new Date();
             return db - da; // newest first
           });
 
-          renderPeriodRow(currentEl, currentPeriod);
+          renderPeriodRow(currentEl, currentPeriod, true);
           if (latestCompleted) renderPeriodRow(lastEl, latestCompleted);
           // Hide the "Latest Completed" block if we don't have any completed periods yet
           var lastBlock = document.querySelector(".period-last");
