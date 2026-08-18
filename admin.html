@@ -31,11 +31,20 @@
       box-shadow: 0 0 6px rgba(46, 204, 113, 0.7);
       font-weight: 600;
     }
-    .week-hours-green { background: #dff5e5 !important; color: #195c31; font-weight: 700; }
-    .week-hours-yellow { background: #fff1b8 !important; color: #6f5100; font-weight: 700; }
-    .week-hours-red { background: #ffd9d9 !important; color: #7a1e1e; font-weight: 800; }
+    .hours-room-green { background: #dff5e5 !important; color: #195c31; }
+    .hours-room-yellow { background: #fff1b8 !important; color: #6f5100; }
+    .hours-room-orange { background: #ffe1b5 !important; color: #794600; }
+    .hours-room-red { background: #ffd9d9 !important; color: #7a1e1e; }
     .week-hours-key { margin: 5px 0 0; font-size: 11px; color: #666; }
     .week-hours-key span { display: inline-block; margin-right: 10px; }
+    .hours-cell { min-width: 138px; text-align: left !important; vertical-align: top; white-space: normal !important; }
+    .hours-total { font-size: 15px; font-weight: 900; white-space: nowrap; }
+    .hours-week { margin-top: 3px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+    .ot-badge { display: inline-block; margin-left: 3px; padding: 1px 5px; border-radius: 999px; background: #a71919; color: #fff; font-size: 9px; font-weight: 900; }
+    .hours-available { margin-top: 5px; font-size: 12px; font-weight: 900; }
+    .hours-active { font-size: 10px; font-weight: 800; color: #246b3b; }
+    .reserve-row { display: flex; align-items: center; gap: 4px; margin-top: 6px; font-size: 10px; font-weight: 700; }
+    .reserve-input { width: 48px; padding: 3px 4px; border: 1px solid rgba(0,0,0,.22); border-radius: 6px; font: inherit; background: rgba(255,255,255,.85); }
     .pill {
       display: inline-block;
       padding: 2px 6px;
@@ -581,8 +590,8 @@ details.timeoff-older > summary::-webkit-details-marker{display:none;}
     <div id="periods-wrap">
       <div class="period-block period-current">
         <div class="period-title">Current Pay Period</div>
-        <div class="week-hours-key" aria-label="Weekly hour color key">
-          <span>Green: 20+ weekly hours</span><span>Yellow: 30+</span><span>Red: 36+</span>
+        <div class="week-hours-key" aria-label="Available hour color key">
+          <span>Green: 16+ available</span><span>Yellow: 8–16</span><span>Orange: 1–8</span><span>Red: none left</span>
         </div>
         <div class="table-scroll">
         <table class="history-table history-table-current">
@@ -779,7 +788,9 @@ function fmt(d) {
           Number(gviz[4] || 0), Number(gviz[5] || 0), Number(gviz[6] || 0)
         );
       }
-      var parsed = new Date(text || cell.f || "");
+      var parsed = new Date(text);
+      if (!isNaN(parsed.getTime())) return parsed;
+      parsed = new Date(String(cell.f || ""));
       return isNaN(parsed.getTime()) ? null : parsed;
     }
 
@@ -793,11 +804,31 @@ function fmt(d) {
       return { start: start, end: end };
     }
 
-    function weekHoursClass(hours) {
-      if (hours >= 36) return "week-hours-red";
-      if (hours >= 30) return "week-hours-yellow";
-      if (hours >= 20) return "week-hours-green";
-      return "";
+    function remainingHoursClass(hours) {
+      if (hours <= 0.001) return "hours-room-red";
+      if (hours <= 8) return "hours-room-orange";
+      if (hours <= 16) return "hours-room-yellow";
+      return "hours-room-green";
+    }
+
+    function getReservedHours(periodKey, employee) {
+      try {
+        var value = Number(localStorage.getItem("admin-reserved-hours:" + periodKey + ":" + employee) || 0);
+        return isNaN(value) || value < 0 ? 0 : value;
+      } catch (e) { return 0; }
+    }
+
+    function setReservedHours(periodKey, employee, value) {
+      try { localStorage.setItem("admin-reserved-hours:" + periodKey + ":" + employee, String(value)); } catch (e) {}
+    }
+
+    function addCalendarDays(date, days) {
+      return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days, 0, 0, 0, 0);
+    }
+
+    function overtimeBadge(hours) {
+      var overtime = Math.max(0, hours - 40);
+      return overtime > 0.005 ? " <span class='ot-badge'>+" + overtime.toFixed(2) + " OT</span>" : "";
     }
 
     // --- Hours table (same as admin.html) ---
@@ -815,8 +846,8 @@ var now = new Date();
       if (statusEl) statusEl.textContent = "Loading hours...";
 
       var tq =
-        "select A, D, B, F " +
-        "where C = 'clock_out' " +
+        "select A, D, B, C, F " +
+        "where B is not null " +
         "order by A";
 
       var baseUrl = "https://docs.google.com/spreadsheets/d/" + TIME_LOG_SHEET_ID + "/gviz/tq";
@@ -833,39 +864,64 @@ var now = new Date();
           var rows = json.table.rows || [];
 
           var byPeriod = {};
-          var currentWeekHours = {};
-          var currentWeek = getCurrentWorkWeek(now);
+          var lastEvent = {};
+          var lastClockIn = {};
           rows.forEach(function(row) {
             var tsCell  = row.c[0];
             var pkCell  = row.c[1];
             var empCell = row.c[2];
-            var hrsCell = row.c[3];
-            if (!pkCell || !empCell || !hrsCell) return;
+            var evtCell = row.c[3];
+            var hrsCell = row.c[4];
+            if (!pkCell || !empCell || !evtCell) return;
 
             var pk  = String(pkCell.v || "");
             var emp = String(empCell.v || "");
-            var hrs = Number(hrsCell.v || 0);
-            if (!pk || !emp || isNaN(hrs)) return;
+            var evt = String(evtCell.v || "");
+            var hrs = Number(hrsCell && hrsCell.v || 0);
+            var eventTime = parseSheetDateTime(tsCell);
+            if (!pk || !emp || !evt || isNaN(hrs)) return;
 
             if (!byPeriod[pk]) {
+              var periodEnd = parsePeriodKey(pk);
+              var periodStart = periodEnd ? addCalendarDays(periodEnd, -13) : null;
               byPeriod[pk] = {
                 key: pk,
-                startDate: parsePeriodKey(pk),
-                employees: {}
+                startDate: periodEnd,
+                periodStart: periodStart,
+                weekTwoStart: periodStart ? addCalendarDays(periodStart, 7) : null,
+                periodAfter: periodEnd ? addCalendarDays(periodEnd, 1) : null,
+                employees: {}, weekOne: {}, weekTwo: {}
               };
             }
             var p = byPeriod[pk];
-            if (!p.employees[emp]) p.employees[emp] = 0;
-            p.employees[emp] += hrs;
-
-            var eventTime = parseSheetDateTime(tsCell);
-            if (eventTime && eventTime >= currentWeek.start && eventTime < currentWeek.end) {
-              if (!currentWeekHours[emp]) currentWeekHours[emp] = 0;
-              currentWeekHours[emp] += hrs;
+            if (evt === "clock_out") {
+              if (!p.employees[emp]) p.employees[emp] = 0;
+              p.employees[emp] += hrs;
+              var weekBucket = eventTime && p.weekTwoStart && eventTime >= p.weekTwoStart ? p.weekTwo : p.weekOne;
+              if (!weekBucket[emp]) weekBucket[emp] = 0;
+              weekBucket[emp] += hrs;
             }
+            if (pk === currentPeriodKey) {
+              lastEvent[emp] = evt;
+              if (evt === "clock_in") lastClockIn[emp] = eventTime;
+              if (evt === "clock_out") lastClockIn[emp] = null;
+            }
+
           });
 
           var periods = Object.keys(byPeriod).map(function(k) { return byPeriod[k]; });
+          var activeHours = {};
+          var currentPeriodForLive = byPeriod[currentPeriodKey];
+          EMPLOYEES.forEach(function(emp) {
+            if (lastEvent[emp] !== "clock_in" || !lastClockIn[emp]) return;
+            var start = lastClockIn[emp];
+            var elapsed = Math.max(0, (now.getTime() - start.getTime()) / 3600000);
+            activeHours[emp] = elapsed;
+            if (currentPeriodForLive) {
+              var liveBucket = start >= currentPeriodForLive.weekTwoStart ? currentPeriodForLive.weekTwo : currentPeriodForLive.weekOne;
+              liveBucket[emp] = (liveBucket[emp] || 0) + elapsed;
+            }
+          });
           periods.sort(function(a, b) {
             var da = a.startDate ? a.startDate.getTime() : -Infinity;
             var db = b.startDate ? b.startDate.getTime() : -Infinity;
@@ -884,16 +940,35 @@ var now = new Date();
 
             EMPLOYEES.forEach(function(emp) {
               var val = p.employees[emp] || 0;
-              var weekHours = currentWeekHours[emp] || 0;
-              var weeklyClass = isCurrent ? weekHoursClass(weekHours) : "";
-              var className = "num" + (weeklyClass ? " " + weeklyClass : "");
-              var title = isCurrent ? " title='This week: " + weekHours.toFixed(2) + " hours'" : "";
-              if (val < 0.0001) {
-                rowHtml += "<td class='" + className + "'" + title + "></td>";
+              var w1 = p.weekOne[emp] || 0;
+              var w2 = p.weekTwo[emp] || 0;
+              if (isCurrent) {
+                var active = activeHours[emp] || 0;
+                var effectiveTotal = val + active;
+                var currentWeekHours = now >= p.weekTwoStart ? w2 : w1;
+                var payPeriodRemaining = Math.max(0, 80 - effectiveTotal);
+                var weekRemaining = Math.max(0, 40 - currentWeekHours);
+                var safeRemaining = Math.min(payPeriodRemaining, weekRemaining);
+                var reserved = getReservedHours(p.key, emp);
+                var available = Math.max(0, safeRemaining - reserved);
+                var roomClass = remainingHoursClass(available);
+                var actionText = active > 0 ? (available > 0 ? "Cut in " + available.toFixed(2) + " hrs" : "Cut now") : available.toFixed(2) + " hrs available";
+                rowHtml += "<td class='num hours-cell " + roomClass + "'>" +
+                  "<div class='hours-total'>" + effectiveTotal.toFixed(2) + " / 80</div>" +
+                  (active > 0 ? "<div class='hours-active'>includes " + active.toFixed(2) + " active hrs</div>" : "") +
+                  "<div class='hours-week'>W1: " + w1.toFixed(2) + overtimeBadge(w1) + "</div>" +
+                  "<div class='hours-week'>W2: " + w2.toFixed(2) + overtimeBadge(w2) + "</div>" +
+                  "<div class='hours-available'>" + actionText + "</div>" +
+                  "<label class='reserve-row'>Reserve <input class='reserve-input' type='number' min='0' step='.25' value='" + reserved + "' data-period='" + p.key + "' data-employee='" + emp + "'> hrs</label>" +
+                  "</td>";
+              } else if (val < 0.0001) {
+                rowHtml += "<td class='num'></td>";
               } else {
-                total += val;
-                rowHtml += "<td class='" + className + "'" + title + ">" + val.toFixed(2) + "</td>";
+                rowHtml += "<td class='num hours-cell'><div class='hours-total'>" + val.toFixed(2) + "</div>" +
+                  "<div class='hours-week'>W1: " + w1.toFixed(2) + overtimeBadge(w1) + "</div>" +
+                  "<div class='hours-week'>W2: " + w2.toFixed(2) + overtimeBadge(w2) + "</div></td>";
               }
+              total += val;
             });
 
             if (total < 0.0001) {
@@ -904,6 +979,15 @@ var now = new Date();
 
             tr.innerHTML = rowHtml;
             tbody.appendChild(tr);
+            if (isCurrent) {
+              tr.querySelectorAll(".reserve-input").forEach(function(input) {
+                input.addEventListener("change", function() {
+                  var value = Math.max(0, Number(input.value || 0));
+                  setReservedHours(input.dataset.period, input.dataset.employee, value);
+                  loadHistory();
+                });
+              });
+            }
           }
 
           if (currentEl) currentEl.innerHTML = "";
@@ -922,7 +1006,10 @@ var now = new Date();
             currentPeriod = {
               key: currentPeriodKey,
               startDate: parsePeriodKey(currentPeriodKey),
-              employees: {}
+              periodStart: pp.start,
+              weekTwoStart: addCalendarDays(pp.start, 7),
+              periodAfter: addCalendarDays(pp.end, 1),
+              employees: {}, weekOne: {}, weekTwo: {}
             };
             // Put it at the top (newest) since it's the active period
             periods.unshift(currentPeriod);
