@@ -45,6 +45,7 @@
     .hours-active { font-size: 10px; font-weight: 800; color: #246b3b; }
     .reserve-row { display: flex; align-items: center; gap: 4px; margin-top: 6px; font-size: 10px; font-weight: 700; }
     .reserve-input { width: 48px; padding: 3px 4px; border: 1px solid rgba(0,0,0,.22); border-radius: 6px; font: inherit; background: rgba(255,255,255,.85); }
+    .timeoff-view-only { margin-top: 10px; padding: 8px 10px; border-radius: 9px; background: #f3f3f3; color: #555; font-size: 12px; font-weight: 800; }
     .pill {
       display: inline-block;
       padding: 2px 6px;
@@ -602,9 +603,9 @@ details.timeoff-older > summary::-webkit-details-marker{display:none;}
               <th>Alan</th>
               <th>Jeff</th>
               <th>Derick</th>
-              <th>Todd</th>
               <th>Anthony</th>
               <th>Jesse</th>
+              <th>Todd</th>
               <th>Total</th>
             </tr>
           </thead>
@@ -624,9 +625,9 @@ details.timeoff-older > summary::-webkit-details-marker{display:none;}
               <th>Alan</th>
               <th>Jeff</th>
               <th>Derick</th>
-              <th>Todd</th>
               <th>Anthony</th>
               <th>Jesse</th>
+              <th>Todd</th>
               <th>Total</th>
             </tr>
           </thead>
@@ -646,9 +647,9 @@ details.timeoff-older > summary::-webkit-details-marker{display:none;}
               <th>Alan</th>
               <th>Jeff</th>
               <th>Derick</th>
-              <th>Todd</th>
               <th>Anthony</th>
               <th>Jesse</th>
+              <th>Todd</th>
               <th>Total</th>
             </tr>
           </thead>
@@ -694,7 +695,7 @@ details.timeoff-older > summary::-webkit-details-marker{display:none;}
     const TIME_LOG_SHEET_ID = "1gm39kMipfpLKS2n8g9F4SYG9Do36M_5Lc6GOs-c6jCM";
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwDMoZjhy2IHA0PFEqSwd79cOteIBX-QhIVjLh8pXHnzm6frGjoO1FkS9_xrdIQh8M/exec";
     const TIME_OFF_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwYof_0kk9wqNMWPrx-vlBeQ5Gwj8jMiDzwJOLphm5z50q72ZaNU-t4Oy0n-rEbbHMq/exec";
-    const EMPLOYEES = ["Michael", "Alan", "Jeff", "Derick", "Todd", "Anthony", "Jesse"];
+    const EMPLOYEES = ["Michael", "Alan", "Jeff", "Derick", "Anthony", "Jesse", "Todd"];
     const EMPLOYEE_PAGES = {
       "Michael": "64445533.html",
       "Alan": "2555266.html",
@@ -1579,6 +1580,12 @@ var now = new Date();
       var requestedTimeText = getTimeOffTimeText(req);
       var card = document.createElement("div");
       card.className = "timeoff-request-card";
+      var decisionControls = "";
+      if (status === "Pending") {
+        decisionControls = IS_JEFF_LIMITED_ADMIN
+          ? '<div class="timeoff-view-only">E2 access is view only. Approval is reserved for E5.</div>'
+          : '<textarea class="timeoff-note" placeholder="Optional admin note"></textarea><div class="timeoff-actions"><button type="button" class="btn primary timeoff-approve">Approve</button><button type="button" class="btn warn timeoff-deny">Deny</button></div>';
+      }
       card.innerHTML =
         '<button type="button" class="timeoff-request-summary">' +
           '<span class="timeoff-summary-left">' +
@@ -1598,7 +1605,7 @@ var now = new Date();
             '<div><strong>Status:</strong> ' + escapeHtml(status) + '</div>' +
             '<div><strong>Decision:</strong> ' + escapeHtml(req.AdminDecisionAt ? formatTimeOffDateWithWeekday(req.AdminDecisionAt) : '') + '</div>' +
           '</div>' +
-          (status === 'Pending' ? '<textarea class="timeoff-note" placeholder="Optional admin note"></textarea><div class="timeoff-actions"><button type="button" class="btn primary timeoff-approve">Approve</button><button type="button" class="btn warn timeoff-deny">Deny</button></div>' : '') +
+          decisionControls +
         '</div>';
       card.querySelector(".timeoff-request-summary").addEventListener("click", function(){ card.classList.toggle("open"); });
       var approve = card.querySelector(".timeoff-approve");
@@ -1645,6 +1652,10 @@ var now = new Date();
 
     function updateTimeOffRequest(requestId, statusValue, note) {
       var statusEl = document.getElementById("timeoff-admin-status");
+      if (IS_JEFF_LIMITED_ADMIN) {
+        if (statusEl) statusEl.textContent = "E2 access can view requests but cannot approve or deny them.";
+        return Promise.resolve(false);
+      }
       if (statusEl) statusEl.textContent = "Saving " + statusValue.toLowerCase() + "...";
       timeOffJsonp({ action:"updateTimeOffRequestStatus", requestId:requestId, status:statusValue, admin:"Michael", note:note || "" })
         .then(function(data){
