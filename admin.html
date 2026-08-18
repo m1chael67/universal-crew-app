@@ -1535,6 +1535,27 @@ var now = new Date();
       });
     }
 
+    function getUpcomingTimeOffReminderText(req) {
+      var employee = req.Employee || "Employee";
+      var dateText = getTimeOffDateText(req);
+      if (req.RequestType !== "Hours") return employee + " is approved off " + dateText + ".";
+
+      var start = formatReadableTime(req.StartTime);
+      var end = formatReadableTime(req.EndTime);
+      if (req.HoursType === "Late Start") {
+        return employee + " is approved for a late start " + dateText + (end ? ", arriving at " + end : "") + ".";
+      }
+      if (req.HoursType === "Early Leave") {
+        return employee + " is approved to leave early " + dateText + (start ? " at " + start : "") + ".";
+      }
+      if (req.HoursType === "Partial Day") {
+        var range = start + (start && end ? " to " : "") + end;
+        return employee + " is approved off part of " + dateText + (range ? " from " + range : "") + ".";
+      }
+      var timeText = getTimeOffTimeText(req);
+      return employee + " is approved off part of " + dateText + (timeText ? " (" + timeText + ")" : "") + ".";
+    }
+
     function renderUpcomingTimeOffReminders(requests) {
       var panel = document.getElementById("timeoff-reminder-panel");
       var list = document.getElementById("timeoff-reminder-list");
@@ -1551,7 +1572,7 @@ var now = new Date();
       upcoming.forEach(function(req) {
         var item = document.createElement("div");
         item.className = "timeoff-reminder-item";
-        item.textContent = (req.Employee || "Employee") + " is approved off " + getTimeOffDateText(req) + ".";
+        item.textContent = getUpcomingTimeOffReminderText(req);
         list.appendChild(item);
       });
 
