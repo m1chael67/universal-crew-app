@@ -17,7 +17,7 @@
   <div class="controls">
     <div class="field"><label for="employee">Employee</label><select id="employee"></select></div>
     <div class="field" id="rate-field"><label for="hourly-rate">Hourly rate</label><input id="hourly-rate" type="number" min="0" step=".25" placeholder="Enter rate"></div>
-    <div class="field"><label>Take-home percentage</label><input value="85.5%" disabled></div>
+    <div class="field"><label>Take-home percentage</label><input value="84.54%" disabled></div>
   </div>
   <div id="status" class="card status">Loading Time Log...</div>
   <div id="content" class="hidden">
@@ -40,7 +40,7 @@
     Alan:{type:"hourly",rate:18}, Jesse:{type:"hourly",rate:18}, Anthony:{type:"hourly",rate:22},
     Derick:{type:"hourly",rate:null}, Delvon:{type:"hourly",rate:null}
   };
-  var NET=.855, rows=[];
+  var NET=.8454, rows=[];
   var employeeEl=document.getElementById("employee"),rateEl=document.getElementById("hourly-rate"),rateField=document.getElementById("rate-field");
   EMPLOYEES.forEach(function(n){var o=document.createElement("option");o.value=n;o.textContent=n;employeeEl.appendChild(o)});
   employeeEl.value="Michael";
@@ -81,16 +81,16 @@
     var name=employeeEl.value,cfg=PAY[name],person=rows.filter(function(r){return r.employee===name}),clockIns=person.filter(function(r){return r.event==="clock_in"&&r.date}),first=clockIns.length?new Date(Math.min.apply(null,clockIns.map(function(r){return r.date.getTime()}))):null;
     rateField.classList.toggle("hidden",cfg.type==="salary");rateEl.value=cfg.type==="hourly"?(storedRate(name)||""):"";
     var periods=buildPeriods(person,name),worked=new Set();person.forEach(function(r){if(r.date&&(r.event==="clock_in"||r.event==="clock_out"))worked.add(dayKey(r.date))});
-    var totalHours=periods.reduce(function(s,p){return s+p.hours},0),net=periods.map(function(p){return p.net}).filter(function(v){return v!=null}),effective=periods.map(function(p){return p.effective}).filter(function(v){return v!=null}),employed=first?daysInclusive(first,new Date()):0,avgDay=worked.size?totalHours/worked.size:0;
+    var totalHours=periods.reduce(function(s,p){return s+p.hours},0),net=periods.map(function(p){return p.net}).filter(function(v){return v!=null}),effective=periods.map(function(p){return p.effective}).filter(function(v){return v!=null}),totalNet=net.reduce(function(s,v){return s+v},0),actualHourly=totalHours&&net.length?totalNet/totalHours:null,employed=first?daysInclusive(first,new Date()):0,avgDay=worked.size?totalHours/worked.size:0;
     document.getElementById("missing-rate").classList.toggle("hidden",cfg.type!=="hourly"||storedRate(name)!=null);
     document.getElementById("metrics").innerHTML=
       metric("Days worked",worked.size+(employed?" / "+employed:""),employed?((worked.size/employed*100).toFixed(1)+"% of calendar days since first clock-in"):"No first clock-in found")+
       metric("Total hours",num(totalHours),num(avgDay)+" average hours per worked day")+
       metric("Average take home",money(mean(net)),"Per recorded pay period")+
       metric("Median take home",money(median(net)),"Per recorded pay period")+
-      metric("Average take-home / hr",money(mean(effective)),"Average of pay-period effective rates")+
+      metric("Actual take-home / hour",money(actualHourly),"Total take-home divided by total hours worked")+
       metric("Median take-home / hr",money(median(effective)),"Less affected by unusually light or heavy periods")+
-      metric("Total take home",money(net.reduce(function(s,v){return s+v},0)),"85.5% of calculated gross pay")+
+      metric("Total take home",money(totalNet),"84.54% of calculated gross pay")+
       metric("Longest work streak",longestStreak(worked)+" days",first?"First clock-in: "+first.toLocaleDateString():"No attendance data");
     var body=document.getElementById("pay-body");body.innerHTML="";periods.forEach(function(p){var tr=document.createElement("tr");tr.innerHTML="<td>"+periodLabel(p.key)+"</td><td>"+num(p.hours)+"</td><td>"+num(p.regular)+"</td><td>"+num(p.ot)+"</td><td>"+money(p.gross)+"</td><td>"+money(p.net)+"</td><td class='effective'>"+money(p.effective)+"</td>";body.appendChild(tr)});if(!periods.length)body.innerHTML='<tr><td colspan="7">No completed clock-out records.</td></tr>';
     renderCalendar(first,worked);
