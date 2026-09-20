@@ -67,8 +67,8 @@
     p.effective=p.net==null||!p.hours?null:p.net/p.hours;return p;
   }
   function buildPeriods(personRows,name){
-    var map={};personRows.forEach(function(r){if(r.event!=="clock_out"||!r.period)return;var p=map[r.period]||(map[r.period]={key:r.period,hours:0,week:{}});p.hours+=r.hours;var e=periodEnd(r.period),s=e?new Date(e.getFullYear(),e.getMonth(),e.getDate()-13):null;var wk=s&&r.date>=new Date(s.getFullYear(),s.getMonth(),s.getDate()+7)?2:1;p.week[wk]=(p.week[wk]||0)+r.hours});
-    return Object.keys(map).map(function(k){var p=map[k];p.regular=Math.min(40,p.week[1]||0)+Math.min(40,p.week[2]||0);p.ot=Math.max(0,(p.week[1]||0)-40)+Math.max(0,(p.week[2]||0)-40);return payFor(p,name)}).sort(function(a,b){return (periodEnd(b.key)||0)-(periodEnd(a.key)||0)});
+    var map={};personRows.forEach(function(r){if(r.event!=="clock_out"||!r.period)return;var p=map[r.period]||(map[r.period]={key:r.period,hours:0});p.hours+=r.hours});
+    return Object.keys(map).map(function(k){var p=map[k];p.regular=Math.min(80,p.hours);p.ot=Math.max(0,p.hours-80);return payFor(p,name)}).sort(function(a,b){return (periodEnd(b.key)||0)-(periodEnd(a.key)||0)});
   }
   function longestStreak(keys){var ds=Array.from(keys).map(function(k){return new Date(k+"T12:00:00")}).sort(function(a,b){return a-b}),best=0,run=0,last=null;ds.forEach(function(d){var diff=last?Math.round((Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())-Date.UTC(last.getFullYear(),last.getMonth(),last.getDate()))/86400000):0;run=last&&diff===1?run+1:1;best=Math.max(best,run);last=d});return best}
   function metric(label,value,sub){return '<div class="card metric"><div class="label">'+label+'</div><div class="value">'+value+'</div><div class="sub">'+sub+'</div></div>'}
@@ -81,14 +81,15 @@
     var name=employeeEl.value,cfg=PAY[name],person=rows.filter(function(r){return r.employee===name}),clockIns=person.filter(function(r){return r.event==="clock_in"&&r.date}),first=clockIns.length?new Date(Math.min.apply(null,clockIns.map(function(r){return r.date.getTime()}))):null;
     rateField.classList.toggle("hidden",cfg.type==="salary");rateEl.value=cfg.type==="hourly"?(storedRate(name)||""):"";
     var periods=buildPeriods(person,name),worked=new Set();person.forEach(function(r){if(r.date&&(r.event==="clock_in"||r.event==="clock_out"))worked.add(dayKey(r.date))});
-    var totalHours=periods.reduce(function(s,p){return s+p.hours},0),net=periods.map(function(p){return p.net}).filter(function(v){return v!=null}),effective=periods.map(function(p){return p.effective}).filter(function(v){return v!=null}),totalNet=net.reduce(function(s,v){return s+v},0),actualHourly=totalHours&&net.length?totalNet/totalHours:null,employed=first?daysInclusive(first,new Date()):0,avgDay=worked.size?totalHours/worked.size:0;
+    var totalHours=periods.reduce(function(s,p){return s+p.hours},0),gross=periods.map(function(p){return p.gross}).filter(function(v){return v!=null}),net=periods.map(function(p){return p.net}).filter(function(v){return v!=null}),effective=periods.map(function(p){return p.effective}).filter(function(v){return v!=null}),totalGross=gross.reduce(function(s,v){return s+v},0),totalNet=net.reduce(function(s,v){return s+v},0),actualGrossHourly=totalHours&&gross.length?totalGross/totalHours:null,actualHourly=totalHours&&net.length?totalNet/totalHours:null,employed=first?daysInclusive(first,new Date()):0,avgDay=worked.size?totalHours/worked.size:0;
     document.getElementById("missing-rate").classList.toggle("hidden",cfg.type!=="hourly"||storedRate(name)!=null);
     document.getElementById("metrics").innerHTML=
       metric("Days worked",worked.size+(employed?" / "+employed:""),employed?((worked.size/employed*100).toFixed(1)+"% of calendar days since first clock-in"):"No first clock-in found")+
       metric("Total hours",num(totalHours),num(avgDay)+" average hours per worked day")+
       metric("Average take home",money(mean(net)),"Per recorded pay period")+
       metric("Median take home",money(median(net)),"Per recorded pay period")+
-      metric("Actual take-home / hour",money(actualHourly),"Total take-home divided by total hours worked")+
+      metric("Actual gross / hour",money(actualGrossHourly),"Gross pay divided by total hours; includes overtime")+
+      metric("Actual take-home / hour",money(actualHourly),"After deductions: total take-home divided by total hours")+
       metric("Median take-home / hr",money(median(effective)),"Less affected by unusually light or heavy periods")+
       metric("Total take home",money(totalNet),"84.54% of calculated gross pay")+
       metric("Longest work streak",longestStreak(worked)+" days",first?"First clock-in: "+first.toLocaleDateString():"No attendance data");
