@@ -32,11 +32,11 @@
   "use strict";
   var from=(new URLSearchParams(location.search).get("from")||"").toLowerCase();
   if(from!=="admin.html"&&from!=="e4.html"){location.replace("index.html");return}
-  var URL="https://script.google.com/macros/s/AKfycbwYof_0kk9wqNMWPrx-vlBeQ5Gwj8jMiDzwJOLphm5z50q72ZaNU-t4Oy0n-rEbbHMq/exec";
+  var TIME_OFF_WEBAPP_URL="https://script.google.com/macros/s/AKfycbwYof_0kk9wqNMWPrx-vlBeQ5Gwj8jMiDzwJOLphm5z50q72ZaNU-t4Oy0n-rEbbHMq/exec";
   var employees=["Michael","Alan","Jeff","Derick","Anthony","Jesse","Delvon","Albert"],requests=[];
   var employee=document.getElementById("employee"),statusFilter=document.getElementById("statusFilter"),typeFilter=document.getElementById("typeFilter"),periodFilter=document.getElementById("periodFilter");
   employees.forEach(function(n){var o=document.createElement("option");o.value=n;o.textContent=n;employee.appendChild(o)});
-  function jsonp(params){return new Promise(function(resolve,reject){var cb="toh_"+Math.random().toString(16).slice(2),u=new URL(URL),s=document.createElement("script"),done=false,t=setTimeout(function(){finish();reject(new Error("Request timed out"))},20000);function finish(){if(done)return;done=true;clearTimeout(t);s.remove();try{delete window[cb]}catch(_){}}Object.keys(params).forEach(function(k){u.searchParams.set(k,params[k])});u.searchParams.set("callback",cb);window[cb]=function(d){finish();resolve(d||{})};s.onerror=function(){finish();reject(new Error("Could not load requests"))};s.src=u;document.body.appendChild(s)})}
+  function jsonp(params){return new Promise(function(resolve,reject){var cb="toh_"+Math.random().toString(16).slice(2),u=new URL(TIME_OFF_WEBAPP_URL),s=document.createElement("script"),done=false,t=setTimeout(function(){finish();reject(new Error("Request timed out"))},20000);function finish(){if(done)return;done=true;clearTimeout(t);s.remove();try{delete window[cb]}catch(_){}}Object.keys(params).forEach(function(k){u.searchParams.set(k,params[k])});u.searchParams.set("callback",cb);window[cb]=function(d){finish();resolve(d||{})};s.onerror=function(){finish();reject(new Error("Could not load requests"))};s.src=u.toString();document.body.appendChild(s)})}
   function parseDate(v){if(!v)return null;var s=String(v).trim(),m=s.match(/^Date\((\d+),(\d+),(\d+)/);if(m)return new Date(+m[1],+m[2],+m[3],12);if(/^\d{4}-\d{2}-\d{2}$/.test(s)){var p=s.split("-");return new Date(+p[0],+p[1]-1,+p[2],12)}var d=new Date(s);return isNaN(d)?null:d}
   function day(d){return new Date(d.getFullYear(),d.getMonth(),d.getDate(),12)}
   function start(r){return parseDate(r.RequestType==="Hours"?r.RequestDate:r.StartDate)}
