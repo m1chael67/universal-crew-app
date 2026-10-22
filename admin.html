@@ -711,7 +711,13 @@ details.timeoff-older > summary::-webkit-details-marker{display:none;}
       "Anthony": "26689.html",
       "Jesse": "53373.html"
     };
-    const IS_JEFF_LIMITED_ADMIN = (new URLSearchParams(window.location.search).get("from") || "").toLowerCase() === "533333.html";
+    const ADMIN_SOURCE = (new URLSearchParams(window.location.search).get("from") || "").toLowerCase();
+    const LOGGED_IN_EMPLOYEE = String(localStorage.getItem("employee") || "").trim();
+    const ADMIN_NAME = LOGGED_IN_EMPLOYEE === "Jeff"
+      ? "Jeff"
+      : (LOGGED_IN_EMPLOYEE === "Michael" || LOGGED_IN_EMPLOYEE === "ADMIN")
+        ? "Michael"
+        : ADMIN_SOURCE === "533333.html" ? "Jeff" : "Michael";
 
     // --- Pay period logic (unchanged) ---
     function getPayPeriodInfo(date) {
@@ -1215,15 +1221,11 @@ var now = new Date();
         row.className = "emp-row";
         row.id = "emp-row-" + emp;
 
-        if (IS_JEFF_LIMITED_ADMIN && emp !== "Jeff") {
-          row.classList.add("limited-no-link");
-        } else {
-          row.addEventListener("click", function(e) {
-            if (e.target && e.target.tagName && e.target.tagName.toLowerCase() === "button") return;
-            var page = EMPLOYEE_PAGES[emp];
-            if (page) window.location.href = page;
-          });
-        }
+        row.addEventListener("click", function(e) {
+          if (e.target && e.target.tagName && e.target.tagName.toLowerCase() === "button") return;
+          var page = EMPLOYEE_PAGES[emp];
+          if (page) window.location.href = page;
+        });
 
         var left = document.createElement("div");
         left.className = "emp-left";
@@ -1431,6 +1433,17 @@ var now = new Date();
     }
     function escapeHtml(value) { return String(value == null ? "" : value).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 
+    function getDecisionAdmin(req) {
+      return String(req.Admin || req.admin || req.AdminName || req.AdminDecisionBy || req.DecisionBy || req.DecidedBy || req.ApprovedBy || req.DeniedBy || "").trim();
+    }
+
+    function getDecisionText(req, status) {
+      if (status === "Pending") return "Pending";
+      var admin = getDecisionAdmin(req);
+      var decidedAt = req.AdminDecisionAt ? formatTimeOffDateWithWeekday(req.AdminDecisionAt) : "";
+      return status + (admin ? " by " + admin : "") + (decidedAt ? " on " + decidedAt : "");
+    }
+
     function formatReadableTime(value) {
       if (value == null || value === "") return "";
       var s = String(value).trim();
@@ -1609,9 +1622,7 @@ var now = new Date();
       card.className = "timeoff-request-card";
       var decisionControls = "";
       if (status === "Pending") {
-        decisionControls = IS_JEFF_LIMITED_ADMIN
-          ? ''
-          : '<textarea class="timeoff-note" placeholder="Optional admin note"></textarea><div class="timeoff-actions"><button type="button" class="btn primary timeoff-approve">Approve</button><button type="button" class="btn warn timeoff-deny">Deny</button></div>';
+        decisionControls = '<textarea class="timeoff-note" placeholder="Optional admin note"></textarea><div class="timeoff-actions"><button type="button" class="btn primary timeoff-approve">Approve</button><button type="button" class="btn warn timeoff-deny">Deny</button></div>';
       }
       card.innerHTML =
         '<button type="button" class="timeoff-request-summary">' +
@@ -1630,7 +1641,7 @@ var now = new Date();
             '<div><strong>Time:</strong> ' + escapeHtml(requestedTimeText || "—") + '</div>' +
             '<div><strong>Reason:</strong> ' + escapeHtml(reasonText) + '</div>' +
             '<div><strong>Status:</strong> ' + escapeHtml(status) + '</div>' +
-            '<div><strong>Decision:</strong> ' + escapeHtml(req.AdminDecisionAt ? formatTimeOffDateWithWeekday(req.AdminDecisionAt) : '') + '</div>' +
+            '<div><strong>Decision:</strong> ' + escapeHtml(getDecisionText(req, status)) + '</div>' +
           '</div>' +
           decisionControls +
         '</div>';
@@ -1679,11 +1690,8 @@ var now = new Date();
 
     function updateTimeOffRequest(requestId, statusValue, note) {
       var statusEl = document.getElementById("timeoff-admin-status");
-      if (IS_JEFF_LIMITED_ADMIN) {
-        return Promise.resolve(false);
-      }
       if (statusEl) statusEl.textContent = "Saving " + statusValue.toLowerCase() + "...";
-      timeOffJsonp({ action:"updateTimeOffRequestStatus", requestId:requestId, status:statusValue, admin:"Michael", note:note || "" })
+      timeOffJsonp({ action:"updateTimeOffRequestStatus", requestId:requestId, status:statusValue, admin:ADMIN_NAME, note:note || "" })
         .then(function(data){
           if (!data.success) throw new Error(data.error || "Save failed");
           return loadTimeOffRequests();
@@ -1752,16 +1760,6 @@ var now = new Date();
   var btn = document.getElementById("globalMenuBtn");
   var menu = document.getElementById("globalSideMenu");
   var overlay = document.getElementById("globalMenuOverlay");
-  var from = new URLSearchParams(window.location.search).get("from") || "";
-  if (menu && from.toLowerCase() === "533333.html") {
-    menu.innerHTML = ''
-      + '<h3>Menu</h3>'
-      + '<a href="533333.html">Home</a>'
-      + '<a href="tent.html?from=533333.html">Tents</a>'
-      + '<a href="propane.html?from=533333.html">Propane</a>'
-      + '<a href="timeoff.html?employee=Jeff&from=533333.html">Time Off Request</a>'
-      + '<a href="index.html" id="globalLoginLink">Login</a>';
-  }
   var login = document.getElementById("globalLoginLink");
   if (!btn || !menu || !overlay) return;
   btn.addEventListener("click", function(){
