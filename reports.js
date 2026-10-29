@@ -1,33 +1,44 @@
-/* Reporting authentication and history. No PINs are retained in the browser. */
+/* Link-based reporting identity. Not secure authentication. */
 window.Reports = (() => {
-  const endpoint='https://script.google.com/macros/s/AKfycbz46zN88GfxqXMNYdls7D9xFr6VjXKuOiO4rWIqfSG0Kg-NWgKFACMhkITS7HTj8sg/exec';
-  let session; try{session=JSON.parse(sessionStorage.getItem('reportSession')||'null')}catch(e){}
-  if(session && session.expiresAt<=Date.now()){session=null;sessionStorage.removeItem('reportSession')}
+  const endpoint='https://script.google.com/macros/s/AKfycbzKWkKFnlKYwDT1cLdwx6TRxNfoSEZigHIABPDfkLO4JD47h-6NWlpEIR5ZtcmbCHE/exec';
+  const query=new URLSearchParams(location.search);
+  const pages={'64445533.html':'Michael','533333.html':'Jeff','2555266.html':'Alan','337375.html':'Derick','26689.html':'Anthony','53373.html':'Jesse','delvon.html':'Delvon','albert.html':'Albert'};
+  const names=Object.values(pages);
+  const explicit=query.get('employee')||pages[query.get('from')]||'';
+  const stored=localStorage.getItem('employee')||'';
+  const remembered=sessionStorage.getItem('reportViewer')||'';
+  const identity=[explicit,stored,remembered].find(n=>names.includes(n))||'';
+  let session=identity?{employee:identity,level:identity==='Michael'||identity==='Jeff'?'E5':identity==='Alan'?'E2':'E1'}:null;
+  if(identity)sessionStorage.setItem('reportViewer',identity);
   async function request(data){
     const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),45000);
     try{
-      const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({...data,token:session?.token||''}),redirect:'follow',credentials:'omit',signal:controller.signal});
+      const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({...data,viewer:session?.employee||''}),redirect:'follow',credentials:'omit',signal:controller.signal});
       const result=await response.json();
       if(!result.success)throw new Error(result.error||'Request failed.');
       return result;
     }catch(error){if(error.name==='AbortError')throw new Error('No confirmation received. Check history before submitting again.');throw error}finally{clearTimeout(timer)}
   }
-  function logout(){sessionStorage.removeItem('reportSession');location.reload()}
+  function logout(){location.href='index.html'}
   function start(){
     const style=document.createElement('style');style.textContent='.report-panel{max-width:730px;margin:16px auto;padding:18px;background:white;border:1px solid #ddd;border-radius:18px;font-family:system-ui}.report-panel input,.report-panel select,.report-panel button{font:inherit;padding:10px;border-radius:10px;border:1px solid #ccc;margin:5px;max-width:100%}.report-panel button{cursor:pointer}.report-panel p{white-space:pre-wrap;overflow-wrap:anywhere}.report-panel summary{cursor:pointer;font-weight:800}.report-filters{display:flex;flex-wrap:wrap;gap:4px}.report-error{color:#b91c1c}';document.head.append(style);
     const bar=document.createElement('section');bar.className='report-panel';document.body.prepend(bar);
     if(!session){
       document.querySelectorAll('main, #historyApp').forEach(el=>el.hidden=true);
-      bar.innerHTML='<h2>Reporting Sign In</h2><p>Use your private reporting PIN. Your normal site login is unchanged.</p><form><label>Employee <select required name="employee"></select></label><br><label>Reporting PIN <input name="pin" type="password" inputmode="numeric" autocomplete="current-password" required></label><button>Sign In</button><p role="status"></p></form>';
-      const names=['Michael','Jeff','Alan','Derick','Anthony','Jesse','Delvon','Albert'];const select=bar.querySelector('select');names.forEach(name=>select.add(new Option(name,name)));select.value=localStorage.getItem('employee')||'Michael';
-      bar.querySelector('form').onsubmit=async e=>{e.preventDefault();const button=bar.querySelector('button');button.disabled=true;const msg=bar.querySelector('[role=status]');msg.textContent='Signing in…';try{const data=Object.fromEntries(new FormData(e.target));session=await request({action:'login',...data});sessionStorage.setItem('reportSession',JSON.stringify(session));location.reload()}catch(error){msg.textContent=error.message;button.disabled=false}};
+      bar.textContent='Employee not recognized. Open reporting from your employee menu.';
+      const link=document.createElement('a');link.href='index.html';link.textContent=' Return to site login';bar.append(link);
       return;
     }
     bar.append(document.createTextNode('Reporting as '+session.employee+' · '));
-    const history=document.createElement('a');history.textContent=session.level==='E5'?'All Reports & Issues':'My Report History';history.href='reporthistory.html';bar.append(history);
-    const out=document.createElement('button');out.textContent='Sign Out';out.onclick=logout;bar.append(out);
+    const history=document.createElement('a');history.textContent=session.level==='E5'?'All Reports & Issues':'My Report History';history.href='reporthistory.html?employee='+encodeURIComponent(session.employee);bar.append(history);
+    const out=document.createElement('button');out.textContent='Site Login';out.onclick=logout;bar.append(out);
     if(location.pathname.endsWith('dailyreport.html')&&!['E2','E5'].includes(session.level)){document.querySelector('main').hidden=true;bar.append(document.createTextNode(' Daily reports require Crew Lead access.'))}
-    if(document.getElementById('historyApp'))loadHistory();
+    document.querySelectorAll('a[href="dailyreport.html"],a[href="reportissue.html"]').forEach(a=>{a.href+='?employee='+encodeURIComponent(session.employee);if(session.level==='E1'&&a.getAttribute('href').startsWith('dailyreport.html'))a.hidden=true});
+    request({action:'getProfile'}).then(profile=>{
+      session.level=profile.level;session.employee=profile.employee;
+      if(document.getElementById('historyApp'))loadHistory();
+    }).catch(error=>{bar.append(document.createTextNode(' '+error.message));document.querySelectorAll('form button[type="submit"]').forEach(b=>b.disabled=true)});
+
   }
   async function loadHistory(){
     const app=document.getElementById('historyApp');app.replaceChildren();
