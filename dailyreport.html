@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <title>Daily Crew Report - Universal Rentals</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <style>
+    :root{--ink:#111;--muted:#656565;--line:#e3e3e3;--paper:#fff;--page:#f4f4f2;--green:#166534;--red:#b91c1c;--accent:#f2c94c}
+    *{box-sizing:border-box}body{margin:0;background:var(--page);color:var(--ink);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.wrap{width:min(760px,100%);margin:0 auto;padding:22px 14px 48px}.top{display:flex;align-items:center;gap:12px;margin-bottom:16px}.back{display:grid;place-items:center;width:42px;height:42px;border:1px solid #d8d8d8;border-radius:13px;background:#fff;color:#111;text-decoration:none;font-size:23px;font-weight:900}.heading{flex:1}.heading h1{font-size:28px;line-height:1.05;margin:0;letter-spacing:-.6px}.heading p{margin:5px 0 0;color:var(--muted);font-size:13px}.card{background:var(--paper);border:1px solid var(--line);border-radius:22px;padding:19px;box-shadow:0 8px 28px rgba(0,0,0,.06);margin-bottom:14px}.card h2{font-size:17px;margin:0 0 14px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}.field{display:grid;gap:6px;margin-bottom:13px}.field:last-child{margin-bottom:0}.field.full{grid-column:1/-1}label,.label{font-size:13px;font-weight:850}.optional{font-weight:600;color:#777}.field input,.field select,.field textarea{width:100%;border:1px solid #d7d7d7;border-radius:13px;padding:11px 12px;background:#fff;color:#111;font:inherit;font-size:15px}.field textarea{resize:vertical;min-height:88px;line-height:1.4}.choice-row{display:flex;gap:8px;flex-wrap:wrap}.choice{position:relative}.choice input{position:absolute;opacity:0;pointer-events:none}.choice span{display:block;padding:9px 12px;border:1px solid #d8d8d8;border-radius:999px;background:#fafafa;font-size:13px;font-weight:800;cursor:pointer}.choice input:checked+span{background:#111;color:#fff;border-color:#111}.rating{display:grid;grid-template-columns:repeat(10,1fr);gap:5px}.rating input{position:absolute;opacity:0}.rating label{display:grid;place-items:center;height:36px;border:1px solid #d5d5d5;border-radius:10px;background:#fafafa;cursor:pointer}.rating input:checked+label{background:#111;color:#fff;border-color:#111}.hint{font-size:12px;color:#6b6b6b;line-height:1.35;margin-top:-4px}.submit{width:100%;border:0;border-radius:15px;background:#111;color:#fff;padding:14px 18px;font:inherit;font-weight:900;font-size:16px;cursor:pointer}.submit:disabled{opacity:.55;cursor:not-allowed}.status{display:none;margin-top:13px;padding:12px;border-radius:13px;font-size:13px;font-weight:800;text-align:center}.status.show{display:block}.status.ok{background:#ebf8ef;color:var(--green);border:1px solid #a9d9b7}.status.err{background:#fff0f0;color:var(--red);border:1px solid #efb5b5}.identity{display:inline-flex;padding:7px 11px;background:#111;color:#fff;border-radius:999px;font-size:12px;font-weight:900;margin-top:8px}.hidden{display:none!important}@media(max-width:620px){.wrap{padding-top:14px}.heading h1{font-size:24px}.card{padding:16px;border-radius:18px}.grid{grid-template-columns:1fr}.field.full{grid-column:auto}.rating{grid-template-columns:repeat(5,1fr)}}
+  </style>
+<script src="reports.js"></script>
+</head>
+<body>
+  <main class="wrap">
+    <header class="top">
+      <a id="backLink" class="back" href="index.html" aria-label="Back">‹</a>
+      <div class="heading"><h1>Daily Crew Report</h1><p>End-of-day field report for crew leadership.</p><span id="leadChip" class="identity">Crew Lead</span></div>
+    </header>
+
+    <form id="reportForm">
+      <section class="card">
+        <h2>Today</h2>
+        <div class="grid">
+          <div class="field"><label for="reportDate">Report Date</label><input id="reportDate" type="date" required></div>
+          <div class="field"><label for="jobs">Job(s) or Location(s)</label><input id="jobs" maxlength="1500" placeholder="Client, venue, or job name"></div>
+          <div class="field full"><label for="crewMembers">Crew Members <span class="optional">(optional)</span></label><input id="crewMembers" maxlength="1000" placeholder="Who worked with you today?"></div>
+          <div class="field full"><span class="label">Overall Day Rating</span><div id="rating" class="rating"></div><div class="hint">1 = very poor · 10 = excellent</div></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Work &amp; Schedule</h2>
+        <div class="field"><span class="label">Was the planned work completed?</span><div class="choice-row" data-choice="completionStatus"><label class="choice"><input type="radio" name="completionStatus" value="Completed"><span>Completed</span></label><label class="choice"><input type="radio" name="completionStatus" value="Partially Completed"><span>Partial</span></label><label class="choice"><input type="radio" name="completionStatus" value="Not Completed"><span>Not completed</span></label></div></div>
+        <div class="field"><label for="completionDetails">Completion Notes <span class="optional">(optional)</span></label><textarea id="completionDetails" maxlength="1500" placeholder="What remains, changed, or needs follow-up?"></textarea></div>
+        <div class="field"><span class="label">How did the schedule go?</span><div class="choice-row"><label class="choice"><input type="radio" name="scheduleStatus" value="On Schedule"><span>On schedule</span></label><label class="choice"><input type="radio" name="scheduleStatus" value="Minor Delay"><span>Minor delay</span></label><label class="choice"><input type="radio" name="scheduleStatus" value="Major Delay"><span>Major delay</span></label></div></div>
+        <div id="delayFields" class="hidden">
+          <div class="field"><label for="delayReasons">Delay Reason</label><select id="delayReasons"><option value="">Choose one</option><option>Customer / Venue</option><option>Weather</option><option>Traffic / Travel</option><option>Missing Inventory</option><option>Equipment / Vehicle</option><option>Crew / Staffing</option><option>Job Information</option><option>Other</option></select></div>
+          <div class="field"><label for="delayDetails">Delay Details</label><textarea id="delayDetails" maxlength="1500" placeholder="What happened and how much time was affected?"></textarea></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Safety &amp; Equipment</h2>
+        <div class="field"><span class="label">Any safety issue or near miss?</span><div class="choice-row"><label class="choice"><input type="radio" name="safetyStatus" value="No Issues"><span>No</span></label><label class="choice"><input type="radio" name="safetyStatus" value="Issue Reported"><span>Yes</span></label></div></div>
+        <div id="safetyDetailsField" class="field hidden"><label for="safetyDetails">Safety Details</label><textarea id="safetyDetails" maxlength="1500" placeholder="What happened, who was involved, and what action was taken?"></textarea></div>
+        <div class="field"><span class="label">Any equipment damage, failure, or missing item?</span><div class="choice-row"><label class="choice"><input type="radio" name="equipmentStatus" value="No Issues"><span>No</span></label><label class="choice"><input type="radio" name="equipmentStatus" value="Issue Reported"><span>Yes</span></label></div></div>
+        <div id="equipmentDetailsField" class="field hidden"><label for="equipmentDetails">Equipment Details</label><textarea id="equipmentDetails" maxlength="1500" placeholder="Item, damage/failure, location, and current condition"></textarea></div>
+        <div class="field"><label for="vehicleEquipmentIssues">Vehicle or Operational Notes <span class="optional">(optional)</span></label><textarea id="vehicleEquipmentIssues" maxlength="1500" placeholder="Truck, trailer, forklift, tools, fuel, maintenance, etc."></textarea></div>
+      </section>
+
+      <section class="card">
+        <h2>People &amp; Customer</h2>
+        <div class="field"><label for="clientVenueIssues">Client or Venue Issues <span class="optional">(optional)</span></label><textarea id="clientVenueIssues" maxlength="1500" placeholder="Complaints, changes, access problems, damage concerns, or compliments"></textarea></div>
+        <div class="field"><span class="label">Crew performance</span><div class="choice-row"><label class="choice"><input type="radio" name="crewPerformanceStatus" value="Strong"><span>Strong</span></label><label class="choice"><input type="radio" name="crewPerformanceStatus" value="Acceptable"><span>Acceptable</span></label><label class="choice"><input type="radio" name="crewPerformanceStatus" value="Needs Follow-Up"><span>Needs follow-up</span></label></div></div>
+        <div id="employeeConcernField" class="field hidden"><label for="employeeConcern">Employee Concern</label><input id="employeeConcern" maxlength="1000" placeholder="Employee name and concern"></div>
+        <div class="field"><label for="performanceNotes">Crew Notes <span class="optional">(optional)</span></label><textarea id="performanceNotes" maxlength="1500" placeholder="Recognition, training needs, attendance, teamwork, or conduct"></textarea></div>
+      </section>
+
+      <section class="card">
+        <h2>Wrap-Up</h2>
+        <div class="field"><label for="tomorrowNeeds">What is needed for tomorrow? <span class="optional">(optional)</span></label><textarea id="tomorrowNeeds" maxlength="1500" placeholder="Inventory, repairs, staffing, supplies, calls, or special instructions"></textarea></div>
+        <div class="field"><label for="summary">Daily Summary</label><textarea id="summary" maxlength="2500" required placeholder="Briefly summarize the day and anything management should know."></textarea></div>
+        <button id="submitBtn" class="submit" type="submit">Submit Daily Report</button>
+        <div id="status" class="status" role="status"></div>
+      </section>
+    </form>
+  </main>
+
+  <script>
+    const REPORT_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbz46zN88GfxqXMNYdls7D9xFr6VjXKuOiO4rWIqfSG0Kg-NWgKFACMhkITS7HTj8sg/exec";
+    const params = new URLSearchParams(location.search);
+    const fromPage = params.get("from") || "";
+    const storedEmployee = String(localStorage.getItem("employee") || "").trim();
+    const allowedLeads = ["Michael", "Jeff", "Alan"];
+    const crewLead = Reports.user ? Reports.user.employee : "";
+
+    function pad(n){return String(n).padStart(2,"0")}
+    function localDate(){var d=new Date();return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())}
+    function selected(name){var el=document.querySelector('input[name="'+name+'"]:checked');return el?el.value:""}
+    function setStatus(message,type){var el=document.getElementById("status");el.textContent=message;el.className="status show "+type}
+    function setVisible(id,show){document.getElementById(id).classList.toggle("hidden",!show)}
+    function jsonp(payload,timeout){return Reports.request(payload)}
+
+    for(var i=1;i<=10;i++){var input=document.createElement("input");input.type="radio";input.name="overallRating";input.id="rating"+i;input.value=String(i);var label=document.createElement("label");label.htmlFor=input.id;label.textContent=String(i);document.getElementById("rating").append(input,label)}
+    document.getElementById("reportDate").value=localDate();
+    document.getElementById("leadChip").textContent=crewLead||"Unknown Crew Lead";
+    document.getElementById("backLink").href=fromPage||"index.html";
+    document.querySelectorAll('input[name="scheduleStatus"]').forEach(function(el){el.addEventListener("change",function(){setVisible("delayFields",this.value!=="On Schedule")})});
+    document.querySelectorAll('input[name="safetyStatus"]').forEach(function(el){el.addEventListener("change",function(){setVisible("safetyDetailsField",this.value==="Issue Reported")})});
+    document.querySelectorAll('input[name="equipmentStatus"]').forEach(function(el){el.addEventListener("change",function(){setVisible("equipmentDetailsField",this.value==="Issue Reported")})});
+    document.querySelectorAll('input[name="crewPerformanceStatus"]').forEach(function(el){el.addEventListener("change",function(){setVisible("employeeConcernField",this.value==="Needs Follow-Up")})});
+
+    document.getElementById("reportForm").addEventListener("submit",async function(event){
+      event.preventDefault();
+      if(!crewLead){setStatus("Open this page from your crew-lead employee menu.","err");return}
+      var rating=selected("overallRating");
+      if(!rating){setStatus("Choose an overall rating from 1 to 10.","err");return}
+      var btn=document.getElementById("submitBtn");btn.disabled=true;btn.textContent="Submitting…";setStatus("Sending report…","");
+      var payload={action:"submitCrewLeadReport",reportDate:document.getElementById("reportDate").value,crewLead:crewLead,jobs:document.getElementById("jobs").value,crewMembers:document.getElementById("crewMembers").value,overallRating:rating,completionStatus:selected("completionStatus"),completionDetails:document.getElementById("completionDetails").value,scheduleStatus:selected("scheduleStatus"),delayReasons:document.getElementById("delayReasons").value,delayDetails:document.getElementById("delayDetails").value,safetyStatus:selected("safetyStatus"),safetyDetails:document.getElementById("safetyDetails").value,equipmentStatus:selected("equipmentStatus"),equipmentDetails:document.getElementById("equipmentDetails").value,vehicleEquipmentIssues:document.getElementById("vehicleEquipmentIssues").value,clientVenueIssues:document.getElementById("clientVenueIssues").value,crewPerformanceStatus:selected("crewPerformanceStatus"),employeeConcern:document.getElementById("employeeConcern").value,performanceNotes:document.getElementById("performanceNotes").value,tomorrowNeeds:document.getElementById("tomorrowNeeds").value,summary:document.getElementById("summary").value};
+      try{await jsonp(payload,40000);setStatus("Daily report submitted successfully.","ok");this.reset();document.getElementById("reportDate").value=localDate();window.scrollTo({top:0,behavior:"smooth"})}catch(error){setStatus(error.message||"The report could not be submitted.","err")}finally{btn.disabled=false;btn.textContent="Submit Daily Report"}
+    });
+  </script>
+</body>
+</html>

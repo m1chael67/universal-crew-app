@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <title>Report an Issue - Universal Rentals</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <style>
+    :root{--ink:#111;--muted:#666;--line:#e2e2e2;--page:#f5f5f3;--red:#b91c1c;--green:#166534}*{box-sizing:border-box}body{margin:0;background:var(--page);color:var(--ink);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.wrap{width:min(650px,100%);margin:0 auto;padding:20px 14px 45px}.top{display:flex;gap:12px;align-items:center;margin-bottom:16px}.back{display:grid;place-items:center;width:42px;height:42px;border:1px solid #d8d8d8;background:#fff;border-radius:13px;color:#111;text-decoration:none;font-size:23px;font-weight:900}.heading{flex:1}.heading h1{margin:0;font-size:28px;letter-spacing:-.5px;line-height:1.05}.heading p{margin:5px 0 0;color:var(--muted);font-size:13px}.card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:19px;box-shadow:0 8px 28px rgba(0,0,0,.06)}.employee{display:inline-flex;padding:7px 11px;border-radius:999px;background:#111;color:#fff;font-size:12px;font-weight:900;margin-bottom:16px}.field{display:grid;gap:6px;margin-bottom:14px}.field label,.label{font-size:13px;font-weight:850}.optional{font-weight:600;color:#777}.field input,.field select,.field textarea{width:100%;border:1px solid #d6d6d6;border-radius:13px;background:#fff;padding:11px 12px;color:#111;font:inherit;font-size:15px}.field textarea{min-height:92px;resize:vertical;line-height:1.4}.choice-row{display:flex;gap:8px;flex-wrap:wrap}.choice{position:relative}.choice input{position:absolute;opacity:0}.choice span{display:block;padding:9px 12px;border:1px solid #d8d8d8;border-radius:999px;background:#fafafa;font-size:13px;font-weight:800;cursor:pointer}.choice input:checked+span{background:#111;color:#fff;border-color:#111}.rating{display:grid;grid-template-columns:repeat(10,1fr);gap:5px}.rating input{position:absolute;opacity:0}.rating label{display:grid;place-items:center;height:36px;border:1px solid #d5d5d5;border-radius:10px;background:#fafafa;cursor:pointer}.rating input:checked+label{background:#111;color:#fff;border-color:#111}.private{display:flex;gap:10px;align-items:flex-start;padding:12px;border:1px solid #ddd;border-radius:14px;background:#fafafa;margin-bottom:15px}.private input{width:18px;height:18px;margin-top:1px}.private strong{display:block;font-size:13px}.private small{display:block;color:#666;line-height:1.35;margin-top:2px}.submit{width:100%;border:0;border-radius:15px;background:#111;color:#fff;padding:14px;font:inherit;font-size:16px;font-weight:900;cursor:pointer}.submit:disabled{opacity:.55}.status{display:none;margin-top:13px;padding:12px;border-radius:13px;text-align:center;font-size:13px;font-weight:800}.status.show{display:block}.status.ok{color:var(--green);background:#ebf8ef;border:1px solid #a9d9b7}.status.err{color:var(--red);background:#fff0f0;border:1px solid #efb5b5}.hidden{display:none!important}.note{padding:11px 12px;border-radius:13px;background:#fff8dc;border:1px solid #ebd887;font-size:12px;line-height:1.4;margin-bottom:15px}@media(max-width:600px){.wrap{padding-top:14px}.heading h1{font-size:25px}.card{padding:16px;border-radius:18px}.rating{grid-template-columns:repeat(5,1fr)}}
+  </style>
+<script src="reports.js"></script>
+</head>
+<body>
+  <main class="wrap">
+    <header class="top"><a id="backLink" class="back" href="index.html" aria-label="Back">‹</a><div class="heading"><h1>Report an Issue</h1><p>Tell management about a problem, concern, or important event.</p></div></header>
+    <section class="card">
+      <span id="employeeChip" class="employee">Employee</span>
+      <div class="note">Use this for workplace issues that management should review. For an emergency or immediate safety danger, stop work and contact a manager directly.</div>
+      <form id="issueForm">
+        <div class="field"><label for="reportDate">Date of Issue</label><input id="reportDate" type="date" required></div>
+        <div class="field"><span class="label">How was the day overall? <span class="optional">(optional)</span></span><div id="rating" class="rating"></div></div>
+        <div class="field"><span class="label">Was there a safety issue or near miss?</span><div class="choice-row"><label class="choice"><input type="radio" name="safetyStatus" value="No"><span>No</span></label><label class="choice"><input type="radio" name="safetyStatus" value="Yes"><span>Yes</span></label></div></div>
+        <div id="safetyField" class="field hidden"><label for="safetyDetails">Safety Details</label><textarea id="safetyDetails" maxlength="1500" placeholder="What happened, where, and who was involved?"></textarea></div>
+        <div class="field"><span class="label">Was anything damaged, missing, or broken?</span><div class="choice-row"><label class="choice"><input type="radio" name="damageStatus" value="No"><span>No</span></label><label class="choice"><input type="radio" name="damageStatus" value="Yes"><span>Yes</span></label></div></div>
+        <div id="damageField" class="field hidden"><label for="damageDetails">Damage or Equipment Details</label><textarea id="damageDetails" maxlength="1500" placeholder="Describe the item, damage, location, and current condition."></textarea></div>
+        <div class="field"><label for="managementShouldKnow">Who or what does this concern? <span class="optional">(optional)</span></label><input id="managementShouldKnow" maxlength="1500" placeholder="Employee, job, customer, venue, truck, equipment, etc."></div>
+        <div class="field"><label for="comment">What should management know?</label><textarea id="comment" maxlength="2500" required placeholder="Explain what happened and any follow-up you think is needed."></textarea></div>
+        <label class="private"><input id="confidential" type="checkbox"><span><strong>Mark as confidential</strong><small>The management report page will clearly flag this issue as confidential.</small></span></label>
+        <button id="submitBtn" class="submit" type="submit">Submit Issue Report</button>
+        <div id="status" class="status" role="status"></div>
+      </form>
+    </section>
+  </main>
+  <script>
+    const REPORT_WEBAPP_URL="https://script.google.com/macros/s/AKfycbz46zN88GfxqXMNYdls7D9xFr6VjXKuOiO4rWIqfSG0Kg-NWgKFACMhkITS7HTj8sg/exec";
+    const params=new URLSearchParams(location.search);const fromPage=params.get("from")||"";const requestedEmployee=(params.get("employee")||"").trim();const storedEmployee=String(localStorage.getItem("employee")||"").trim();const allowed=["Alan","Derick","Anthony","Jesse","Delvon","Albert"];
+    const employee=Reports.user ? Reports.user.employee : "";
+    function pad(n){return String(n).padStart(2,"0")}function localDate(){var d=new Date();return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())}function selected(name){var el=document.querySelector('input[name="'+name+'"]:checked');return el?el.value:""}function show(id,yes){document.getElementById(id).classList.toggle("hidden",!yes)}function setStatus(message,type){var el=document.getElementById("status");el.textContent=message;el.className="status show "+type}
+    function jsonp(payload,timeout){return Reports.request(payload)}
+    for(var i=1;i<=10;i++){var input=document.createElement("input");input.type="radio";input.name="dayRating";input.id="dayRating"+i;input.value=String(i);var label=document.createElement("label");label.htmlFor=input.id;label.textContent=String(i);document.getElementById("rating").append(input,label)}
+    document.getElementById("reportDate").value=localDate();document.getElementById("employeeChip").textContent=employee||"Employee not recognized";document.getElementById("backLink").href=fromPage||"index.html";
+    document.querySelectorAll('input[name="safetyStatus"]').forEach(function(el){el.addEventListener("change",function(){show("safetyField",this.value==="Yes")})});document.querySelectorAll('input[name="damageStatus"]').forEach(function(el){el.addEventListener("change",function(){show("damageField",this.value==="Yes")})});
+    document.getElementById("issueForm").addEventListener("submit",async function(event){event.preventDefault();if(!employee){setStatus("Open this page from your employee menu.","err");return}var rating=selected("dayRating");var btn=document.getElementById("submitBtn");btn.disabled=true;btn.textContent="Submitting…";setStatus("Sending issue report…","");var payload={action:"submitLaborerIssue",reportDate:document.getElementById("reportDate").value,employee:employee,dayRating:rating,safetyStatus:selected("safetyStatus"),safetyDetails:document.getElementById("safetyDetails").value,damageStatus:selected("damageStatus"),damageDetails:document.getElementById("damageDetails").value,managementShouldKnow:document.getElementById("managementShouldKnow").value,comment:document.getElementById("comment").value,confidential:document.getElementById("confidential").checked};try{await jsonp(payload,40000);setStatus("Issue report submitted successfully.","ok");this.reset();document.getElementById("reportDate").value=localDate();window.scrollTo({top:0,behavior:"smooth"})}catch(error){setStatus(error.message||"The issue could not be submitted.","err")}finally{btn.disabled=false;btn.textContent="Submit Issue Report"}});
+  </script>
+</body>
+</html>
