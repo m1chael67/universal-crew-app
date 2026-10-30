@@ -2011,12 +2011,9 @@ function waitForClockState(expectedState, triesLeft) {
 
       jsonp(JOBS_WEBAPP_URL, { action: "listJobs" }, 20000)
         .then(function(res) {
-          var jobs = (res.jobs || []).filter(function(job) {
-            var raw = job.employees || [];
-            var emps = Array.isArray(raw) ? raw : String(raw || "").split(",");
-            emps = emps.map(function(x){ return String(x || "").trim().toLowerCase(); }).filter(Boolean);
-            return emps.indexOf(String(FILTER_EMPLOYEE || "").trim().toLowerCase()) !== -1;
-          });
+          // E5 job visibility: this E5 user's job page displays every returned job,
+          // whether or not the user is listed in the assigned crew.
+          var jobs = res.jobs || [];
 
           var jobsArray = jobs.map(function(job) {
             var setupDate = parseUsDate(job.startDate || "");
